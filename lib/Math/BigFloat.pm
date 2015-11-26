@@ -12,7 +12,7 @@ package Math::BigFloat;
 #   _a	: accuracy
 #   _p	: precision
 
-$VERSION = '1.9993';
+$VERSION = '1.9994';
 require 5.006002;
 
 require Exporter;
@@ -1498,6 +1498,10 @@ sub _log_10
       }
     $l_2->bmul($twos);		# * -2 => subtract, * 2 => add
     }
+  else
+    {
+      undef $l_2;
+    }
   
   $self->_log($x,$scale);			# need to do the "normal" way
   $x->badd($l_10) if defined $l_10; 		# correct it by ln(10)
@@ -1895,6 +1899,7 @@ sub bdiv
     {
     if ($y_not_one)
       {
+      $x -> bint();
       $rem->bmod($y,@params);			# copy already done
       }
     if ($fallback)

@@ -1201,6 +1201,9 @@ Math::BigInt:
  * Stop $x -> bmodpow(1, 1) from failing when $x is large (Peter John Acklam)
    (Closes: RT#62949).
 
+##############################################################################
+The changes are now grouped by distribution.
+
 2011-01-29 v1.99_05 pjacklam
  * Fix typos (reminder -> remainder etc.) (Peter John Acklam)
  * Fix Math::BigInt::Calc::_num returning NaN, not Inf, when it overflowed
@@ -1271,6 +1274,49 @@ Math::BigInt:
  * Synchronise with blead perl. For a list of recent changes, see
    http://perl5.git.perl.org/perl.git/history/HEAD:/dist/Math-BigInt
  * Removed examples/hailstone.pl which required the obsolete Math::Big
+
+2015-08-10 v1.9994 pjacklam
+ BUGS
+  * Added reference to CPAN RT for the Math-BigInt distro.
+ CHANGES
+  * Added recent changes.
+ examples/hailstone.pl
+  * Removed this file as it required the obsolete Math::Big
+ lib/Math/BigFloat.pm
+  * Corrected spelling errors.
+  * Code reformatted to avoid long lines.
+  * Improved POD formatting.
+  * Added meta-documentation (CPAN ratings, CPAN testers matrix, etc.)
+  * Added the bint() method.
+ lib/Math/BigInt.pm
+  * Corrected spelling errors.
+  * Code reformatted to avoid long lines.
+  * Improved POD formatting.
+  * Added meta-documentation (CPAN ratings, CPAN testers matrix, etc.)
+  * Added the bint() method.
+  * Removed references to the obsolete Math::Big
+ lib/Math/BigInt/Calc.pm
+  * Corrected spelling errors.
+  * Added meta-documentation (CPAN ratings, CPAN testers matrix, etc.)
+ lib/Math/BigInt/CalcEmu.pm
+  * Corrected spelling errors.
+  * Improved POD formatting.
+  * Added meta-documentation (CPAN ratings, CPAN testers matrix, etc.)
+  * Removed references to Math::BigInt::BitVect, which is no longer on CPAN.
+ Makefile.PL
+  * Removed code that checks for compatible versions of distributions that
+    depend on Math-BigInt. Such checking should be done in the distributions
+    that depend on Math-BigInt, not in Math-BigInt itself.
+ NEW
+  * This file now only refers to the change log.
+ t/bigfltpm.inc
+  * Added tests for fint().
+ t/bigintpm.inc
+  * Added tests for int().
+ t/upgrade.inc
+  * Added tests for int().
+ t/*.t
+  * Incremented test counts as needed for the new tests in the t/*.inc files.
 
 Please send us test-reports, your experiences with this and your ideas - we love
 to hear about our work!
