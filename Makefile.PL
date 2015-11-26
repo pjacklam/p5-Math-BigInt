@@ -1,4 +1,3 @@
-
 # We need at least Perl 5.6
 require 5.006002;
 use strict;
@@ -20,9 +19,9 @@ requires        'perl'                          => 5.006002;
 # upgrading them would make little fluffy kittens much happier:
 
 my @checks;
-check_minimum_version ('Math::BigInt::FastCalc' => 0.25);
-check_minimum_version ('Math::BigInt::GMP'      => 1.35);
-check_minimum_version ('Math::BigInt::Pari'     => 1.15);
+check_minimum_version ('Math::BigInt::FastCalc' => 0.27);
+check_minimum_version ('Math::BigInt::GMP'      => 1.37);
+check_minimum_version ('Math::BigInt::Pari'     => 1.16);
 check_minimum_version ('Math::BigRat'           => 0.2602);
 check_minimum_version ('bignum'                 => 0.22);
 
