@@ -4,7 +4,7 @@ use 5.006002;
 use strict;
 # use warnings;	# dont use warnings for older Perls
 
-our $VERSION = '0.59';
+our $VERSION = '1.99_04';
 
 # Package to store unsigned big integers in decimal and do math with them
 
@@ -270,16 +270,17 @@ sub _str
   $ret;
   }                                                                             
 
-sub _num {
-    # Make a number (scalar int/float) from a BigInt object.
+sub _num
+  {
+    # Make a Perl scalar number (int/float) from a BigInt object.
     my $x = $_[1];
 
     return 0 + $x->[0] if scalar @$x == 1;      # below $BASE
 
     # Start with the most significant element and work towards the least
-    # significant element. This has two advantages: 1) the number is not
-    # converted to a floating point format too early, and 2) we completely
-    # avoid multiplying "inf" with "0", giving "nan".
+    # significant element. Avoid multiplying "inf" (which happens if the number
+    # overflows) with "0" (if there are zero elements in $x) since this gives
+    # "nan" which propagates to the output.
 
     my $num = 0;
     for (my $i = $#$x ; $i >= 0 ; --$i) {
@@ -287,7 +288,7 @@ sub _num {
         $num += $x -> [$i];
     }
     return $num;
-}
+  }
 
 ##############################################################################
 # actual math code
@@ -1267,7 +1268,7 @@ sub _is_even
 sub _is_odd
   {
   # return true if arg is odd
-  (($_[1]->[0] & 1)) <=> 0; 
+  (($_[1]->[0] & 1)) <=> 0;
   }
 
 sub _is_one
@@ -1491,7 +1492,7 @@ sub _lsft
     }
   # set lowest parts to 0
   while ($dst >= 0) { $x->[$dst--] = 0; }
-  # fix spurios last zero element
+  # fix spurious last zero element
   splice @$x,-1 if $x->[-1] == 0;
   $x;
   }
@@ -1544,8 +1545,8 @@ sub _nok
 
   if (!_is_zero($c,$k))
     {
-  my $x = _copy($c,$n);
-  _sub($c,$n,$k);
+    my $x = _copy($c,$n);
+    _sub($c,$n,$k);
     _inc($c,$n);
     my $f = _copy($c,$n); _inc($c,$f);		# n = 5, f = 6, d = 2
     my $d = _two($c);
@@ -1557,7 +1558,7 @@ sub _nok
       _inc($c,$f); _inc($c,$d);
       }
     }
-  else 
+  else
     {
     # keep ref to $n and set it to 1
     splice (@$n,1); $n->[0] = 1;
@@ -2479,7 +2480,7 @@ Math::BigInt v1.70 or later:
 			NOTE: because of Perl numeric notation defaults,
 			the _num'ified obj may lose accuracy due to 
 			machine-dependent floating point size limitations
-                    
+
 	_add(obj,obj)	Simple addition of two objects
 	_mul(obj,obj)	Multiplication of two objects
 	_div(obj,obj)	Division of the 1st object by the 2nd
@@ -2517,17 +2518,17 @@ Math::BigInt v1.70 or later:
 	_from_hex(str)	return new object from a hexadecimal string
 	_from_bin(str)	return new object from a binary string
 	_from_oct(str)	return new object from an octal string
-	
+
 	_as_hex(str)	return string containing the value as
 			unsigned hex string, with the '0x' prepended.
 			Leading zeros must be stripped.
 	_as_bin(str)	Like as_hex, only as binary string containing only
 			zeros and ones. Leading zeros must be stripped and a
 			'0b' must be prepended.
-	
+
 	_rsft(obj,N,B)	shift object in base B by N 'digits' right
 	_lsft(obj,N,B)	shift object in base B by N 'digits' left
-	
+
 	_xor(obj1,obj2)	XOR (bit-wise) object 1 with object 2
 			Note: XOR, AND and OR pad with zeros if size mismatches
 	_and(obj1,obj2)	AND (bit-wise) object 1 with object 2
@@ -2561,7 +2562,7 @@ The following functions are REQUIRED for an api_version of 2 or greater:
 The following functions are optional, and can be defined if the underlying lib
 has a fast way to do them. If undefined, Math::BigInt will use pure Perl (hence
 slow) fallback routines to emulate these:
-	
+
 	_signed_or
 	_signed_and
 	_signed_xor
@@ -2598,7 +2599,7 @@ by this:
 This way you ensure that your library really works 100% within Math::BigInt.
 
 =head1 LICENSE
- 
+
 This program is free software; you may redistribute it and/or modify it under
 the same terms as Perl itself. 
 

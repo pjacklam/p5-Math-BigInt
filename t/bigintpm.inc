@@ -198,7 +198,7 @@ while (<DATA>)
     }
   if ($ans eq "")
     {
-      is ($ans1, undef);
+      is ($ans1, undef); 
     }
   else
     {
@@ -545,11 +545,11 @@ $x -= 1; is ($x,$MAX); is_valid($x);	# 9999 again
 ###############################################################################
 # check numify
 
-$x = $class->new($BASE-1);     is ($x->numify(),$BASE-1);
-$x = $class->new(-($BASE-1));  is ($x->numify(),-($BASE-1));
+$x = $class->new($BASE-1);     is ($x->numify(),$BASE-1); 
+$x = $class->new(-($BASE-1));  is ($x->numify(),-($BASE-1)); 
 
 # +0 is to protect from 1e15 vs 100000000 (stupid to_string aaaarglburblll...)
-$x = $class->new($BASE);       is ($x->numify()+0,$BASE+0);
+$x = $class->new($BASE);       is ($x->numify()+0,$BASE+0); 	
 $x = $class->new(-$BASE);      is ($x->numify(),-$BASE);
 $x = $class->new( -($BASE*$BASE*1+$BASE*1+1) ); 
 is ($x->numify(),-($BASE*$BASE*1+$BASE*1+1));
@@ -1182,8 +1182,6 @@ numifyabc:NaN
 -5:-5
 100:100
 -100:-100
-1e999999:inf
--1e999999:-inf
 &bneg
 bnegNaN:NaN
 +inf:-inf
@@ -1543,7 +1541,7 @@ inf:inf:NaN,NaN
 inf:-inf:NaN,NaN
 8:0:inf,8
 inf:0:inf,inf
-# exceptions to reminder rule
+# exceptions to remainder rule
 -8:0:-inf,-8
 -inf:0:-inf,-inf
 0:0:NaN,NaN
@@ -1674,7 +1672,7 @@ inf:0:inf
 84696969696969696943434343434871161616161616161452525252486813131313131313143230042929292929292930:13131313131313131313131313131394949494949494949494949494943535353535353535353535:6449999999999999998
 84696969696969696969696969697497424242424242424242424242385803030303030303030300750000000000000000:13131313131313131313131313131394949494949494949494949494943535353535353535353535:6450000000000000000
 84696969696969696930303030303558030303030303030057575757537318181818181818199694689393939393939395:13131313131313131313131313131394949494949494949494949494943535353535353535353535:6449999999999999997
-# excercise shortcut for numbers of the same length in div
+# exercise shortcut for numbers of the same length in div
 999999999999999999999999999999999:999999999999999999999999999999999:1
 999999999999999999999999999999999:888888888888888888888888888888888:1
 999999999999999999999999999999999:777777777777777777777777777777777:1
@@ -1703,7 +1701,15 @@ inf:0:inf
 abc:abc:NaN
 abc:5:NaN
 5:abc:NaN
-# bmodinv expected results from normal use
+# bmodinv Expected Results from normal use
+1:5:1
+3:5:2
+3:-5:-3
+-2:5:2
+8:5033:4404
+1234567891:13:6
+-1234567891:13:7
+324958749843759385732954874325984357439658735983745:2348249874968739:1741662881064902
 -2:1:0
 -1:1:0
 0:1:0
@@ -1725,14 +1731,7 @@ abc:5:NaN
 2:4:NaN
 3:4:3
 4:4:NaN
--2:5:2
-1:5:1
-3:5:2
-8:5033:4404
-1234567891:13:6
--1234567891:13:7
-324958749843759385732954874325984357439658735983745:2348249874968739:1741662881064902
-# bmodinv infinity cases
+## bmodinv Error cases / useless use of function
 inf:5:NaN
 5:inf:NaN
 -inf:5:NaN
@@ -1747,11 +1746,11 @@ abc:abc:5:NaN
 5:5:abc:NaN
 5:abc:5:NaN
 abc:5:5:NaN
-# bmodpow inf cases
-inf:5:11:NaN
-5:inf:11:NaN
-5:11:inf:NaN
+3:5:0:NaN
 # bmodpow Expected results
+0:0:2:1
+1:0:2:1
+0:3:5:0
 -2:-2:1:0
 -1:-2:1:0
 0:-2:1:0
@@ -1899,16 +1898,15 @@ inf:5:11:NaN
 2:4:4:0
 3:4:4:1
 4:4:4:0
-#
+8:-1:16:NaN
+8:-1:5033:4404
+8:7:5032:3840
+8:8:-5:-4
 1e50:1:1:0
 98436739867439843769485798542749827593285729587325:43698764986460981048259837659386739857456983759328457:6943857329857295827698367:3104744730915914415259518
-#
-3:5:0:NaN
-5:7:-11:-8
-8:-1:16:NaN
-5:-7:-11:NaN
--5:-7:-11:NaN
-#
+# bmodpow Error cases
+inf:5:13:NaN
+5:inf:13:NaN
 &bmod
 # inf handling, see table in doc
 0:inf:0
@@ -1929,7 +1927,7 @@ inf:inf:NaN
 inf:-inf:NaN
 8:0:8
 inf:0:inf
-# exceptions to reminder rule
+# exceptions to remainder rule
 -inf:0:-inf
 -8:0:-8
 0:0:NaN

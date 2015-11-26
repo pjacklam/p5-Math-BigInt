@@ -3,8 +3,7 @@
 # Test use Math::BigFloat with => 'Math::BigInt::SomeSubclass';
 
 use strict;
-use Test::More tests => 2321
-    + 1;	# + our own tests
+use Test::More tests => 2322 + 1;
 
 use Math::BigFloat with => 'Math::BigInt::Subclass', lib => 'Calc';
 

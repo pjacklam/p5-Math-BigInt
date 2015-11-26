@@ -175,12 +175,6 @@ Math::BigInt::Calc:
  * use 9 digit parts on 64bit integer or long double systems
 2007-09-16 v0.52 Tels
  * fix 64bit ints on Perl v5.8.0 (thanx zefram)
-2010-11-25 v1.99.1 pjacklam
- * Fix numify() so returns inf, not nan, for large values.
-   (Peter John Acklam) (Closes: RT#25274)
-2010-11-25 v1.99.1 pjacklam
- * Fix _modpow() so it handles boundary cases better.
-   (Peter John Acklam) (Closes: RT#61543, RT#62918, RT#62949)
 
 ##############################################################################
 Math::BigInt::CalcEmu:
@@ -523,12 +517,6 @@ Math::BigFloat:
  * fix #34459: bsqrt() breaks on floats with enough digits (Thanx Niko Tyni!)
  * fix #35238: batan2() handles inf/+inf wrong
  * fix #35162: MBI segfault (as_number(Math::BigRat()) was wrong)
-2010-11-25 v1.99.1 pjacklam
- * Fix as_number() so it doesn't lose precision. (Peter John Acklam)
-  (Closes: RT#43694)
-2010-11-25 v1.99.1 pjacklam
- * Fix bcmp() so it can handle very large exponents. (Peter John Acklam)
-  (Closes: RT#62764)
 
 ##############################################################################
 Math::BigInt:
@@ -1010,9 +998,16 @@ Math::BigInt:
    (Peter John Acklam) (Closes: RT#62918).
  * Stop $x -> bmodpow(1, 1) from failing when $x is large (Peter John Acklam)
    (Closes: RT#62949).
-2010-11-25 v1.99.1 pjacklam
- * Fix bmodpow() and bmodinv() so they handle boundary cases better. (Peter
-   John Acklam and Martin Becker) (Closes: RT#61543, RT#62918 and RT#62949)
+2011-01-29 v1.99_05 pjacklam
+ * Fix typos (reminder -> remainder etc.) (Peter John Acklam)
+ * Fix Math::BigInt::Calc::_num returning NaN, not Inf, when it overflowed
+   (Peter John Acklam) (Closes: RT #25274).
+ * Fix Math::BigFloat->bcmp() so it can handle arbitrarily large exponents
+   (Peter John Acklam) (Closes: RT #62764).
+ * Fix bmodpow() and bmodinv() in Math::BigInt to handle negative input
+   (Peter John Acklam) (Closes: RT #61543 and RT #63237).
+ * Clean up whitespace (Nicholas Clark).
+ * Added file t/00-signature.t for testing SIGNATURE (Peter John Acklam).
 
 Please send us test-reports, your experiences with this and your ideas - we love
 to hear about our work!

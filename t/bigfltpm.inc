@@ -210,9 +210,9 @@ is ($y,1200); is ($x,1200);
 my $monster = '1e1234567890123456789012345678901234567890';
 
 # new and exponent
-is ($class->new($monster)->bsstr(),
+is ($class->new($monster)->bsstr(), 
 		'1e+1234567890123456789012345678901234567890');
-is ($class->new($monster)->exponent(),
+is ($class->new($monster)->exponent(), 
 		'1234567890123456789012345678901234567890');
 # cmp
 is ($class->new($monster) > 0,1);
@@ -224,7 +224,7 @@ is ($class->new($monster)->bmul(2)->bsstr(),
 
 # mantissa
 $monster = '1234567890123456789012345678901234567890e2';
-is ($class->new($monster)->mantissa(),
+is ($class->new($monster)->mantissa(), 
 		'123456789012345678901234567890123456789');
 
 ###############################################################################
@@ -587,7 +587,6 @@ fnormNaN:NaN
 -2:-2
 -123.456:-123
 -200:-200
-71243225429896467497217836789578596379:71243225429896467497217836789578596379
 -inf:-inf
 inf:inf
 NaN:NaN
@@ -727,7 +726,7 @@ abc:NaN
 -123456E-2:-1234.56
 1e1:10
 2e-11:0.00000000002
-# excercise _split
+# exercise _split
   .02e-1:0.002
    000001:1
    -00001:-1
@@ -1065,6 +1064,8 @@ fcmpNaN:+0:
 2:1.5:1
 1.54321:234:-1
 234:1.54321:1
+1e1234567890987654321:1e1234567890987654320:1
+1e-1234567890987654321:1e-1234567890987654320:-1
 # infinity
 -inf:5432112345:-1
 +inf:5432112345:1
@@ -1508,7 +1509,7 @@ inf:inf:NaN
 inf:-inf:NaN
 8:0:8
 inf:0:inf
-# exceptions to reminder rule
+# exceptions to remainder rule
 -inf:0:-inf
 -8:0:-8
 0:0:NaN

@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 
 use strict;
-use Test::More tests => 3615 + 6;
+use Test::More tests => 3619 + 6;
 
 use Math::BigInt lib => 'Calc';
 

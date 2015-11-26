@@ -1,4 +1,4 @@
-# test rounding, accuracy, precicion and fallback, round_mode and mixing
+# test rounding, accuracy, precision and fallback, round_mode and mixing
 # of classes
 
 # Make sure you always quote any bare floating-point values, lest 123.46 will
@@ -180,7 +180,7 @@ is ($x->copy()->round(undef,-1,'odd'),'123.5');
 $x = $mbf->new('123.4567');
 $y = $x->copy()->bround();		# no-op since nowhere A or P defined
 
-is ($y,123.4567);
+is ($y,123.4567);			
 $y = $x->copy()->round(5);
 is ($y->accuracy(),5);
 is ($y->precision(), undef);		# A has precedence, so P still unset
@@ -274,8 +274,8 @@ foreach my $c ($mbi,$mbf)
   }
 
 ###############################################################################
-# test wether operations round properly afterwards
-# These tests are not complete, since they do not excercise every "return"
+# test whether operations round properly afterwards
+# These tests are not complete, since they do not exercise every "return"
 # statement in the op's. But heh, it's better than nothing...
 
 $x = $mbf->new('123.456');
@@ -398,9 +398,9 @@ my $warn = ''; $SIG{__WARN__} = sub { $warn = shift; };
 # these should no longer warn, even tho '3.17' is a NaN in BigInt (>= returns
 # now false, bug until v1.80)
 $warn = ''; eval "\$z = 3.17 <= \$y"; is ($z, '');
-unlike ($warn, qr/^Use of uninitialized value (\$y )?(in numeric le \(<=\) |)at/);
+unlike ($warn, qr/^Use of uninitialized value (\$y )?(in numeric le \(<=\) |)at/);	
 $warn = ''; eval "\$z = \$y >= 3.17"; is ($z, '');
-unlike ($warn, qr/^Use of uninitialized value (\$y )?(in numeric ge \(>=\) |)at/);
+unlike ($warn, qr/^Use of uninitialized value (\$y )?(in numeric ge \(>=\) |)at/);	
 
 # XXX TODO breakage:
 # $z = $y->copy()->bmul($u,2,0,'odd'); is ($z,31000);
@@ -584,7 +584,7 @@ is ($x,'12350'); is ($x->{_a},4); is ($x->{_p}, undef);
 $x = $mbf->new(100) / 3;
 is ($x->{_a}, undef); is ($x->{_p}, undef);
 
-# result & reminder
+# result & remainder
 $x = $mbf->new(100) / 3; ($x,$y) = $x->bdiv(3);
 is ($x->{_a}, undef); is ($x->{_p}, undef);
 is ($y->{_a}, undef); is ($y->{_p}, undef);

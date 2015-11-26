@@ -581,7 +581,7 @@ abc:abc:NaN
 +4294967296:+32:1
 +281474976710656:+48:1
 +2:-2:NaN
-# excercise base 10
+# exercise base 10
 -1234:0:10:-1234
 +1234:0:10:1234
 +200:2:10:2
@@ -862,7 +862,7 @@ inf:inf:NaN,NaN
 inf:-inf:NaN,NaN
 8:0:inf,8
 inf:0:inf,inf
-# exceptions to reminder rule
+# exceptions to remainder rule
 -8:0:-inf,-8
 -inf:0:-inf,-inf
 0:0:NaN,NaN
@@ -965,7 +965,7 @@ inf:inf:NaN
 inf:-inf:NaN
 8:0:8
 inf:0:inf
-# exceptions to reminder rule
+# exceptions to remainder rule
 -inf:0:-inf
 -8:0:-8
 0:0:NaN
