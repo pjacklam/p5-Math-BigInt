@@ -1500,6 +1500,15 @@ The changes are now grouped by distribution.
 
  * Required version of Test::More is 0.9301.
 
+2015-11-12 v1.999710 pjacklam
+
+ * New method Math::BigFloat -> from_hex() which supports hexadecimal floating
+   point numbers, e.g., "0x1.999ap-4".
+
+ * New test file t/from_hex-mbf.t for testing Math::BigFloat -> from_hex().
+
+ * Add 'from_hex' and 'from_bin' to list of methods in the Math::BigInt POD.
+
 Please send us test-reports, your experiences with this and your ideas - we love
 to hear about our work!
 

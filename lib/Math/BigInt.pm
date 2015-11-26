@@ -19,7 +19,7 @@ use 5.006002;
 use strict;
 use warnings;
 
-our $VERSION = '1.999709';
+our $VERSION = '1.999710';
 
 our @ISA = qw(Exporter);
 our @EXPORT_OK = qw(objectify bgcd blcm);
@@ -3505,6 +3505,8 @@ Math::BigInt - Arbitrary size integer/float math package
   $h = Math::BigInt->new('0x123');	# from hexadecimal
   $b = Math::BigInt->new('0b101');	# from binary
   $o = Math::BigInt->from_oct('0101');	# from octal
+  $h = Math::BigInt->from_hex('cafe');	# from hexadecimal
+  $b = Math::BigInt->from_bin('0101');	# from binary
 
   # Testing (don't modify their arguments)
   # (return true if the condition is met, otherwise false)
