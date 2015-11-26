@@ -1354,6 +1354,42 @@ The changes are now grouped by distribution.
  t/upgrade.inc
   * Correct spelling errors.
 
+2015-09-11 v1.999701 pjacklam
+
+ * The POD documentation, as well as the comments in the code, said that
+   $x->bdiv($y) in list context should return quotient $q and remainder $r so
+   that $x = $q * $y + $r, and that the remainder (modulo) $r should correspond
+   to Perl's % operator as well as the bmod() method. This has not been the
+   actual behaviour. This is now fixed.
+
+ * Clearer POD documentation for the bdiv() and bmod() methods.
+
+ * All input values in the range (-1,1) written as a decimal number, e.g.,
+   -0.75 and 0.5, now return NaN, not 0.
+
+ * Input values with a large (absolute value) negative exponent, e.g.,
+   1e-9999999, now return NaN. The former behaviour was to die with the message
+   "Quantifier in {,} bigger than 32766 in regex; marked by ..."
+
+ * Intermediate computations in blog() increased the number of digits
+   significantly in some cases. Now reduce the number of digits by rounding.
+   However, keep some extra digits for remaining intermediate computations
+   before the final rounding.
+
+ * When $x is a Math::BigFloat, $x -> bceil() and $x -> bint() for -1 < $x < 0
+   returned -0. Negative zero is never used by Math::Big(Int|Float), and care
+   has been taken to avoid it, so this bug is surely an oversight.
+
+ * Explicitly specify the backend (lib => 'Calc') in t/mbimbf.t for easier
+   release management of the backend distributions.
+
+ * Add "use warnings" to test scripts, since Perl 5.6.2 is required anyway, and
+   "use warnings" was introduced in Perl 5.6.1.
+
+ * Modified test scripts so the difference between the test files in the
+   Math-BigInt distribution and the backend distributions are as few and as
+   small as possible. This makes for easier release management.
+
 Please send us test-reports, your experiences with this and your ideas - we love
 to hear about our work!
 
