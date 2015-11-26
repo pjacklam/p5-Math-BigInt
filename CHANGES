@@ -213,31 +213,31 @@ Math::BigFloat:
 2001-03-06 1.03: layed more foundations (mul() etc)
 2001-03-27 1.04: bmul/bdiv/cmp work now, better _norm()
 2001-03-31 1.05: fixed bstr() and bsstr()
-	         added AUTOLOAD for fxxx() to work as well as bxxx()
-		 enhanced and fixed testsuite for mul/cmp/add/new
+                 added AUTOLOAD for fxxx() to work as well as bxxx()
+                 enhanced and fixed testsuite for mul/cmp/add/new
 2001-04-05 1.06: bstr() returns NaN for NaN's
-		 renamed _norm to bnorm, added it to AUTOLOAD for compatibility
-		 fixed bug Math::BigFloat->new(Math::BigInt->new(3));
-		 bug mul/div when second arg was BigInt
-		 bdiv() works now with precision
-		 precision()
-		 doc about mixing different objects in overloaded math
+                 renamed _norm to bnorm, added it to AUTOLOAD for compatibility
+                 fixed bug Math::BigFloat->new(Math::BigInt->new(3));
+                 bug mul/div when second arg was BigInt
+                 bdiv() works now with precision
+                 precision()
+                 doc about mixing different objects in overloaded math
 2001-04-07 1.07: bug in bstr() for 0.xxx style numbers, as well as for "-xxx"
-		 babs(), bneg(), bint() work now
-		 empty stubs for bsqrt(), bround() and bmod()
-		 exponent(), mantissa(), parts() work now as expected
+                 babs(), bneg(), bint() work now
+                 empty stubs for bsqrt(), bround() and bmod()
+                 exponent(), mantissa(), parts() work now as expected
 2001-04-18 1.08: exponent(), mantissa() and parts() now return BigInt's
-		 bnorm: 0Ey => 0E1 (was wrongly 0E0)
-		 fixed is_zero()
-		 added bround() and bfround() (only truncate mode)
+                 bnorm: 0Ey => 0E1 (was wrongly 0E0)
+                 fixed is_zero()
+                 added bround() and bfround() (only truncate mode)
                  fixed bug in bstr() for 1.203E-2 style numbers (Thanx Tom!)
 2001-04-23 1.09: length() in list context return length of mantissa & exponent
-		 bug in bstr() for '0.x' style strings
-		 added bsqrt()
-		 workaround for Perl v5.6.0 overload-bool bug (via MBI)
+                 bug in bstr() for '0.x' style strings
+                 added bsqrt()
+                 workaround for Perl v5.6.0 overload-bool bug (via MBI)
                  fixed rounding
 2001-05-07 1.10: Tom's round fixes (minus one nit)
- 		 new: .xxx, -.xxx, +.xxx etc are valid inputs, while
+                 new: .xxx, -.xxx, +.xxx etc are valid inputs, while
                  '.', 'x x x' and 'Exxx' are now invalid
                  finally got rid of C&P of overload section and clone()
 2001-05-09 1.11: bug bcmp() (1e-08 was < 0, aka fractions were broken)
@@ -1004,10 +1004,17 @@ Math::BigInt:
    (Peter John Acklam) (Closes: RT #25274).
  * Fix Math::BigFloat->bcmp() so it can handle arbitrarily large exponents
    (Peter John Acklam) (Closes: RT #62764).
+ * Fix bmodpow() in Math::BigInt 1.99 mis-calculating powers of one
+   (Peter John Acklam) (Closes: RT #63237).
  * Fix bmodpow() and bmodinv() in Math::BigInt to handle negative input
-   (Peter John Acklam) (Closes: RT #61543 and RT #63237).
+   (Peter John Acklam) (Closes: RT #61543)
  * Clean up whitespace (Nicholas Clark).
  * Added file t/00-signature.t for testing SIGNATURE (Peter John Acklam).
+2011-02-05 v1.991 pjacklam
+ * Add workaround for library inconsistencies (Math::BigInt::Calc vs.
+   Math::BigInt::GMP). This makes older versions of Math::BigInt::GMP
+   work with latest version of Math::BigInt (Peter John Acklam).
+ * Correct and extend API documentation (Peter John Acklam).
 
 Please send us test-reports, your experiences with this and your ideas - we love
 to hear about our work!
