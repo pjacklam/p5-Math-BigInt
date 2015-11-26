@@ -1039,6 +1039,10 @@ Math::BigInt:
    Acklam).
  * Clean up code and add more code comments (Peter John Acklam).
  * Fix typos (Peter John Acklam).
+2011-02-26 v1.993 pjacklam
+ * Change default backend library from Math::BigInt::FastCalc to
+   Math::BigInt::Calc, which is included in the Math-BigInt distro. This
+   avoids recursive distribution dependency (RT #65976) (Peter John Acklam).
 
 Please send us test-reports, your experiences with this and your ideas - we love
 to hear about our work!
