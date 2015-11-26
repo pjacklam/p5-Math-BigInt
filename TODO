@@ -48,7 +48,7 @@ following are pretty much ultra-low-priority:
 Math::BigInt::Calc:
  * look at div() for more speed (I have the hunch that the general _div()
    routine does way too much work for normal div (e.g. when we don't need
-   the remainder). A simplified version could take care of this.
+   the reminder). A simplified version could take care of this.
  * alternative mul() method using shifts
  * implement in Calc (and GMP etc) to calculate band(), bior(), bxor() for
    negative inputs (_signed_or() etc)

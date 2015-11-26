@@ -587,6 +587,7 @@ fnormNaN:NaN
 -2:-2
 -123.456:-123
 -200:-200
+71243225429896467497217836789578596379:71243225429896467497217836789578596379
 -inf:-inf
 inf:inf
 NaN:NaN
@@ -1507,7 +1508,7 @@ inf:inf:NaN
 inf:-inf:NaN
 8:0:8
 inf:0:inf
-# exceptions to remainder rule
+# exceptions to reminder rule
 -inf:0:-inf
 -8:0:-8
 0:0:NaN

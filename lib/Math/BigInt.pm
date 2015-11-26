@@ -172,8 +172,8 @@ $_trap_nan = 0;				# are NaNs ok? set w/ config()
 $_trap_inf = 0;				# are infs ok? set w/ config()
 my $nan = 'NaN'; 			# constants for easier life
 
-my $CALC = 'Math::BigInt::FastCalc';	# module to do the low level math
-					# default is FastCalc.pm
+my $CALC = 'Math::BigInt::Calc';        # module to do the low level math
+					# default is Calc.pm
 my $IMPORT = 0;				# was import() called yet?
 					# used to make require work
 my %WARN;				# warn only once for low-level libs
@@ -1653,7 +1653,7 @@ sub _div_inf
    if (($x->is_nan() || $y->is_nan())   ||
        ($x->is_zero() && $y->is_zero()));
  
-  # +-inf / +-inf == NaN, remainder also NaN
+  # +-inf / +-inf == NaN, reminder also NaN
   if (($x->{sign} =~ /^[+-]inf$/) && ($y->{sign} =~ /^[+-]inf$/))
     {
     return wantarray ? ($x->bnan(),$self->bnan()) : $x->bnan();
@@ -1800,6 +1800,9 @@ sub bmodinv
 
   return $x if $x->modify('bmodinv');
 
+  # TODO: The following case should be handled by $CALC->_modinv():
+  return $x->bzero() if $y->is_one();                   # modulus 1
+
   return $x->bnan()
         if ($y->{sign} ne '+'                           # -, NaN, +inf, -inf
          || $x->is_zero()                               # or num == 0
@@ -1823,29 +1826,100 @@ sub bmodpow
   # takes a very large number to a very large exponent in a given very
   # large modulus, quickly, thanks to binary exponentation. Supports
   # negative exponents.
+
+  unless (@_ == 3) {
+      require Carp;
+      Carp::croak ("Not enough arguments for bmodpow") if @_ < 3;
+      Carp::croak ("Too many arguments for bmodpow")   if @_ > 3;
+  }
+
   my ($self,$num,$exp,$mod,@r) = objectify(3,@_);
 
   return $num if $num->modify('bmodpow');
 
-  # check modulus for valid values
-  return $num->bnan() if ($mod->{sign} ne '+'		# NaN, - , -inf, +inf
-                       || $mod->is_zero());
+  # When the exponent 'e' is negative, use the following relation, which is
+  # based on finding the multiplicative inverse 'd' of 'b' modulo 'm':
+  #
+  #    b^(-e) (mod m) = d^e (mod m) where b*d = 1 (mod m)
+  #
+  # The modular inverse can not be computed if the modulus 'm' has a negative
+  # sign. The reason is that if 'a (mod m)' is non-zero, it has the same sign
+  # as 'm', and if 'm' is negative, then it is impossible to find 'b' and 'd'
+  # satisfying 'b*d = 1 (mod m)', which is positive.
 
-  # check exponent for valid values
-  if ($exp->{sign} =~ /\w/) 
-    {
-    # i.e., if it's NaN, +inf, or -inf...
-    return $num->bnan();
-    }
+  $num->bmodinv($mod) if ($exp->{sign} eq '-');
 
-  $num->bmodinv ($mod) if ($exp->{sign} eq '-');
+  # Check for valid input. All operands must be finite, and the modulus must be
+  # non-zero.
 
-  # check num for valid values (also NaN if there was no inverse but $exp < 0)
-  return $num->bnan() if $num->{sign} !~ /^[+-]$/;
+  return $num->bnan() if ($num->{sign} =~ /NaN|inf/ ||  # NaN, -inf, +inf
+                          $exp->{sign} =~ /NaN|inf/ ||  # NaN, -inf, +inf
+                          $mod->{sign} =~ /NaN|inf/ ||  # NaN, -inf, +inf
+                          $mod->is_zero());
 
-  # $mod is positive, sign on $exp is ignored, result also positive
-  $num->{value} = $CALC->_modpow($num->{value},$exp->{value},$mod->{value});
-  $num;
+  # Compute 'a (mod m)', ignoring the signs on 'a' and 'm'. If the resulting
+  # value is zero, the output is also zero, regardless of the signs on 'a' and
+  # 'm'.
+
+  my $value = $CALC->_modpow($num->{value}, $exp->{value}, $mod->{value});
+  my $sign  = '+';
+
+  # If the resulting value is non-zero, we have four special cases, depending
+  # on the signs on 'a' and 'm'.
+
+  unless ($CALC->_is_zero($num->{value})) {
+
+      # There is a negative sign on 'a' (= $num**$exp) only if the number we
+      # are exponentiating ($num) is negative and the exponent ($exp) is odd.
+
+      if ($num->{sign} eq '-' && $exp->is_odd()) {
+
+          # When both the number 'a' and the modulus 'm' have a negative sign,
+          # use this relation:
+          #
+          #    -a (mod -m) = -(a (mod m))
+
+          if ($mod->{sign} eq '-') {
+              $sign = '-';
+          }
+
+          # When only the number 'a' has a negative sign, use this relation:
+          #
+          #    -a (mod m) = m - (a (mod m))
+
+          else {
+              # Use copy of $mod since _sub() modifies the first argument.
+              my $mod = $CALC->_copy($mod->{value});
+              $value = $CALC->_sub($mod, $num->{value});
+              $sign  = '+';
+          }
+
+      } else {
+
+          # When only the modulus 'm' has a negative sign, use this relation:
+          #
+          #    a (mod -m) = (a (mod m)) - m
+          #               = -(m - (a (mod m)))
+
+          if ($mod->{sign} eq '-') {
+              my $mod = $CALC->_copy($mod->{value});
+              $value = $CALC->_sub($mod, $num->{value});
+              $sign  = '-';
+          }
+
+          # When neither the number 'a' nor the modulus 'm' have a negative
+          # sign, directly return the already computed value.
+          #
+          #    (a (mod m))
+
+      }
+
+  }
+
+  $num->{value} = $value;
+  $num->{sign}  = $sign;
+
+  return $num;
   }
 
 ###############################################################################
@@ -2639,7 +2713,7 @@ sub import
     {
     $_ =~ tr/a-zA-Z0-9://cd;			# limit to sane characters
     }
-  push @c, \'FastCalc', \'Calc'			# if all fail, try these
+  push @c, \'Calc', \'FastCalc'                 # if all fail, try these
     if $warn_or_die < 2;			# but not for "only"
   $CALC = '';					# signal error
   foreach my $l (@c)

@@ -270,20 +270,24 @@ sub _str
   $ret;
   }                                                                             
 
-sub _num
-  {
-  # Make a number (scalar int/float) from a BigInt object 
-  my $x = $_[1];
+sub _num {
+    # Make a number (scalar int/float) from a BigInt object.
+    my $x = $_[1];
 
-  return 0+$x->[0] if scalar @$x == 1;  # below $BASE
-  my $fac = 1;
-  my $num = 0;
-  foreach (@$x)
-    {
-    $num += $fac*$_; $fac *= $BASE;
+    return 0 + $x->[0] if scalar @$x == 1;      # below $BASE
+
+    # Start with the most significant element and work towards the least
+    # significant element. This has two advantages: 1) the number is not
+    # converted to a floating point format too early, and 2) we completely
+    # avoid multiplying "inf" with "0", giving "nan".
+
+    my $num = 0;
+    for (my $i = $#$x ; $i >= 0 ; --$i) {
+        $num *= $BASE;
+        $num += $x -> [$i];
     }
-  $num; 
-  }
+    return $num;
+}
 
 ##############################################################################
 # actual math code
@@ -2386,7 +2390,7 @@ sub _modpow
 
   # 0^a (mod m) = 0 if m != 0, a != 0
   # 0^0 (mod m) = 1 if m != 0
-  if (_is_one($c, $num)) {
+  if (_is_zero($c, $num)) {
       if (_is_zero($c, $exp)) {
           @$num = 1;
       } else {

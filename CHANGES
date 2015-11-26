@@ -175,6 +175,12 @@ Math::BigInt::Calc:
  * use 9 digit parts on 64bit integer or long double systems
 2007-09-16 v0.52 Tels
  * fix 64bit ints on Perl v5.8.0 (thanx zefram)
+2010-11-25 v1.99.1 pjacklam
+ * Fix numify() so returns inf, not nan, for large values.
+   (Peter John Acklam) (Closes: RT#25274)
+2010-11-25 v1.99.1 pjacklam
+ * Fix _modpow() so it handles boundary cases better.
+   (Peter John Acklam) (Closes: RT#61543, RT#62918, RT#62949)
 
 ##############################################################################
 Math::BigInt::CalcEmu:
@@ -517,6 +523,12 @@ Math::BigFloat:
  * fix #34459: bsqrt() breaks on floats with enough digits (Thanx Niko Tyni!)
  * fix #35238: batan2() handles inf/+inf wrong
  * fix #35162: MBI segfault (as_number(Math::BigRat()) was wrong)
+2010-11-25 v1.99.1 pjacklam
+ * Fix as_number() so it doesn't lose precision. (Peter John Acklam)
+  (Closes: RT#43694)
+2010-11-25 v1.99.1 pjacklam
+ * Fix bcmp() so it can handle very large exponents. (Peter John Acklam)
+  (Closes: RT#62764)
 
 ##############################################################################
 Math::BigInt:
@@ -617,7 +629,7 @@ Math::BigInt:
  * _trailing_zeros()
  * fixed as_number() to return copy of BigInt
  * added bround(), bfround() and support for round_mode() as well as $rnd_mode
- * fixed bug in bdiv() wich left remainder "-0", causing further op's to die()
+ * fixed bug in bdiv() wich left reminder "-0", causing further op's to die()
  * added is_valid to testsuite to see whether invalid objects are created
  * added bsqrt()
  * workaround coredump bug in bool() for v5.6.1
@@ -998,6 +1010,9 @@ Math::BigInt:
    (Peter John Acklam) (Closes: RT#62918).
  * Stop $x -> bmodpow(1, 1) from failing when $x is large (Peter John Acklam)
    (Closes: RT#62949).
+2010-11-25 v1.99.1 pjacklam
+ * Fix bmodpow() and bmodinv() so they handle boundary cases better. (Peter
+   John Acklam and Martin Becker) (Closes: RT#61543, RT#62918 and RT#62949)
 
 Please send us test-reports, your experiences with this and your ideas - we love
 to hear about our work!
