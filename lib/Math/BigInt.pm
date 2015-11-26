@@ -18,7 +18,7 @@ package Math::BigInt;
 my $class = "Math::BigInt";
 use 5.006002;
 
-$VERSION = '1.999701';
+$VERSION = '1.999702';
 
 @ISA = qw(Exporter);
 @EXPORT_OK = qw(objectify bgcd blcm); 
@@ -94,7 +94,7 @@ use overload
 #'oct'	=>	sub { print "oct"; $_[0]; }, 
 
 # log(N) is log(N, e), where e is Euler's number
-'log'	=>	sub { $_[0]->copy()->blog($_[1], undef); }, 
+'log'	=>	sub { $_[0]->copy()->blog(); }, 
 'exp'	=>	sub { $_[0]->copy()->bexp($_[1]); }, 
 'int'	=>	sub { $_[0]->copy(); }, 
 'neg'	=>	sub { $_[0]->copy()->bneg(); }, 
@@ -1282,17 +1282,21 @@ sub blog
 
   # set up parameters
   my ($self,$x,$base,@r) = (undef,@_);
-  # objectify is costly, so avoid it
-  if ((!ref($_[0])) || (ref($_[0]) ne ref($_[1])))
-    {
-    ($self,$x,$base,@r) = objectify(2,@_);
-    }
+  # If called as $x -> blog() or $x -> blog(undef), don't objectify the
+  # undefined base, since undef signals that the base is Euler's number.
+  unless (ref($x) && !defined($base)) {
+      # objectify is costly, so avoid it
+      if ((!ref($_[0])) || (ref($_[0]) ne ref($_[1]))) {
+          ($self,$x,$base,@r) = objectify(2,@_);
+      }
+  }
 
   return $x if $x->modify('blog');
 
   $base = $self->new($base) if defined $base && !ref $base;
 
   # inf, -inf, NaN, <0 => NaN
+  return $x->binf() if $x->is_inf('+');
   return $x->bnan()
    if $x->{sign} ne '+' || (defined $base && $base->{sign} ne '+');
 

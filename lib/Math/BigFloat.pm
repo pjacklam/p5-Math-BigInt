@@ -12,7 +12,7 @@ package Math::BigFloat;
 #   _a	: accuracy
 #   _p	: precision
 
-$VERSION = '1.999701';
+$VERSION = '1.999702';
 require 5.006002;
 
 require Exporter;
@@ -871,6 +871,7 @@ sub blog
   ($x,@params) = $x->_find_round_parameters($a,$p,$r);
 
   # also takes care of the "error in _find_round_parameters?" case
+  return $x->binf() if $x->is_inf('+');
   return $x->bnan() if $x->{sign} ne '+' || $x->is_zero();
 
   # no rounding at all, so must use fallback

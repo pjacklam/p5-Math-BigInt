@@ -9,7 +9,6 @@ The file NEW lists only the changes for the latest version.
 ##############################################################################
 Math::BigInt::Calc:
 
-
 2001-07-09 v0.06 Tels
  * first release
 
@@ -1389,6 +1388,22 @@ The changes are now grouped by distribution.
  * Modified test scripts so the difference between the test files in the
    Math-BigInt distribution and the backend distributions are as few and as
    small as possible. This makes for easier release management.
+
+2015-09-17 v1.999702 pjacklam
+
+ * The overloaded log() is a unary operator, so don't pass additional
+   arguments.
+
+ * Fix blog() so the cases $x->blog() and $x->blog(undef) work correctly. An
+   undefined base means that blog() should use base e (Euler's number).
+
+ * Both CORE::log() and other mathematical software returns inf for log(inf),
+   so we do the same.
+
+ * Add tests for log() as well as templates for future tests of the other
+   overloadable functions.
+
+ * Improve descriptions of a few tests.
 
 Please send us test-reports, your experiences with this and your ideas - we love
 to hear about our work!
