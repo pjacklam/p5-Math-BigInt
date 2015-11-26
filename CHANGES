@@ -1271,11 +1271,6 @@ The changes are now grouped by distribution.
    are known. (Peter John Acklam)
 
 2014-04-03 v1.9993 pjacklam
- * Synchronise with blead perl. For a list of recent changes, see
-   http://perl5.git.perl.org/perl.git/history/HEAD:/dist/Math-BigInt
- * Removed examples/hailstone.pl which required the obsolete Math::Big
-
-2015-08-10 v1.9994 pjacklam
  BUGS
   * Added reference to CPAN RT for the Math-BigInt distro.
  CHANGES
@@ -1317,6 +1312,32 @@ The changes are now grouped by distribution.
   * Added tests for int().
  t/*.t
   * Incremented test counts as needed for the new tests in the t/*.inc files.
+ inc/Module/Install*
+  * Upgraded bundled Module::Install from version 1.01 to version 1.08.
+
+2015-08-10 v1.9994 pjacklam
+ CHANGES
+  * Added recent changes.
+ lib/Math/BigFloat.pm
+  * Fixed blog() sometimes returning incorrect result.
+  * bdiv() in list context now returns the integer quotient and the remainder.
+ t/bigfltpm.inc
+  * Modified tests for blog() in list context.
+ t/biglog.t
+  * Changed incorrect use of ok() to is().
+ t/upgrade.inc
+  * Modified tests for blog() in list context.
+ inc/Module/Install*
+  * Upgraded bundled Module::Install from version 1.08 to version 1.16.
+
+2015-08-11 v1.9995 pjacklam
+ CHANGES
+  * Moved changes that were incorrectly reported as being for the release
+    1.9994 when they were in fact for release 1.9993.
+  * Added changes both for release 1.9994 and 1.9995.
+ lib/Math/BigInt.pm
+  * Line breaks to avoid lines with more than 80 characters.
+  * Improved objectify() for better handling of subclasses.
 
 Please send us test-reports, your experiences with this and your ideas - we love
 to hear about our work!
