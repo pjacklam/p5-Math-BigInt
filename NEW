@@ -1,15 +1,3 @@
-This lists only the changes for the current release over the last version,
-since HISTORY is now quite big:
+For the list of recent changes, see
 
-* fix #34459: bsqrt() breaks on floats with enough digits (Thanx Niko Tyni!)
-* fix #35238: batan2() does not handle inf/-inf properly
-* fix #35162: MBI segfault (as_number(Math::BigRat())), Thanx Zsbán Ambrus!)
-* fix #34822: Which library is used? (Thanx Mark Overmeer!)
-
-##############################################################################
-
-Please have Math::BigFloat->bone->bexp->bdiv(0) big amounts of fun.
-
-Tels <http://bloodgate.com/perl>
-
-
+  http://perl5.git.perl.org/perl.git/history/HEAD:/dist/Math-BigInt

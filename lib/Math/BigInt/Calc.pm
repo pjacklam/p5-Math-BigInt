@@ -2,9 +2,9 @@ package Math::BigInt::Calc;
 
 use 5.006002;
 use strict;
-# use warnings;	# dont use warnings for older Perls
+# use warnings;	# do not use warnings for older Perls
 
-our $VERSION = '1.997';
+our $VERSION = '1.9993';
 
 # Package to store unsigned big integers in decimal and do math with them
 
@@ -23,7 +23,7 @@ our $VERSION = '1.997';
 
 # Beware of things like:
 # $i = $i * $y + $car; $car = int($i / $BASE); $i = $i % $BASE;
-# This works on x86, but fails on ARM (SA1100, iPAQ) due to whoknows what
+# This works on x86, but fails on ARM (SA1100, iPAQ) due to who knows what
 # reasons. So, use this instead (slower, but correct):
 # $i = $i * $y + $car; $car = int($i / $BASE); $i -= $BASE * $car;
 
@@ -1566,7 +1566,7 @@ sub _nok {
 
     else {
 
-        # Make a copy of the original n, since we'll be modifing n in-place.
+        # Make a copy of the original n, since we'll be modifying n in-place.
 
         my $n_orig = _copy($c, $n);
 
@@ -2932,6 +2932,65 @@ by this:
 	use Math::BigInt lib => 'yourlib';
 
 This way you ensure that your library really works 100% within Math::BigInt.
+
+=head1 BUGS
+
+Please report any bugs or feature requests to
+C<bug-math-bigint at rt.cpan.org>, or through the web interface at
+L<https://rt.cpan.org/Ticket/Create.html?Queue=Math-BigInt>
+(requires login).
+We will be notified, and then you'll automatically be notified of progress on
+your bug as I make changes.
+
+=head1 SUPPORT
+
+You can find documentation for this module with the perldoc command.
+
+    perldoc Math::BigInt::Calc
+
+You can also look for information at:
+
+=over 4
+
+=item * RT: CPAN's request tracker
+
+L<https://rt.cpan.org/Public/Dist/Display.html?Name=Math-BigInt>
+
+=item * AnnoCPAN: Annotated CPAN documentation
+
+L<http://annocpan.org/dist/Math-BigInt>
+
+=item * CPAN Ratings
+
+L<http://cpanratings.perl.org/dist/Math-BigInt>
+
+=item * Search CPAN
+
+L<http://search.cpan.org/dist/Math-BigInt/>
+
+=item * CPAN Testers Matrix
+
+L<http://matrix.cpantesters.org/?dist=Math-BigInt>
+
+=item * The Bignum mailing list
+
+=over 4
+
+=item * Post to mailing list
+
+C<bignum at lists.scsys.co.uk>
+
+=item * View mailing list
+
+L<http://lists.scsys.co.uk/pipermail/bignum/>
+
+=item * Subscribe/Unsubscribe
+
+L<http://lists.scsys.co.uk/cgi-bin/mailman/listinfo/bignum>
+
+=back
+
+=back
 
 =head1 LICENSE
 
