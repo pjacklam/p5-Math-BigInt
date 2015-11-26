@@ -1272,72 +1272,79 @@ The changes are now grouped by distribution.
 
 2014-04-03 v1.9993 pjacklam
  BUGS
-  * Added reference to CPAN RT for the Math-BigInt distro.
+  * Add reference to CPAN RT for the Math-BigInt distro.
  CHANGES
-  * Added recent changes.
+  * Add recent changes.
  examples/hailstone.pl
-  * Removed this file as it required the obsolete Math::Big
+  * Remove this file as it doesn't seem to be working.
  lib/Math/BigFloat.pm
-  * Corrected spelling errors.
-  * Code reformatted to avoid long lines.
-  * Improved POD formatting.
-  * Added meta-documentation (CPAN ratings, CPAN testers matrix, etc.)
-  * Added the bint() method.
+  * Correct spelling errors.
+  * Reformat code to avoid long lines.
+  * Improve POD formatting.
+  * Add meta-documentation (CPAN ratings, CPAN testers matrix, etc.)
+  * Add the bint() method.
  lib/Math/BigInt.pm
-  * Corrected spelling errors.
-  * Code reformatted to avoid long lines.
-  * Improved POD formatting.
-  * Added meta-documentation (CPAN ratings, CPAN testers matrix, etc.)
-  * Added the bint() method.
-  * Removed references to the obsolete Math::Big
+  * Correct spelling errors.
+  * Reformat code to avoid long lines.
+  * Improve POD formatting.
+  * Add meta-documentation (CPAN ratings, CPAN testers matrix, etc.)
+  * Add the bint() method.
+  * Remove references to the obsolete Math::Big
  lib/Math/BigInt/Calc.pm
-  * Corrected spelling errors.
+  * Correct spelling errors.
   * Added meta-documentation (CPAN ratings, CPAN testers matrix, etc.)
  lib/Math/BigInt/CalcEmu.pm
-  * Corrected spelling errors.
-  * Improved POD formatting.
-  * Added meta-documentation (CPAN ratings, CPAN testers matrix, etc.)
-  * Removed references to Math::BigInt::BitVect, which is no longer on CPAN.
+  * Correct spelling errors.
+  * Improve POD formatting.
+  * Add meta-documentation (CPAN ratings, CPAN testers matrix, etc.)
+  * Remove references to Math::BigInt::BitVect, which is no longer on CPAN.
  Makefile.PL
-  * Removed code that checks for compatible versions of distributions that
+  * Remove code that checks for compatible versions of distributions that
     depend on Math-BigInt. Such checking should be done in the distributions
     that depend on Math-BigInt, not in Math-BigInt itself.
  NEW
   * This file now only refers to the change log.
  t/bigfltpm.inc
-  * Added tests for fint().
+  * Add tests for fint().
  t/bigintpm.inc
-  * Added tests for int().
+  * Add tests for int().
  t/upgrade.inc
-  * Added tests for int().
+  * Add tests for int().
  t/*.t
-  * Incremented test counts as needed for the new tests in the t/*.inc files.
+  * Increment test counts as needed for the new tests in the t/*.inc files.
  inc/Module/Install*
-  * Upgraded bundled Module::Install from version 1.01 to version 1.08.
+  * Upgrade bundled Module::Install from version 1.01 to version 1.08.
 
 2015-08-10 v1.9994 pjacklam
  CHANGES
-  * Added recent changes.
+  * Add recent changes.
  lib/Math/BigFloat.pm
-  * Fixed blog() sometimes returning incorrect result.
+  * Fix blog() which sometimes returns incorrect result.
   * bdiv() in list context now returns the integer quotient and the remainder.
  t/bigfltpm.inc
-  * Modified tests for blog() in list context.
+  * Modify tests for blog() in list context.
  t/biglog.t
-  * Changed incorrect use of ok() to is().
+  * Change incorrect use of ok() to is().
  t/upgrade.inc
-  * Modified tests for blog() in list context.
+  * Modify tests for blog() in list context.
  inc/Module/Install*
-  * Upgraded bundled Module::Install from version 1.08 to version 1.16.
+  * Upgrade bundled Module::Install from version 1.08 to version 1.16.
 
 2015-08-11 v1.9995 pjacklam
  CHANGES
-  * Moved changes that were incorrectly reported as being for the release
-    1.9994 when they were in fact for release 1.9993.
-  * Added changes both for release 1.9994 and 1.9995.
+  * Move changes that were incorrectly reported as being for the release 1.9994
+    when they were in fact for release 1.9993.
+  * Add changes both for release 1.9994 and 1.9995.
  lib/Math/BigInt.pm
-  * Line breaks to avoid lines with more than 80 characters.
-  * Improved objectify() for better handling of subclasses.
+  * Break lines to avoid lines with more than 80 characters.
+  * Improve objectify() for better handling of subclasses.
+
+2015-08-12 v1.9996 pjacklam
+ CHANGES
+  * Add recent changes.
+  * Use present tense in change descriptions.
+ lib/Math/BigInt.pm
+  * Change incorrect use of ok() to is() in example.
 
 Please send us test-reports, your experiences with this and your ideas - we love
 to hear about our work!
