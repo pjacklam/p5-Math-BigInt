@@ -19,7 +19,7 @@ use 5.006002;
 use strict;
 use warnings;
 
-our $VERSION = '1.999708';
+our $VERSION = '1.999709';
 
 our @ISA = qw(Exporter);
 our @EXPORT_OK = qw(objectify bgcd blcm);
@@ -2510,7 +2510,7 @@ sub exponent
     my $s = $x->{sign}; $s =~ s/^[+-]//;  # NaN, -inf,+inf => NaN or inf
     return $self->new($s);
     }
-  return $self->bone() if $x->is_zero();
+  return $self->bzero() if $x->is_zero();
 
   # 12300 => 2 trailing zeros => exponent is 2
   $self->new( $CALC->_zeros($x->{value}) );

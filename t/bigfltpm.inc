@@ -1767,7 +1767,7 @@ NaN:0
 -inf:1
 +inf:0
 &parts
-0:0 1
+0:0 0
 1:1 0
 123:123 0
 -123:-123 0
@@ -1776,7 +1776,7 @@ NaNparts:NaN NaN
 +inf:inf inf
 -inf:-inf inf
 &exponent
-0:1
+0:0
 1:0
 123:0
 -123:0

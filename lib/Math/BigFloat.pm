@@ -16,7 +16,7 @@ use 5.006002;
 use strict;
 use warnings;
 
-our $VERSION = '1.999708';
+our $VERSION = '1.999709';
 
 require Exporter;
 our @ISA	= qw/Math::BigInt/;
@@ -223,10 +223,10 @@ sub new
       }
     $self->{sign} = $$mis;
 
-    # for something like 0Ey, set y to 1, and -0 => +0
+    # for something like 0Ey, set y to 0, and -0 => +0
     # Check $$miv for being '0' and $$mfv eq '', because otherwise _m could not
     # have become 0. That's faster than to call $MBI->_is_zero().
-    $self->{sign} = '+', $self->{_e} = $MBI->_one()
+    $self->{sign} = '+', $self->{_e} = $MBI->_zero()
      if $$miv eq '0' and $$mfv eq '';
 
     return $self->round(@r) if !$downgrade;
@@ -321,11 +321,11 @@ sub _bone
 
 sub _bzero
   {
-  # used by parent class bone() to initialize number to 0
+  # used by parent class bzero() to initialize number to 0
   my $self = shift;
   $IMPORT=1;					# call our import only once
   $self->{_m} = $MBI->_zero();
-  $self->{_e} = $MBI->_one();
+  $self->{_e} = $MBI->_zero();
   $self->{_es} = '+';
   }
 
@@ -4218,8 +4218,6 @@ as BigInts such that:
 	print "ok\n" if $x == $y;
 
 C<< ($m,$e) = $x->parts(); >> is just a shortcut giving you both of them.
-
-A zero is represented and returned as C<0E1>, B<not> C<0E0> (after Knuth).
 
 Currently the mantissa is reduced as much as possible, favouring higher
 exponents over lower ones (e.g. returning 1e7 instead of 10e6 or 10000000e0).

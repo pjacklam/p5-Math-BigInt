@@ -1488,6 +1488,18 @@ The changes are now grouped by distribution.
  * Use Math::Complex::Inf() in testfiles also (for generating Perl scalar
    infinity) since it is more portable.
 
+2015-11-06 v1.999709 pjacklam
+
+ * Represent and return zero as 0E0, not 0E1. The old POD said "A zero is
+   represented and returned as 0E1, not 0E0 (after Knuth)." I find no
+   references to Knuth ever having said this. The closest reference I can find
+   is that Knuth says 0**0 should be defined to be 1, not 0, but that is
+   something else than 0e0, which is 0*10**0. I have yet to see any other
+   mathematical software that represents and returns zero as 0e1 rather than
+   0e0.
+
+ * Required version of Test::More is 0.9301.
+
 Please send us test-reports, your experiences with this and your ideas - we love
 to hear about our work!
 

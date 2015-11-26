@@ -2301,7 +2301,7 @@ abc:NaN
 123:0
 -1:0
 -2:0
-0:1
+0:0
 +inf:inf
 -inf:inf
 &parts
@@ -2311,7 +2311,7 @@ abc:NaN,NaN
 123:123,0
 -1:-1,0
 -2:-2,0
-0:0,1
+0:0,0
 +inf:inf,inf
 -inf:-inf,inf
 &bfac
