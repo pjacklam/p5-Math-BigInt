@@ -1346,6 +1346,14 @@ The changes are now grouped by distribution.
  lib/Math/BigInt.pm
   * Change incorrect use of ok() to is() in example.
 
+2015-08-12 v1.9997 pjacklam
+ CHANGES
+  * Add recent changes.
+ t/bigintpm.inc
+  * Correct spelling errors.
+ t/upgrade.inc
+  * Correct spelling errors.
+
 Please send us test-reports, your experiences with this and your ideas - we love
 to hear about our work!
 
