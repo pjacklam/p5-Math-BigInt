@@ -1,3 +1,5 @@
+#!perl
+
 # We need at least Perl 5.6
 require 5.006002;
 use strict;

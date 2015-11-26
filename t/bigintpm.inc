@@ -523,7 +523,8 @@ is (ref($x),'Math::Foo');
 # Check numify on non-finite objects.
 
 {
-    my $inf = 1e99 ** 1e99;
+    require Math::Complex;
+    my $inf = Math::Complex::Inf();
     my $nan = $inf - $inf;
     is($class -> binf("+") -> numify(),  $inf, "numify of +Inf");
     is($class -> binf("-") -> numify(), -$inf, "numify of -Inf");
@@ -2432,7 +2433,7 @@ inf:-inf:NaN
 +0:2:0
 +1:2:1
 -1:2:NaN
-# -$x ** (1/2) => -$y, but not in froot()
+# -$x ** (1/2) => -$y, but not in broot()
 -123:2:NaN
 +inf:2:inf
 -inf:2:NaN

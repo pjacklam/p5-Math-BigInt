@@ -1431,7 +1431,7 @@ The changes are now grouped by distribution.
 
  * Add documentation for as_float() in lib/Math/BigFloat.pm
 
- * Added test files t/objectify_mbf.t and t/objectify_mbi.t.
+ * Add test files t/objectify_mbf.t and t/objectify_mbi.t.
 
 2015-10-26 v1.999705 pjacklam
 
@@ -1442,20 +1442,20 @@ The changes are now grouped by distribution.
 
 2015-10-28 v1.999706 pjacklam
 
- * Corrected release date of v1.999705 in CHANGES.
+ * Correct release date of v1.999705 in CHANGES.
 
- * Added code and tests for numify() on non-finite objects.
+ * Add code and tests for numify() on non-finite objects.
 
 2015-10-29 v1.999707 pjacklam
 
- * Added dependency on Math::Complex 1.39 for Math::Complex::Inf(), which is
+ * Add dependency on Math::Complex 1.39 for Math::Complex::Inf(), which is
    used for numifying infinity.
 
- * Updated author information.
+ * Update author information.
 
- * Updated information in the file README.
+ * Update information in the file README.
 
- * Removed the files INSTALL and LICENSE as this information is already covered
+ * Remove the files INSTALL and LICENSE as this information is already covered
    in the file README.
 
  * Enable 'use warnings' in all modules. We require a Perl newer than 5.6.0
@@ -1467,6 +1467,26 @@ The changes are now grouped by distribution.
  * Avoid indirect object syntax in documentation.
 
  * Moved 'Test::More' from 'build_requires' to 'test_requires' in Makefile.PL.
+
+2015-11-03 v1.999708 pjacklam
+
+ * Use bxxx() method names consistently, rather than mixing bxxx() and fxxx()
+   in code and test files. The fxxx() methods for Math::BigFloat objects are
+   still available through autoloading. However, we leave the fround() method
+   in Math::BigInt, as it seems to provide some kind of compatibility with
+   Math::BigFloat.
+
+ * Correct author information in the README file.
+
+ * Remove INSTALL file, which by accident wasn't removed in v1.999707.
+
+ * Use present tense, not past tense, in CHANGES file.
+
+ * Add '#!perl' to Makefile.PL for correct syntax highlighting in editors
+   supporting this.
+
+ * Use Math::Complex::Inf() in testfiles also (for generating Perl scalar
+   infinity) since it is more portable.
 
 Please send us test-reports, your experiences with this and your ideas - we love
 to hear about our work!

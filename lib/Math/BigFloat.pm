@@ -16,7 +16,7 @@ use 5.006002;
 use strict;
 use warnings;
 
-our $VERSION = '1.999707';
+our $VERSION = '1.999708';
 
 require Exporter;
 our @ISA	= qw/Math::BigInt/;
@@ -4286,26 +4286,26 @@ functions like so:
 
 =over
 
-=item ffround ( +$scale )
+=item bfround ( +$scale )
 
 Rounds to the $scale'th place left from the '.', counting from the dot.
 The first digit is numbered 1. 
 
-=item ffround ( -$scale )
+=item bfround ( -$scale )
 
 Rounds to the $scale'th place right from the '.', counting from the dot.
 
-=item ffround ( 0 )
+=item bfround ( 0 )
 
 Rounds to an integer.
 
-=item fround  ( +$scale )
+=item bround  ( +$scale )
 
 Preserves accuracy to $scale digits from the left (aka significant digits)
 and pads the rest with zeros. If the number is between 1 and -1, the
 significant digits count from the first non-zero after the '.'
 
-=item fround  ( -$scale ) and fround ( 0 )
+=item bround  ( -$scale ) and bround ( 0 )
 
 These are effectively no-ops.
 
