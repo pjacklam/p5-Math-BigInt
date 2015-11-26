@@ -12,7 +12,7 @@ package Math::BigFloat;
 #   _a	: accuracy
 #   _p	: precision
 
-$VERSION = '1.999703';
+$VERSION = '1.999704';
 require 5.006002;
 
 require Exporter;
@@ -945,17 +945,17 @@ sub blog
 
   if ($done) {
       if ($fallback) {
-          # clear a/p after round, since user did not request it
+        # clear a/p after round, since user did not request it
           delete $x->{_a};
           delete $x->{_p};
-      }
+        }
       return $x;
-  }
+      }
 
   # when user set globals, they would interfere with our calculation, so
   # disable them and later re-enable them
   no strict 'refs';
-  my $abr = "$self\::accuracy";  my $ab = $$abr; $$abr = undef;
+  my $abr = "$self\::accuracy"; my $ab = $$abr; $$abr = undef;
   my $pbr = "$self\::precision"; my $pb = $$pbr; $$pbr = undef;
   # we also need to disable any set A or P on $x (_find_round_parameters took
   # them already into account), since these would interfere, too
@@ -971,7 +971,7 @@ sub blog
     $x = Math::BigFloat->new($x);
     $self = ref($x);
     }
-
+  
   $done = 0;
 
   # If the base is defined and an integer, try to calculate integer result
@@ -4434,6 +4434,24 @@ This method was added in v1.87 of Math::BigInt (June 2007).
 Multiply $x by $y, and then add $z to the result.
 
 This method was added in v1.87 of Math::BigInt (June 2007).
+
+=item as_float()
+
+This method is called when Math::BigFloat encounters an object it doesn't know
+how to handle. For instance, assume $x is a Math::BigFloat, or subclass
+thereof, and $y is defined, but not a Math::BigFloat, or subclass thereof. If
+you do
+
+    $x -> badd($y);
+
+$y needs to be converted into an object that $x can deal with. This is done by
+first checking if $y is something that $x might be upgraded to. If that is the
+case, no further attempts are made. The next is to see if $y supports the
+method C<as_float()>. The method C<as_float()> is expected to return either an
+object that has the same class as $x, a subclass thereof, or a string that
+C<ref($x)-E<gt>new()> can parse to create an object.
+
+In Math::BigFloat, C<as_float()> has the same effect as C<copy()>.
 
 =back
 

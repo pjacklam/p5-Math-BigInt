@@ -1418,6 +1418,21 @@ The changes are now grouped by distribution.
  * Add test files t/blog-mbf.t and t/blog-mbi.t for better testing of the
    blog() methods.
 
+2015-09-25 v1.999704 pjacklam
+
+  * objectify() in lib/Math/BigInt.pm now uses 'isa' not 'eq' to check object
+    relationship. This is necessary for correct handling of subclasses.
+
+  * objectify() in lib/Math/BigInt.pm no longer expects as_int(), as_number()
+    and as_float() to return objects, but allows them to return numbers
+    formatted as strings. This is used by some other modules on CPAN.
+
+  * Better documentation of as_int() and as_number() in lib/Math/BigInt.pm.
+
+  * Add documentation for as_float() in lib/Math/BigFloat.pm
+
+  * Added test files t/objectify_mbf.t and t/objectify_mbi.t.
+
 Please send us test-reports, your experiences with this and your ideas - we love
 to hear about our work!
 
