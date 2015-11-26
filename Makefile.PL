@@ -12,15 +12,15 @@ name            'Math-BigInt';
 all_from        'lib/Math/BigInt.pm';
 
 # Required versions.
-requires        'perl'          => 5.006002;
-
-build_requires  'Test::More'    => 0.62;
+requires        'perl'              => 5.006002;
+requires        'Math::Complex'     => 1.39,
+test_requires   'Test::More'        => 0.62;
 
 install_as_core();
 
 license         'perl';
 
-author          'Tels <nospam-abuse@bloodgate.com>';
+author          'Peter John Acklam <pjacklam@online.no>';
 
 # Do not index these
 no_index        directory       => 'examples';

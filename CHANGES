@@ -1446,6 +1446,28 @@ The changes are now grouped by distribution.
 
  * Added code and tests for numify() on non-finite objects.
 
+2015-10-29 v1.999707 pjacklam
+
+ * Added dependency on Math::Complex 1.39 for Math::Complex::Inf(), which is
+   used for numifying infinity.
+
+ * Updated author information.
+
+ * Updated information in the file README.
+
+ * Removed the files INSTALL and LICENSE as this information is already covered
+   in the file README.
+
+ * Enable 'use warnings' in all modules. We require a Perl newer than 5.6.0
+   anyway.
+
+ * Replace 'use vars ...' with 'our ...'. We require a Perl newer than 5.6.0
+   anyway.
+
+ * Avoid indirect object syntax in documentation.
+
+ * Moved 'Test::More' from 'build_requires' to 'test_requires' in Makefile.PL.
+
 Please send us test-reports, your experiences with this and your ideas - we love
 to hear about our work!
 

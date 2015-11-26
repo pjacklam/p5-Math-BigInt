@@ -1,30 +1,43 @@
-Rewrite project of Math::BigInt, Math::BigFloat.
+Math-BigInt
 
-(C) Copyright ..--- ----- ----- .---- - ..--- by - . .-.. ... .-.-.-
+Math::BigInt and Math::BigFloat are modules for arbitrary precision
+arithmetic.
 
-This package contains completely rewritten versions of Math::BigInt and
-Math::BigFloat.
+INSTALLATION
 
-To test, unzip & untar package, then run
+To install this module, unpack the distribution file, and run the following
+commands:
 
-	perl Makefile.PL
-	make
-	make test
-	make install
+    perl Makefile.PL
+    make
+    make test
+    make install
 
-See also ./examples for some example scripts.
+SUPPORT AND DOCUMENTATION
 
-See INSTALL for detailed help on installing these modules.
+After installing, you can find documentation for these modules with the
+perldoc command.
 
-You can look on CPAN (http://search.cpan.org/) for modules that replace the
-core math routines of Math::BigInt (look for Math::BigInt::BitVect, f.i.).
+    perldoc Math::BigInt
+    perldoc Math::BigFloat
 
-More information including HTMLified help are available under:
+You can also look for information at:
 
-	http://bloodgate.com/perl/			# project homepage
-	http://bloodgate.com/perl/benchmarks.html	# benchmarks
+    RT, CPAN's request tracker
+        http://rt.cpan.org/NoAuth/Bugs.html?Dist=Math-BigInt
 
-Please send me test-reports, your experiences with this and your ideas - I love
-to hear about my work!
+    AnnoCPAN, Annotated CPAN documentation
+        http://annocpan.org/dist/Math-BigInt
 
-Tels <http://bloodgate.com/>
+    CPAN Ratings
+        http://cpanratings.perl.org/d/Math-BigInt
+
+    Search CPAN
+        http://search.cpan.org/dist/Math-BigInt
+
+COPYRIGHT AND LICENCE
+
+Copyright 2007-2010 Peter John Acklam <pjacklam@online.no>
+
+This program is free software; you can redistribute it and/or modify it
+under the same terms as Perl itself.
