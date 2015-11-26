@@ -18,7 +18,7 @@ package Math::BigInt;
 my $class = "Math::BigInt";
 use 5.006002;
 
-$VERSION = '1.999702';
+$VERSION = '1.999703';
 
 @ISA = qw(Exporter);
 @EXPORT_OK = qw(objectify bgcd blcm); 
@@ -1277,31 +1277,52 @@ sub bdec
 
 sub blog
   {
-  # calculate $x = $a ** $base + $b and return $a (e.g. the log() to base
-  # $base of $x)
+  # Return the logarithm of the operand. If a second operand is defined, that
+  # value is used as the base, otherwise the base is assumed to be Euler's
+  # constant.
+
+  # Don't objectify the base, since an undefined base, as in $x->blog() or
+  # $x->blog(undef) signals that the base is Euler's number.
 
   # set up parameters
   my ($self,$x,$base,@r) = (undef,@_);
-  # If called as $x -> blog() or $x -> blog(undef), don't objectify the
-  # undefined base, since undef signals that the base is Euler's number.
-  unless (ref($x) && !defined($base)) {
-      # objectify is costly, so avoid it
-      if ((!ref($_[0])) || (ref($_[0]) ne ref($_[1]))) {
-          ($self,$x,$base,@r) = objectify(2,@_);
-      }
+  # objectify is costly, so avoid it
+  if ((!ref($_[0])) || (ref($_[0]) ne ref($_[1]))) {
+      ($self,$x,$base,@r) = objectify(1,@_);
   }
 
   return $x if $x->modify('blog');
 
-  $base = $self->new($base) if defined $base && !ref $base;
+  # Handle all exception cases and all trivial cases. I have used Wolfram Alpha
+  # (http://www.wolframalpha.com) as the reference for these cases.
 
-  # inf, -inf, NaN, <0 => NaN
-  return $x->binf() if $x->is_inf('+');
-  return $x->bnan()
-   if $x->{sign} ne '+' || (defined $base && $base->{sign} ne '+');
+  return $x -> bnan() if $x -> is_nan();
 
-  return $upgrade->blog($upgrade->new($x),$base,@r) if 
-    defined $upgrade;
+  if (defined $base) {
+      $base = $self -> new($base) unless ref $base;
+      if ($base -> is_nan() || $base -> is_one()) {
+          return $x -> bnan();
+      } elsif ($base -> is_inf() || $base -> is_zero()) {
+          return $x -> bnan() if $x -> is_inf() || $x -> is_zero();
+          return $x -> bzero();
+      } elsif ($base -> is_negative()) {            # -inf < base < 0
+          return $x -> bzero() if $x -> is_one();   #     x = 1
+          return $x -> bone()  if $x == $base;      #     x = base
+          return $x -> bnan();                      #     otherwise
+      }
+      return $x -> bone() if $x == $base;           # 0 < base && 0 < x < inf
+  }
+
+  # We now know that the base is either undefined or >= 2 and finite.
+
+  return $x -> binf('+') if $x -> is_inf();         #   x = +/-inf
+  return $x -> bnan()    if $x -> is_neg();         #   -inf < x < 0
+  return $x -> bzero()   if $x -> is_one();         #   x = 1
+  return $x -> binf('-') if $x -> is_zero();        #   x = 0
+
+  # At this point we are done handling all exception cases and trivial cases.
+
+  return $upgrade -> blog($upgrade -> new($x), $base, @r) if defined $upgrade;
 
   # fix for bug #24969:
   # the default base is e (Euler's number) which is not an integer
@@ -1316,7 +1337,7 @@ sub blog
     }
 
   my ($rc,$exact) = $CALC->_log_int($x->{value},$base->{value});
-  return $x->bnan() unless defined $rc;		# not possible to take log?
+  return $x->bnan() unless defined $rc;         # not possible to take log?
   $x->{value} = $rc;
   $x->round(@r);
   }

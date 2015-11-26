@@ -1405,6 +1405,19 @@ The changes are now grouped by distribution.
 
  * Improve descriptions of a few tests.
 
+2015-09-21 v1.999703 pjacklam
+
+ * Fix blog() in Math::BigInt and Math::BigFloat to work correctly regardless
+   of the base.
+
+ * Correct existing tests in bigintpm.inc and bigfltpm.inc.
+
+ * Update test plans (number of tests) in t/bare_mbi.t, t/bigintpm.t, and
+   t/sub_mbi.t.
+
+ * Add test files t/blog-mbf.t and t/blog-mbi.t for better testing of the
+   blog() methods.
+
 Please send us test-reports, your experiences with this and your ideas - we love
 to hear about our work!
 
