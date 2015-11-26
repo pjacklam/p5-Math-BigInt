@@ -1015,6 +1015,30 @@ Math::BigInt:
    Math::BigInt::GMP). This makes older versions of Math::BigInt::GMP
    work with latest version of Math::BigInt (Peter John Acklam).
  * Correct and extend API documentation (Peter John Acklam).
+2011-02-18 v1.992 pjacklam
+ * Math::BigInt::Calc->_nok(): Use symmetry property nok(n,k) = nok(n,n-k) to
+   speed up execution when k is large. Also general code cleanup. (Peter John
+   Acklam).
+ * Math::BigInt::Calc->_gcd(): Speed up by reducing amount of data copying
+   (Peter John Acklam).
+ * Add '01load.t' for basic module loading and diagnostics useful for
+   debugging. Rename '00-signature.t' to '00sig.t', 'pod.t' to '02pod.t', and
+   'pod_cov.t' to '03podcov.t' (Peter John Acklam).
+ * Math::BigInt:: Make from_hex(), from_oct(), and behave more like hex() and
+   oct() in the Perl core, and make from_bin() consistent with from_hex() and
+   from_oct() (this is related to RT #58954) (Peter John Acklam).
+ * Math::BigInt::Calc->_rem(): Modify first input arg always, not just
+   sometimes (Peter John Acklam).
+ * Math::BigInt::Calc->_modinv(): be more consistent with the _modinv() method
+   in other libraries (Math::BigInt::GMP, etc.) (Peter John Acklam)
+ * Math::BigInt::Calc->_nok(): use symmetry property nok(n,k) = nok(n,n-k).
+   This cuts computation time tremendously when n and k are large (Peter John
+   Acklam).
+ * Math::BigInt::Calc->_gcd(): quickly handle zero cases, avoid code
+   duplication, and always modify the first input argument in-place (Peter John
+   Acklam).
+ * Clean up code and add more code comments (Peter John Acklam).
+ * Fix typos (Peter John Acklam).
 
 Please send us test-reports, your experiences with this and your ideas - we love
 to hear about our work!

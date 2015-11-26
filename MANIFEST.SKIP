@@ -4,6 +4,8 @@
 ^Makefile\z
 ^Makefile.(old|bak)\z
 ^MANIFEST.(old|bak)\z
-^Math-BigInt-.*
+^MYMETA\.yml\z
 pm_to_blib
-\.git*
+\.git
+.*\.patch\z
+^Math-BigInt-
