@@ -1433,12 +1433,18 @@ The changes are now grouped by distribution.
 
  * Added test files t/objectify_mbf.t and t/objectify_mbi.t.
 
-2015-09-25 v1.999705 pjacklam
+2015-10-26 v1.999705 pjacklam
 
  * Avoid using "my" in a false conditional. See "Deprecated use of my() in
    false conditional" in perldiag(1).
 
- * Faster algorithm for bpi() when precision is >= 1000.
+ * Faster algorithm for bpi() when accuracy is >= 1000.
+
+2015-10-28 v1.999706 pjacklam
+
+ * Corrected release date of v1.999705 in CHANGES.
+
+ * Added code and tests for numify() on non-finite objects.
 
 Please send us test-reports, your experiences with this and your ideas - we love
 to hear about our work!
