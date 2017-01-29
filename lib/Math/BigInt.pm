@@ -19,7 +19,7 @@ use 5.006001;
 use strict;
 use warnings;
 
-our $VERSION = '1.999716';
+our $VERSION = '1.999717';
 $VERSION = eval $VERSION;
 
 our @ISA = qw(Exporter);
@@ -546,8 +546,8 @@ sub new {
                      : bless {}, $class;
 
     unless (defined $wanted) {
-        require Carp;
-        Carp::carp("Use of uninitialized value in new()");
+        #require Carp;
+        #Carp::carp("Use of uninitialized value in new()");
         return $self->bzero($a, $p, $r);
     }
 

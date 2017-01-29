@@ -16,7 +16,7 @@ use 5.006001;
 use strict;
 use warnings;
 
-our $VERSION = '1.999716';
+our $VERSION = '1.999717';
 $VERSION = eval $VERSION;
 
 require Exporter;
@@ -141,8 +141,8 @@ sub new {
     # avoid numify-calls by not using || on $wanted!
 
     unless (defined $wanted) {
-        require Carp;
-        Carp::carp("Use of uninitialized value in new");
+        #require Carp;
+        #Carp::carp("Use of uninitialized value in new");
         return $self->bzero(@r);
     }
 
@@ -5124,11 +5124,11 @@ Completely rewritten by Tels L<http://bloodgate.com> in 2001-2008.
 
 =item *
 
-Florian Ragwitz L<flora@cpan.org>, 2010.
+Florian Ragwitz E<lt>flora@cpan.orgE<gt>, 2010.
 
 =item *
 
-Peter John Acklam, L<pjacklam@online.no>, 2011-.
+Peter John Acklam E<lt>pjacklam@online.noE<gt>, 2011-.
 
 =back
 

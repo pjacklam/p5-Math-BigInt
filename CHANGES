@@ -1669,6 +1669,15 @@ there are so many changes, I let this be a development release.
 
  * Improved wording and fixed typos in earlier changelog entries.
 
+2016-04-16 v1.999717 pjacklam
+
+ * Using new() with an undefined argument no longer gives a warning. Explicit
+   use of this is discouraged, but it is sometimes used by the modules
+   themselves issuing warnings that is confusing to the end user. Just
+   uncomment the code, since we plan to reintroduce this warning later.
+
+ * Avoid using L<> around e-mail addressess in POD.
+
 Please send us test-reports, your experiences with this and your ideas - we love
 to hear about our work!
 
