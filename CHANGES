@@ -1599,11 +1599,35 @@ there are so many changes, I let this be a development release.
    error message depends not on the Perl version, but on the module that does
    the version checking.
 
-2015-12-31 v1.999713
+ * Avoid infinite loop in the Math::BigFloat->batan() method. Thanks to DANAJ
+   (Dana Jacobsen) for the patch. This was not intended to be added before the
+   next release, but was included in this release by accident.
+
+2015-12-31 v1.999713 pjacklam
 
  * Fix Math::BigInt->new(), which had a faulty handling in the shortcut for
    non-zero scalar integers with no non-zero exponent, like "12", "12.000",
    "12e3", and "12.000e4". Added tests for this in t/bigintpm.inc.
+
+2016-01-03 v1.999714 pjacklam
+
+ * Add code to speed up Math::BigFloat->batan(). Thanks to DANAJ (Dana
+   Jacobsen) for the patch.
+
+ * Re-write Math::BigFloat->batan2() completely, except for the parts related
+   to the rounding. The old version was sometimes correct, sometimes off by pi,
+   and sometimes very inaccurate. Also add more tests.
+
+ * Make it clearer in Math::BigFloat->bpi() when it is called as a method vs.
+   as a function.
+
+ * The Math::BigFloat->bpi() method can now be used as an instance method to
+   assign pi to $x, as in $x->bpi().
+
+ * Add tests for as_oct().
+
+ * Minor simplifications in Math::BigInt->as_oct() as
+   Math::BigInt::Calc::_as_oct().
 
 Please send us test-reports, your experiences with this and your ideas - we love
 to hear about our work!

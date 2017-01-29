@@ -4,7 +4,7 @@ use 5.006001;
 use strict;
 use warnings;
 
-our $VERSION = '1.999713';
+our $VERSION = '1.999714';
 $VERSION = eval $VERSION;
 
 # Package to store unsigned big integers in decimal and do math with them
@@ -2273,7 +2273,7 @@ sub _as_oct
     $es .= reverse sprintf("%05o", $xr->[0]);
     }
   $es = reverse $es;
-  $es =~ s/^[0]+//;   # strip leading zeros
+  $es =~ s/^0+//;   # strip leading zeros
   '0' . $es;					# return result prepended with 0
   }
 

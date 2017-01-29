@@ -1,9 +1,9 @@
-#!/usr/bin/perl
+#!perl
 
 use strict;
 use warnings;
 
-use Test::More tests => 2367            # tests in require'd file
+use Test::More tests => 2409            # tests in require'd file
                          + 6;           # tests in this file
 
 use lib 't';

@@ -1,11 +1,12 @@
-#!/usr/bin/perl
+#!perl
 
 # Test use Math::BigFloat with => 'Math::BigInt::SomeSubclass';
 
 use strict;
 use warnings;
 
-use Test::More tests => 2367 + 1;
+use Test::More tests => 2409            # tests in require'd file
+                         + 1;           # tests in this file
 
 use Math::BigFloat with => 'Math::BigInt::Subclass',
                    lib  => 'Calc';

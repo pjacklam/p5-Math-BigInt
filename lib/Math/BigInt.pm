@@ -19,7 +19,7 @@ use 5.006001;
 use strict;
 use warnings;
 
-our $VERSION = '1.999713';
+our $VERSION = '1.999714';
 $VERSION = eval $VERSION;
 
 our @ISA = qw(Exporter);
@@ -900,143 +900,131 @@ sub sign
   $x->{sign};
   }
 
-sub _find_round_parameters
-  {
-  # After any operation or when calling round(), the result is rounded by
-  # regarding the A & P from arguments, local parameters, or globals.
+sub _find_round_parameters {
+    # After any operation or when calling round(), the result is rounded by
+    # regarding the A & P from arguments, local parameters, or globals.
 
-  # !!!!!!! If you change this, remember to change round(), too! !!!!!!!!!!
+    # !!!!!!! If you change this, remember to change round(), too! !!!!!!!!!!
 
-  # This procedure finds the round parameters, but it is for speed reasons
-  # duplicated in round. Otherwise, it is tested by the testsuite and used
-  # by bdiv().
+    # This procedure finds the round parameters, but it is for speed reasons
+    # duplicated in round. Otherwise, it is tested by the testsuite and used
+    # by bdiv().
 
-  # returns ($self) or ($self,$a,$p,$r) - sets $self to NaN of both A and P
-  # were requested/defined (locally or globally or both)
+    # returns ($self) or ($self,$a,$p,$r) - sets $self to NaN of both A and P
+    # were requested/defined (locally or globally or both)
 
-  my ($self,$a,$p,$r,@args) = @_;
-  # $a accuracy, if given by caller
-  # $p precision, if given by caller
-  # $r round_mode, if given by caller
-  # @args all 'other' arguments (0 for unary, 1 for binary ops)
+    my ($self, $a, $p, $r, @args) = @_;
+    # $a accuracy, if given by caller
+    # $p precision, if given by caller
+    # $r round_mode, if given by caller
+    # @args all 'other' arguments (0 for unary, 1 for binary ops)
 
-  my $c = ref($self);                           # find out class of argument(s)
-  no strict 'refs';
+    my $class = ref($self);       # find out class of argument(s)
+    no strict 'refs';
 
-  # convert to normal scalar for speed and correctness in inner parts
-  $a = $a->can('numify') ? $a->numify() : "$a" if defined $a && ref($a);
-  $p = $p->can('numify') ? $p->numify() : "$p" if defined $p && ref($p);
+    # convert to normal scalar for speed and correctness in inner parts
+    $a = $a->can('numify') ? $a->numify() : "$a" if defined $a && ref($a);
+    $p = $p->can('numify') ? $p->numify() : "$p" if defined $p && ref($p);
 
-  # now pick $a or $p, but only if we have got "arguments"
-  if (!defined $a)
-    {
-    foreach ($self,@args)
-      {
-      # take the defined one, or if both defined, the one that is smaller
-      $a = $_->{_a} if (defined $_->{_a}) && (!defined $a || $_->{_a} < $a);
-      }
+    # now pick $a or $p, but only if we have got "arguments"
+    if (!defined $a) {
+        foreach ($self, @args) {
+            # take the defined one, or if both defined, the one that is smaller
+            $a = $_->{_a} if (defined $_->{_a}) && (!defined $a || $_->{_a} < $a);
+        }
     }
-  if (!defined $p)
-    {
-    # even if $a is defined, take $p, to signal error for both defined
-    foreach ($self,@args)
-      {
-      # take the defined one, or if both defined, the one that is bigger
-      # -2 > -3, and 3 > 2
-      $p = $_->{_p} if (defined $_->{_p}) && (!defined $p || $_->{_p} > $p);
-      }
-    }
-  # if still none defined, use globals (#2)
-  $a = ${"$c\::accuracy"} unless defined $a;
-  $p = ${"$c\::precision"} unless defined $p;
-
-  # A == 0 is useless, so undef it to signal no rounding
-  $a = undef if defined $a && $a == 0;
-
-  # no rounding today?
-  return ($self) unless defined $a || defined $p;               # early out
-
-  # set A and set P is an fatal error
-  return ($self->bnan()) if defined $a && defined $p;           # error
-
-  $r = ${"$c\::round_mode"} unless defined $r;
-  if ($r !~ /^(even|odd|\+inf|\-inf|zero|trunc|common)$/)
-    {
-    require Carp; Carp::croak ("Unknown round mode '$r'");
+    if (!defined $p) {
+        # even if $a is defined, take $p, to signal error for both defined
+        foreach ($self, @args) {
+            # take the defined one, or if both defined, the one that is bigger
+            # -2 > -3, and 3 > 2
+            $p = $_->{_p} if (defined $_->{_p}) && (!defined $p || $_->{_p} > $p);
+        }
     }
 
-  $a = int($a) if defined $a;
-  $p = int($p) if defined $p;
+    # if still none defined, use globals (#2)
+    $a = ${"$class\::accuracy"}  unless defined $a;
+    $p = ${"$class\::precision"} unless defined $p;
 
-  ($self,$a,$p,$r);
-  }
+    # A == 0 is useless, so undef it to signal no rounding
+    $a = undef if defined $a && $a == 0;
 
-sub round
-  {
-  # Round $self according to given parameters, or given second argument's
-  # parameters or global defaults
+    # no rounding today?
+    return ($self) unless defined $a || defined $p; # early out
 
-  # for speed reasons, _find_round_parameters is embedded here:
+    # set A and set P is an fatal error
+    return ($self->bnan()) if defined $a && defined $p; # error
 
-  my ($self,$a,$p,$r,@args) = @_;
-  # $a accuracy, if given by caller
-  # $p precision, if given by caller
-  # $r round_mode, if given by caller
-  # @args all 'other' arguments (0 for unary, 1 for binary ops)
-
-  my $c = ref($self);                           # find out class of argument(s)
-  no strict 'refs';
-
-  # now pick $a or $p, but only if we have got "arguments"
-  if (!defined $a)
-    {
-    foreach ($self,@args)
-      {
-      # take the defined one, or if both defined, the one that is smaller
-      $a = $_->{_a} if (defined $_->{_a}) && (!defined $a || $_->{_a} < $a);
-      }
-    }
-  if (!defined $p)
-    {
-    # even if $a is defined, take $p, to signal error for both defined
-    foreach ($self,@args)
-      {
-      # take the defined one, or if both defined, the one that is bigger
-      # -2 > -3, and 3 > 2
-      $p = $_->{_p} if (defined $_->{_p}) && (!defined $p || $_->{_p} > $p);
-      }
-    }
-  # if still none defined, use globals (#2)
-  $a = ${"$c\::accuracy"} unless defined $a;
-  $p = ${"$c\::precision"} unless defined $p;
-
-  # A == 0 is useless, so undef it to signal no rounding
-  $a = undef if defined $a && $a == 0;
-
-  # no rounding today?
-  return $self unless defined $a || defined $p;         # early out
-
-  # set A and set P is an fatal error
-  return $self->bnan() if defined $a && defined $p;
-
-  $r = ${"$c\::round_mode"} unless defined $r;
-  if ($r !~ /^(even|odd|\+inf|\-inf|zero|trunc|common)$/)
-    {
-    require Carp; Carp::croak ("Unknown round mode '$r'");
+    $r = ${"$class\::round_mode"} unless defined $r;
+    if ($r !~ /^(even|odd|[+-]inf|zero|trunc|common)$/) {
+        require Carp; Carp::croak ("Unknown round mode '$r'");
     }
 
-  # now round, by calling either bround or bfround:
-  if (defined $a)
-    {
-    $self->bround(int($a),$r) if !defined $self->{_a} || $self->{_a} >= $a;
+    $a = int($a) if defined $a;
+    $p = int($p) if defined $p;
+
+    ($self, $a, $p, $r);
+}
+
+sub round {
+    # Round $self according to given parameters, or given second argument's
+    # parameters or global defaults
+
+    # for speed reasons, _find_round_parameters is embedded here:
+
+    my ($self, $a, $p, $r, @args) = @_;
+    # $a accuracy, if given by caller
+    # $p precision, if given by caller
+    # $r round_mode, if given by caller
+    # @args all 'other' arguments (0 for unary, 1 for binary ops)
+
+    my $class = ref($self);       # find out class of argument(s)
+    no strict 'refs';
+
+    # now pick $a or $p, but only if we have got "arguments"
+    if (!defined $a) {
+        foreach ($self, @args) {
+            # take the defined one, or if both defined, the one that is smaller
+            $a = $_->{_a} if (defined $_->{_a}) && (!defined $a || $_->{_a} < $a);
+        }
     }
-  else # both can't be undefined due to early out
-    {
-    $self->bfround(int($p),$r) if !defined $self->{_p} || $self->{_p} <= $p;
+    if (!defined $p) {
+        # even if $a is defined, take $p, to signal error for both defined
+        foreach ($self, @args) {
+            # take the defined one, or if both defined, the one that is bigger
+            # -2 > -3, and 3 > 2
+            $p = $_->{_p} if (defined $_->{_p}) && (!defined $p || $_->{_p} > $p);
+        }
     }
-  # bround() or bfround() already called bnorm() if nec.
-  $self;
-  }
+
+    # if still none defined, use globals (#2)
+    $a = ${"$class\::accuracy"}  unless defined $a;
+    $p = ${"$class\::precision"} unless defined $p;
+
+    # A == 0 is useless, so undef it to signal no rounding
+    $a = undef if defined $a && $a == 0;
+
+    # no rounding today?
+    return $self unless defined $a || defined $p; # early out
+
+    # set A and set P is an fatal error
+    return $self->bnan() if defined $a && defined $p;
+
+    $r = ${"$class\::round_mode"} unless defined $r;
+    if ($r !~ /^(even|odd|[+-]inf|zero|trunc|common)$/) {
+        require Carp; Carp::croak ("Unknown round mode '$r'");
+    }
+
+    # now round, by calling either bround or bfround:
+    if (defined $a) {
+        $self->bround(int($a), $r) if !defined $self->{_a} || $self->{_a} >= $a;
+    } else {                  # both can't be undefined due to early out
+        $self->bfround(int($p), $r) if !defined $self->{_p} || $self->{_p} <= $p;
+    }
+
+    # bround() or bfround() already called bnorm() if nec.
+    $self;
+}
 
 sub bnorm
   {
@@ -2772,8 +2760,8 @@ sub as_oct
 
   return $x->bstr() if $x->{sign} !~ /^[+-]$/;  # inf, nan etc
 
-  my $s = ''; $s = $x->{sign} if $x->{sign} eq '-';
-  return $s . $CALC->_as_oct($x->{value});
+  my $oct = $CALC->_as_oct($x->{value});
+  return $x->{sign} eq '-' ? "-$oct" : $oct;
   }
 
 ##############################################################################
