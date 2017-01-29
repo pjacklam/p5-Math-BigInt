@@ -4,7 +4,7 @@ use 5.006001;
 use strict;
 use warnings;
 
-our $VERSION = '1.999800';
+our $VERSION = '1.999801';
 $VERSION = eval $VERSION;
 
 use Carp;
@@ -1148,6 +1148,23 @@ sub _gcd {
     }
 }
 
+sub _lcm {
+    # Least common multiple.
+
+    my ($class, $x, $y) = @_;
+
+    # lcm(0, x) = 0 for all x
+
+    return $class -> _zero()
+      if ($class -> _is_zero($x) ||
+          $class -> _is_zero($y));
+
+    my $gcd = $class -> _gcd($class -> _copy($x), $y);
+    $x = $class -> _div($x, $gcd);
+    $x = $class -> _mul($x, $y);
+    return $x;
+}
+
 ##############################################################################
 ##############################################################################
 
@@ -1364,6 +1381,10 @@ whether OBJ is the exact result.
 =item I<_gcd(OBJ1, OBJ2)>
 
 Return the greatest common divisor of OBJ1 and OBJ2.
+
+=item I<_lcm(OBJ1, OBJ2)>
+
+Return the least common multiple of OBJ1 and OBJ2.
 
 =back
 

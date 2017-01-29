@@ -19,7 +19,7 @@ use warnings;
 use Carp ();
 use Math::BigInt ();
 
-our $VERSION = '1.999800';
+our $VERSION = '1.999801';
 $VERSION = eval $VERSION;
 
 require Exporter;
@@ -218,7 +218,7 @@ $div_scale  = 40;
 $upgrade = undef;
 $downgrade = undef;
 # the package we are using for our private parts, defaults to:
-# Math::BigInt->config()->{lib}
+# Math::BigInt->config('lib')
 my $MBI = 'Math::BigInt::Calc';
 
 # are NaNs ok? (otherwise it dies when encountering an NaN) set w/ config()
@@ -2126,7 +2126,7 @@ sub bpow {
 }
 
 sub blog {
-    my ($class, $x, $base, $a, $p, $r) = ref($_[0]) ? (ref($_[0]), @_) : objectify(1, @_);
+    my ($class, $x, $base, $a, $p, $r) = ref($_[0]) ? (ref($_[0]), @_) : objectify(2, @_);
 
     # If called as $x -> blog() or $x -> blog(undef), don't objectify the
     # undefined base, since undef signals that the base is Euler's number.
@@ -3590,28 +3590,29 @@ sub bgcd {
     # (BINT or num_str, BINT or num_str) return BINT
     # does not modify arguments, but returns new object
 
-    my $y = shift;
-    $y = __PACKAGE__->new($y) if !ref($y);
-    my $class = ref($y);
-    my $x = $y->copy()->babs(); # keep arguments
+    unshift @_, __PACKAGE__
+      unless ref($_[0]) || $_[0] =~ /^[a-z]\w*(?:::[a-z]\w*)*$/i;
 
-    return $x->bnan() if $x->{sign} !~ /^[+-]$/ # x NaN?
-      || !$x->is_int();                         # only for integers now
+    my ($class, @args) = objectify(0, @_);
 
-    while (@_) {
-        my $t = shift;
-        $t = $class->new($t) if !ref($t);
-        $y = $t->copy()->babs();
+    my $x = shift @args;
+    $x = ref($x) && $x -> isa($class) ? $x -> copy() : $class -> new($x);
+    $x -> babs();
+    return $class->bnan() unless $x -> is_int();
 
-        return $x->bnan() if $y->{sign} !~ /^[+-]$/ # y NaN?
-          || !$y->is_int();                         # only for integers now
+    while (@args) {
+        my $y = shift @args;
+        $y = ref($y) && $y -> isa($class) ? $y -> copy() -> babs()
+                                          : $class -> new($y);
+        return $class->bnan() unless $y -> is_int();
+        $y -> babs();
 
         # greatest common divisor
         while (! $y->is_zero()) {
             ($x, $y) = ($y->copy(), $x->copy()->bmod($y));
         }
 
-        last if $x->is_one();
+        last if $x -> is_one();
     }
     $x;
 }
@@ -3621,10 +3622,20 @@ sub blcm {
     # does not modify arguments, but returns new object
     # Lowest Common Multiplicator
 
-    my ($class, @arg) = objectify(0, @_);
-    my $x = $class->new(shift @arg);
-    while (@arg) {
-        $x = Math::BigInt::__lcm($x, shift @arg);
+    unshift @_, __PACKAGE__
+      unless ref($_[0]) || $_[0] =~ /^[a-z]\w*(?:::[a-z]\w*)*$/i;
+
+    my ($class, @args) = objectify(0, @_);
+
+    my $x = $class -> bone();
+    while (@args) {
+        my $y = shift @args;
+        $y = ref($y) && $y -> isa($class) ? $y -> copy() -> babs()
+                                          : $class -> new($y);
+        return $x->bnan() unless $y -> is_int();
+
+        my $gcd = $x -> bgcd($y);
+        $x -> bdiv($gcd) -> bmul($y);
     }
     $x;
 }
@@ -4091,7 +4102,7 @@ my @a;
 
     $lib =~ tr/a-zA-Z0-9,://cd; # restrict to sane characters
     # let use Math::BigInt lib => 'GMP'; use Math::BigFloat; still work
-    my $mbilib = eval { Math::BigInt->config()->{lib} };
+    my $mbilib = eval { Math::BigInt->config('lib') };
     if ((defined $mbilib) && ($MBI eq 'Math::BigInt::Calc')) {
         # MBI already loaded
         Math::BigInt->import($lib_kind, "$lib, $mbilib", 'objectify');
@@ -4111,7 +4122,7 @@ my @a;
         Carp::croak("Couldn't load $lib: $! $@");
     }
     # find out which one was actually loaded
-    $MBI = Math::BigInt->config()->{lib};
+    $MBI = Math::BigInt->config('lib');
 
     # register us with MBI to get notified of future lib changes
     Math::BigInt::_register_callback($class, sub { $MBI = $_[0]; });

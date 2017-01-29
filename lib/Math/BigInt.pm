@@ -20,7 +20,7 @@ use warnings;
 
 use Carp ();
 
-our $VERSION = '1.999800';
+our $VERSION = '1.999801';
 $VERSION = eval $VERSION;
 
 our @ISA = qw(Exporter);
@@ -413,7 +413,7 @@ sub precision {
 
 sub config {
     # return (or set) configuration data as hash ref
-    my $class = shift || 'Math::BigInt';
+    my $class = shift || __PACKAGE__;
 
     no strict 'refs';
     if (@_ > 1 || (@_ == 1 && (ref($_[0]) eq 'HASH'))) {
@@ -2342,13 +2342,13 @@ sub blog {
     my ($class, $x, $base, @r) = (undef, @_);
     # objectify is costly, so avoid it
     if ((!ref($_[0])) || (ref($_[0]) ne ref($_[1]))) {
-        ($class, $x, $base, @r) = objectify(1, @_);
+        ($class, $x, $base, @r) = objectify(2, @_);
     }
 
     return $x if $x->modify('blog');
 
-    # Handle all exception cases and all trivial cases. I have used Wolfram Alpha
-    # (http://www.wolframalpha.com) as the reference for these cases.
+    # Handle all exception cases and all trivial cases. I have used Wolfram
+    # Alpha (http://www.wolframalpha.com) as the reference for these cases.
 
     return $x -> bnan() if $x -> is_nan();
 
@@ -3093,16 +3093,17 @@ sub bgcd {
     # does not modify arguments, but returns new object
     # GCD -- Euclid's algorithm, variant C (Knuth Vol 3, pg 341 ff)
 
-    my $y = shift;
-    $y = $class->new($y) if !ref($y);
-    my $class = ref($y);
-    my $x = $y->copy()->babs();                  # keep arguments
-    return $x->bnan() if $x->{sign} !~ /^[+-]$/; # x NaN?
+    my ($class, @args) = objectify(0, @_);
 
-    while (@_) {
-        $y = shift;
-        $y = $class->new($y) if !ref($y);
-        return $x->bnan() if $y->{sign} !~ /^[+-]$/; # y NaN?
+    my $x = shift @args;
+    $x = ref($x) && $x -> isa($class) ? $x -> copy() : $class -> new($x);
+    $x -> babs();
+    return $class->bnan() if $x->{sign} !~ /^[+-]$/;    # x NaN?
+
+    while (@args) {
+        my $y = shift @args;
+        $y = $class->new($y) unless ref($y) && $y -> isa($class);
+        return $class->bnan() if $y->{sign} !~ /^[+-]$/;    # y NaN?
         $x->{value} = $CALC->_gcd($x->{value}, $y->{value});
         last if $CALC->_is_one($x->{value});
     }
@@ -3114,18 +3115,15 @@ sub blcm {
     # does not modify arguments, but returns new object
     # Lowest Common Multiple
 
-    my $y = shift;
-    my ($x);
-    if (ref($y)) {
-        $x = $y->copy();
-    } else {
-        $x = $class->new($y);
-    }
-    my $class = ref($x);
-    while (@_) {
-        my $y = shift;
-        $y = $class->new($y) if !ref ($y);
-        $x = __lcm($x, $y);
+    my ($class, @args) = objectify(0, @_);
+
+    my $x = $class -> bone();
+
+    while (@args) {
+        my $y = shift @args;
+        $y = $class -> new($y) unless ref($y) && $y -> isa($class);
+        return $x->bnan() if $y->{sign} !~ /^[+-]$/;     # y not integer
+        $x -> {value} = $CALC->_lcm($x -> {value}, $y -> {value});
     }
     $x;
 }
@@ -3575,6 +3573,13 @@ sub objectify {
     }
 
     for my $i (1 .. $count) {
+
+        # Don't do anything with undefs. This special treatment is necessary
+        # because blog() might have a second operand which is undef, to signify
+        # that the default Euler base should be used.
+
+        next unless defined $a[$i];
+
         my $ref = ref $a[$i];
 
         # Perl scalars are fed to the appropriate constructor.
@@ -4020,21 +4025,6 @@ sub _find_round_parameters {
     ($self, $a, $p, $r);
 }
 
-##############################################################################
-# internal calculation routines (others are in Math::BigInt::Calc etc)
-
-sub __lcm {
-    # (BINT or num_str, BINT or num_str) return BINT
-    # does modify first argument
-    # LCM
-
-    my ($x, $ty) = @_;
-    return $x->bnan() if ($x->{sign} eq $nan) || ($ty->{sign} eq $nan);
-    my $method = ref($x) . '::bgcd';
-    no strict 'refs';
-    $x * $ty / &$method($x, $ty);
-}
-
 ###############################################################################
 # this method returns 0 if the object can be modified, or 1 if not.
 # We use a fast constant sub() here, to avoid costly calls. Subclasses
@@ -4433,6 +4423,7 @@ This is used for instance by L<Math::BigInt::Constant>.
 
     print Dumper ( Math::BigInt->config() );
     print Math::BigInt->config()->{lib},"\n";
+    print Math::BigInt->config('lib')},"\n";
 
 Returns a hash containing the configuration, e.g. the version number, lib
 loaded etc. The following hash keys are currently filled in with the

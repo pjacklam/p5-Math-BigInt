@@ -13,7 +13,7 @@ use Math::BigInt qw/:constant/;
 
 print "# Using Math::BigInt v",$Math::BigInt::VERSION,"\n";
 
-# calculate some sample prime numbers from 
+# calculate some sample prime numbers from
 # http://www.utm.edu/research/primes/largest.html
 # also: http://www-stud.enst.fr/~bellard/mersenne.html
 # (c takes 1 minute on 800 Mhz, so Perl will take..ages..)
@@ -134,4 +134,3 @@ sub len
   $x = "$x"; $x =~ s/^\+//;
   return length($x);
   }
-

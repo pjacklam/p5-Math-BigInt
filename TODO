@@ -3,7 +3,7 @@ See also various .pm files.
 General:
  * Copy on write (helps for $x = -$x; cases etc) (seems to make it slower :/
  * run config() and die_on_nan() tests under Subclass.pm
- 
+
 Math::BigFloat:
  * finish upgrading and downgrading
  * ! bround()/bfround(): some bugs may lurk in there

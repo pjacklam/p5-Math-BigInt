@@ -1896,12 +1896,50 @@ Fixes:
 
  * Add more tests and use more verbose output in some tests.
 
- * Fix typo in lib/Math/BigFloat.pm 
+ * Fix typo in lib/Math/BigFloat.pm
 
  * Fix documentation error in lib/Math/Calc.pm
 
  * Use Config::Tiny and an .ini file to handle the library specific
    configuration for the author-lib*.t test files.
+
+2016-11-23 v1.999801 pjacklam
+
+ * Fix, hopefully once and for all, the longstanding problem of handling undef
+   as an operand to mathematical methods. The only method that accepts undef as
+   an operand is blog(), where the second operand might be undef, as in
+   $x->blog() or $x->blog($b), where $b is undef. The undef signifies that
+   Euler's number should be used as the base. With this fix, we should be able
+   to get Math::BigInt::Lite working again.
+
+ * Add least common multiple method _lcm() to Math::BigInt::Lib, and add
+   corresponding test file t/author-lib-arithmetic-binary-_lcm.t and test data
+   file t/author-lib-arithmetic-binary-_lcm.dat.
+
+ * Remove internal function __lcm() which has become redundant now that _lcm()
+   is in the library.
+
+ * Make it possible to use bgcd() and blcm() as class methods, since other
+   methods can be used as class methods. This applies to both Math::BigInt and
+   Math::BigFloat.
+
+ * Fix blcm() with negative input. The LCM should always be non-negative. This
+   applies to both Math::BigInt and Math::BigFloat.
+
+ * Add tests for bgcd() and blcm() in t/bigintpm.t and t/bigfltpm.t.
+
+ * Fix tests for blcm() assuming that LCM(0,0) should be a NaN. LCM(0,0) is 0
+   by convention.
+
+ * Prefer Class->config('option') over Class->config()->{option}. However, this
+   does not seem to be working for all options. It seems that this won't work
+   properly until we move the global variables into the OO interface.
+
+ * Explicitly specify the library in all test files that are shared between
+   Math-BigInt and the library distributions (FaatCalc, GMP, Pari, ...) with,
+   e.g., "use Math::BigInt only => 'Calc';". This way, it will fail immediately
+   if the specified library can't be loaded rather than using the fallback
+   library.
 
 Please send us test-reports, your experiences with this and your ideas - we
 love to hear about our work!

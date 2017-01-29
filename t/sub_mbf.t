@@ -12,7 +12,7 @@ use Math::BigFloat::Subclass;
 
 our ($CLASS, $CALC);
 $CLASS = "Math::BigFloat::Subclass";
-$CALC  = Math::BigFloat->config()->{lib};       # backend
+$CALC  = Math::BigFloat->config('lib');         # backend library
 
 require 't/bigfltpm.inc';	# perform same tests as bigfltpm
 

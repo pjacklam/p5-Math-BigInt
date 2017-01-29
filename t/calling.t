@@ -48,7 +48,7 @@ like($@, qr/ ^ Math::BigInt \s+ ( version \s+ )? \S+ \s+ required--this \s+
 
 # test whether fallback to calc works
 $try = qq|use $class ($VERSION, "try", "foo, bar, ");|
-     . qq| $class\->config()->{lib};|;
+     . qq| $class\->config('lib');|;
 $expected = eval $try;
 like($expected, qr/^Math::BigInt::(Fast)?Calc\z/, $try);
 

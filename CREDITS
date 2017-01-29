@@ -21,7 +21,7 @@ I wish to thank the following people:
 * Tim Rushing for reporting the bsqrt() hang and giving me the chance to
   improve BigInt/BigFloat.
 * cpan@ali.as for reporting the floor() bug with 0.1412024 and providing a
-  fix and testcase - thanx! 
+  fix and testcase - thanx!
 * Stephen Ross for finding the -2 ** Y with odd Y bug
 
 Special thanx must go to John Peacock and Tom Roche, both have helped me a lot

@@ -21,7 +21,7 @@ my $prime = Math::BigInt->new (3);	# start
 $r = 0; my $a = $amount->numify();
 for ($i = 3; $i < $a; $i++)		# int version
   {
-  $primes[$i] = $r; $r = 1-$r; 
+  $primes[$i] = $r; $r = 1-$r;
   }
 
 # find primes
@@ -43,7 +43,7 @@ while ($prime < $amount)
   $cur += $add;
   while ($cur < $amount)
     {
-    $primes[$cur] = 1; $cur += $add; 
+    $primes[$cur] = 1; $cur += $add;
     }
   }
 
@@ -75,10 +75,9 @@ close FILE;
 my $i = 0;
 foreach (@real_primes)
   {
-  print "oups: $i: $test[$i] != $real_primes[$i]\n" 
+  print "oups: $i: $test[$i] != $real_primes[$i]\n"
     if $test[$i] != $real_primes[$i]; $i++;
   last if $i >= 1000;
   }
 
 print "done\n";
-
