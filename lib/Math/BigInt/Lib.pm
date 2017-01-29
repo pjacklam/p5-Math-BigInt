@@ -4,7 +4,7 @@ use 5.006001;
 use strict;
 use warnings;
 
-our $VERSION = '1.999804';
+our $VERSION = '1.999805';
 
 use Carp;
 
@@ -589,8 +589,8 @@ sub _fac {
 
 sub _log_int {
     # calculate integer log of $x to base $base
-    # calculate integer log of $x to base $base
     # ref to array, ref to array - return ref to array
+
     my ($class, $x, $base) = @_;
 
     # X == 0 => NaN

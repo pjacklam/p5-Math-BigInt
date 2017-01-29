@@ -15,6 +15,7 @@ WriteMakefile
                             'Test::More'          => 0.94,
                             'Math::Complex'       => 1.39,
                            },
+   'INSTALLDIRS'        => 'perl',      # install over the core version
    'LICENSE'            => 'perl_5',
    'LIBS'               => [''],        # e.g., '-lm'
    'DEFINE'             => '',          # e.g., '-DHAVE_SOMETHING'

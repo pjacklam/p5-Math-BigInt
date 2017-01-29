@@ -11,7 +11,7 @@ BEGIN {
 use strict;
 use warnings;
 
-use Test::More tests => 81205;
+use Test::More tests => 82645;
 
 ###############################################################################
 # Read and load configuration file and backend library.

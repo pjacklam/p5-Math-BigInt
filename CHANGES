@@ -1,3 +1,14 @@
+2016-12-11 v1.999805 pjacklam
+
+ * Fix Makefile.PL so that this module installs over the core version.
+
+ * Add more tests for _nok() (binomial coefficient "n over k"). These new tests
+   revealed some problems with some of the backend libraries when _nok() was
+   given very large arguments.
+
+ * Remove t/Math/BigFloat/#Subclass.pm#, which is an Emacs temporary file
+   included by accident.
+
 2016-12-07 v1.999804 pjacklam
 
  * Implement as_bytes(), as requested (CPAN RT 119096). Also implement the
