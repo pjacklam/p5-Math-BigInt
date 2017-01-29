@@ -18,7 +18,7 @@ use warnings;
 
 use Carp ();
 
-our $VERSION = '1.999721';
+our $VERSION = '1.999722';
 $VERSION = eval $VERSION;
 
 require Exporter;
@@ -488,7 +488,9 @@ sub bnan {
 sub binf {
     # create/assign a '+inf' or '-inf'
 
-    if (@_ == 0 || !ref($_[0]) && $_[0] =~ /^\s*[+-](inf(inity)?)?\s*$/) {
+    if (@_ == 0 || (defined($_[0]) && !ref($_[0]) &&
+                    $_[0] =~ /^\s*[+-](inf(inity)?)?\s*$/))
+    {
         Carp::carp("Using binf() as a function is deprecated;",
                    " use binf() as a method instead");
         unshift @_, __PACKAGE__;
@@ -563,7 +565,7 @@ sub bzero {
 sub bone {
     # Create or assign '+1' (or -1 if given sign '-').
 
-    if (@_ == 0 && $_[0] eq '+' || $_[0] eq '-') {
+    if (@_ == 0 || (defined($_[0]) && ($_[0] eq '+' || $_[0] eq '-'))) {
         Carp::carp("Using bone() as a function is deprecated;",
                    " use bone() as a method instead");
         unshift @_, __PACKAGE__;

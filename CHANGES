@@ -1741,9 +1741,6 @@ there are so many changes, I let this be a development release.
 
 2016-04-25 v1.999719 pjacklam
 
- * Fix bug in bone() when used as a function. This fix applies to both
-   Math::BigInt and Math::BigFloat.
-
  * Revert the change to Math::BigFloat's blsft() and brsft() methods, which
    truncated the input (and output) to integers. However, now convert the base
    to an object only when the base isn't an object already. Also return NaN if
@@ -1769,6 +1766,12 @@ there are so many changes, I let this be a development release.
 
  * Prevent Math::BigFloat methods band(), bior(), bxor(), and bnot() from
    modifying unmodifiable objects.
+
+2016-04-26 v1.999722 pjacklam
+
+ * Fix bug in bone() and binf() when used as a function. The error caused
+   warnings about using an unitialized variable. This fix applies to both
+   Math::BigInt and Math::BigFloat.
 
 Please send us test-reports, your experiences with this and your ideas - we love
 to hear about our work!
