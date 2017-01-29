@@ -1102,7 +1102,8 @@ Math::BigInt:
  * fix bug #21446 - Docs/code inconsistency for bnorm() method
  * fix bug #21964 - A patch to include a rounding mode of 'common'
  * fix bug #21445 - Documentation error for exponent() method
- * fix bug perl #41050 - NaN returned when raising integer value to negative power
+ * fix bug perl #41050 - NaN returned when raising integer value to negative
+   power
  * add from_hex(), from_oct(), and from_bin()
  * add as_oct()
 
@@ -1628,6 +1629,19 @@ there are so many changes, I let this be a development release.
 
  * Minor simplifications in Math::BigInt->as_oct() as
    Math::BigInt::Calc::_as_oct().
+
+2016-01-05 v1.999715 pjacklam
+
+ * Fix Math::BigFloat->bexp() based on patch by DANAJ (Dana Jacobsen).
+
+ * Add Math::BigFloat->bexp() tests to "t/biglog.t" and new file
+   "t/author-bexp-mbf.t".
+
+ * Fix flawed test in test_bpow. It used ok($x, $y) rather than is($x, $y).
+
+ * Add better descriptions (test names) to a few tests.
+
+ * Wrap long line in the CHANGES file.
 
 Please send us test-reports, your experiences with this and your ideas - we love
 to hear about our work!
