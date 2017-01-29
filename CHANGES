@@ -1739,6 +1739,24 @@ there are so many changes, I let this be a development release.
 
  * Improve test descriptions in t/mbimbf.inc.
 
+2016-04-25 v1.999719 pjacklam
+
+ * Fix bug in bone() when used as a function. This fix applies to both
+   Math::BigInt and Math::BigFloat.
+
+ * Revert the change to Math::BigFloat's blsft() and brsft() methods, which
+   truncated the input (and output) to integers. However, now convert the base
+   to an object only when the base isn't an object already.
+
+ * Change t/bigfltpm.inc so when a method should be tested, actually test that
+   method, not the overloaded operator, which doesn't necessarily behave
+   exactly the same way as the method. This applies to the methods binc(),
+   bdec(), bpow(), badd(), bsub(), bmul(), bdiv() in scalar context, brsft(),
+   blsft(), and bmod().
+
+ * The first output argument from objectify() is the class name, so use the
+   variable name $class, not $self.
+
 Please send us test-reports, your experiences with this and your ideas - we love
 to hear about our work!
 
