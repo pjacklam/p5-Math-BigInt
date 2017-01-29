@@ -1,3 +1,29 @@
+2016-12-07 v1.999804 pjacklam
+
+ * Implement as_bytes(), as requested (CPAN RT 119096). Also implement the
+   inverse conversion from_bytes(). This applies to Math::BigInt only. (Alas,
+   these methods will be inherited from Math::BigInt into Math::BigFloat,
+   Math::BigRat etc. where the methods won't work. Fixing this class
+   relationship is an issue of its own.)
+
+ * Implement _as_bytes() and _from_bytes() in Math::BigInt::Lib. Preferably,
+   the various backend libraries will implement faster versions of their
+   own. Add author test files for testing these methods thorougly.
+
+ * Fix from_hex(), from_oct(), and from_bin().
+   - When called as instance methods, the new value should be assigned to the
+     invocand unless the invocand is read-only (a constant).
+   - When called as instance methods, the assigned value was incorrect, if the
+     invocand was inf or NaN.
+   - Add tests to t/from_hex-mbf.t, t/from_oct-mbf.t, and t/from_bin-mbf.t
+     to confirm the fix.
+   - Add new test files t/from_hex-mbi.t, t/from_oct-mbi.t, and
+     t/from_bin-mbi.t for better testing of these methods with Math::BigInt.
+
+ * Correct typo in Math/BigInt/Lib.pm (otherise -> otherwise) (CPAN RT 118829).
+
+ * Add POD coverage testing of Math::BigInt::Lib to t/03podcov.t.
+
 2016-12-03 v1.999803 pjacklam
 
  * Remove BENCHMARK file. The information was obsolete.
