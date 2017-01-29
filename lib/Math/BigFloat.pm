@@ -16,7 +16,7 @@ use 5.006001;
 use strict;
 use warnings;
 
-our $VERSION = '1.999712';
+our $VERSION = '1.999713';
 $VERSION = eval $VERSION;
 
 require Exporter;

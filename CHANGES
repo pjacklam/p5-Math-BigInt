@@ -1599,6 +1599,12 @@ there are so many changes, I let this be a development release.
    error message depends not on the Perl version, but on the module that does
    the version checking.
 
+2015-12-31 v1.999713
+
+ * Fix Math::BigInt->new(), which had a faulty handling in the shortcut for
+   non-zero scalar integers with no non-zero exponent, like "12", "12.000",
+   "12e3", and "12.000e4". Added tests for this in t/bigintpm.inc.
+
 Please send us test-reports, your experiences with this and your ideas - we love
 to hear about our work!
 
