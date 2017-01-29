@@ -1678,6 +1678,67 @@ there are so many changes, I let this be a development release.
 
  * Avoid using L<> around e-mail addressess in POD.
 
+2016-04-22 v1.999718 pjacklam
+
+ * Improve documentation on large, unquoted input values to Math::BigInt.
+
+ * Remove stuff from bitfltpm.inc that was placed into author-numify-mbf.t, but
+   accidentally still present in bitfltpm.inc. Adjusted test counts as needed.
+
+ * Fix file headers in author-bmod-bdiv-mbi.t and author-btmod-btdiv-mbi.t.
+
+ * Add bnan(), binf(), and bsub() methods to Math::BigFloat. This is a step
+   along the way to having Math::BigFloat no longer being a subclass of
+   Math::BigInt.
+
+ * Using bnan, binf(), bzero() and bone() as functions is deprecated. This is a
+   step along the way to a pure object oriented design.
+
+ * When bnan() and binf() are used as instance methods, they no longer delete
+   the accuracy and precision instance variables. 
+
+ * Add test files from_bin-mbf.t, from_oct-mbf.t, and new-mbf.t.
+
+ * Remove some code for Perl prior to 5.6. Such old versions are no longer
+   support anyway.
+
+ * Fix buggy handling of NaN in bcmp().
+
+ * Add methods beq(), bne(), blt(), ble(), bgt(), and bge() to Math::BigInt and
+   Math::BigFloat. These methods are called for the overloaded operators.
+
+ * Add overloading of '==', '!=', '<', '<=', '>', to to Math::BigInt and
+   Math::BigFloat and fix the broken overloading of '>='. These overloaded
+   operators now behave like the equivalent core Perl operators.
+
+ * Add test file author-relop-mbi-mbf.t for testing bcmp(), beq(), bne(),
+   blt(), ble(), bgt(), and bge(), as well as the overloaded operators '==',
+   '!=', '<', '<=', '>', and '>='.
+
+ * 'int' now truncates a Math::BigFloat object to an integer without converting
+   it to a Math::BigInt. When an object becomes a Math::BigInt, further
+   computations with that object as invocand causes the arguments to be
+   converted to Math::BigInt objects too, leading to unexpected results. This
+   is confusing people. Unless downgrading is in effect, no Math::BigFloat
+   object should become a Math::BigInt unless a Math::BigInt is explicitly
+   requested.
+
+ * For Math::BigFloat, modify bitwise operations brsft() and brsft(), and add
+   band(), bior(), bxor(), and bnot(). These now handle floating point numbers
+   the same way as core Perl does, i.e., truncate non-integers to integers
+   before applying the bitwise operator. This change will also make Perl's
+   behaviour more consistent whether 'use bignum' is in effect or not.
+
+ * Add overloading of '~' (bitwise not). It just calls bnot(), which has been
+   implemented for ages.
+
+ * Fix error in POD for bone().
+
+ * Take parts of the code in t/calling.t and move it into the new files
+   t/calling-class-methods.t and t/calling-instance-methods.t.
+
+ * Improve test descriptions in t/mbimbf.inc.
+
 Please send us test-reports, your experiences with this and your ideas - we love
 to hear about our work!
 

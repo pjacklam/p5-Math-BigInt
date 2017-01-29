@@ -16,7 +16,9 @@ use 5.006001;
 use strict;
 use warnings;
 
-our $VERSION = '1.999717';
+use Carp ();
+
+our $VERSION = '1.999718';
 $VERSION = eval $VERSION;
 
 require Exporter;
@@ -30,20 +32,175 @@ our ($AUTOLOAD, $accuracy, $precision, $div_scale, $round_mode, $rnd_mode,
 my $class = "Math::BigFloat";
 
 use overload
-  '<=>'	=>	sub { my $rc = $_[2] ? ref($_[0])->bcmp($_[1], $_[0])
-                                     : ref($_[0])->bcmp($_[0], $_[1]);
-		      $rc = 1 unless defined $rc;
-		      $rc <=> 0;
-		},
-# we need '>=' to get things like "1 >= NaN" right:
-  '>='	=>	sub { my $rc = $_[2] ? ref($_[0])->bcmp($_[1],$_[0])
-                                     : ref($_[0])->bcmp($_[0],$_[1]);
-		      # if there was a NaN involved, return false
-		      return '' unless defined $rc;
-		      $rc >= 0;
-		},
-  'int'	=>	sub { $_[0]->as_number() },		# 'trunc' to bigint
-;
+
+  # overload key: with_assign
+
+  '+'     =>      sub { $_[0] -> copy() -> badd($_[1]); },
+
+  '-'     =>      sub { my $c = $_[0] -> copy;
+                        $_[2] ? $c -> bneg() -> badd( $_[1])
+                              : $c -> bsub($_[1]); },
+
+  '*'     =>      sub { $_[0] -> copy() -> bmul($_[1]); },
+
+  '/'     =>      sub { $_[2] ? ref($_[0]) -> new($_[1]) -> bdiv($_[0])
+                              : $_[0] -> copy -> bdiv($_[1]); },
+
+
+  '%'     =>      sub { $_[2] ? ref($_[0]) -> new($_[1]) -> bmod($_[0])
+                              : $_[0] -> copy -> bmod($_[1]); },
+
+  '**'    =>      sub { $_[2] ? ref($_[0]) -> new($_[1]) -> bpow($_[0])
+                              : $_[0] -> copy -> bpow($_[1]); },
+
+  '<<'    =>      sub { $_[2] ? ref($_[0]) -> new($_[1]) -> blsft($_[0])
+                              : $_[0] -> copy -> blsft($_[1]); },
+
+  '>>'    =>      sub { $_[2] ? ref($_[0]) -> new($_[1]) -> brsft($_[0])
+                              : $_[0] -> copy -> brsft($_[1]); },
+
+  # overload key: assign
+
+  '+='    =>      sub { $_[0]->badd($_[1]); },
+
+  '-='    =>      sub { $_[0]->bsub($_[1]); },
+
+  '*='    =>      sub { $_[0]->bmul($_[1]); },
+
+  '/='    =>      sub { scalar $_[0]->bdiv($_[1]); },
+
+  '%='    =>      sub { $_[0]->bmod($_[1]); },
+
+  '**='   =>      sub { $_[0]->bpow($_[1]); },
+
+
+  '<<='   =>      sub { $_[0]->blsft($_[1]); },
+
+  '>>='   =>      sub { $_[0]->brsft($_[1]); },
+
+#  'x='    =>      sub { },
+
+#  '.='    =>      sub { },
+
+  # overload key: num_comparison
+
+  '<'     =>      sub { $_[2] ? ref($_[0]) -> new($_[1]) -> blt($_[0])
+                              : $_[0] -> blt($_[1]); },
+
+  '<='    =>      sub { $_[2] ? ref($_[0]) -> new($_[1]) -> ble($_[0])
+                              : $_[0] -> ble($_[1]); },
+
+  '>'     =>      sub { $_[2] ? ref($_[0]) -> new($_[1]) -> bgt($_[0])
+                              : $_[0] -> bgt($_[1]); },
+
+  '>='    =>      sub { $_[2] ? ref($_[0]) -> new($_[1]) -> bge($_[0])
+                              : $_[0] -> bge($_[1]); },
+
+  '=='    =>      sub { $_[0] -> beq($_[1]); },
+
+  '!='    =>      sub { $_[0] -> bne($_[1]); },
+
+  # overload key: 3way_comparison
+
+  '<=>'   =>      sub { my $cmp = $_[0] -> bcmp($_[1]);
+                        defined($cmp) && $_[2] ? -$cmp : $cmp; },
+
+  'cmp'   =>      sub { $_[2] ? "$_[1]" cmp $_[0] -> bstr()
+                              : $_[0] -> bstr() cmp "$_[1]"; },
+
+  # overload key: str_comparison
+
+#  'lt'    =>      sub { $_[2] ? ref($_[0]) -> new($_[1]) -> bstrlt($_[0])
+#                              : $_[0] -> bstrlt($_[1]); },
+#
+#  'le'    =>      sub { $_[2] ? ref($_[0]) -> new($_[1]) -> bstrle($_[0])
+#                              : $_[0] -> bstrle($_[1]); },
+#
+#  'gt'    =>      sub { $_[2] ? ref($_[0]) -> new($_[1]) -> bstrgt($_[0])
+#                              : $_[0] -> bstrgt($_[1]); },
+#
+#  'ge'    =>      sub { $_[2] ? ref($_[0]) -> new($_[1]) -> bstrge($_[0])
+#                              : $_[0] -> bstrge($_[1]); },
+#
+#  'eq'    =>      sub { $_[0] -> bstreq($_[1]); },
+#
+#  'ne'    =>      sub { $_[0] -> bstrne($_[1]); },
+
+  # overload key: binary
+
+  '&'     =>      sub { $_[2] ? ref($_[0]) -> new($_[1]) -> band($_[0])
+                              : $_[0] -> copy -> band($_[1]); },
+
+  '&='    =>      sub { $_[0] -> band($_[1]); },
+
+  '|'     =>      sub { $_[2] ? ref($_[0]) -> new($_[1]) -> bior($_[0])
+                              : $_[0] -> copy -> bior($_[1]); },
+
+  '|='    =>      sub { $_[0] -> bior($_[1]); },
+
+  '^'     =>      sub { $_[2] ? ref($_[0]) -> new($_[1]) -> bxor($_[0])
+                              : $_[0] -> copy -> bxor($_[1]); },
+
+  '^='    =>      sub { $_[0] -> bxor($_[1]); },
+
+#  '&.'    =>      sub { },
+
+#  '&.='   =>      sub { },
+
+#  '|.'    =>      sub { },
+
+#  '|.='   =>      sub { },
+
+#  '^.'    =>      sub { },
+
+#  '^.='   =>      sub { },
+
+  # overload key: unary
+
+  'neg'   =>      sub { $_[0] -> copy() -> bneg(); },
+
+#  '!'     =>      sub { },
+
+  '~'     =>      sub { $_[0] -> copy() -> bnot(); },
+
+#  '~.'    =>      sub { },
+
+  # overload key: mutators
+
+  '++'    =>      sub { $_[0] -> binc() },
+
+  '--'    =>      sub { $_[0] -> bdec() },
+
+  # overload key: func
+
+  'atan2' =>      sub { $_[2] ? ref($_[0]) -> new($_[1]) -> batan2($_[0])
+                              : $_[0] -> copy() -> batan2($_[1]); },
+
+  'cos'   =>      sub { $_[0] -> copy -> bcos(); },
+
+  'sin'   =>      sub { $_[0] -> copy -> bsin(); },
+
+  'exp'   =>      sub { $_[0] -> copy() -> bexp($_[1]); },
+
+  'abs'   =>      sub { $_[0] -> copy() -> babs(); },
+
+  'log'   =>      sub { $_[0] -> copy() -> blog(); },
+
+  'sqrt'  =>      sub { $_[0] -> copy() -> bsqrt(); },
+
+  'int'   =>      sub { $_[0] -> bint(); },
+
+  # overload key: conversion
+
+  'bool'  =>      sub { $_[0] -> is_zero() ? '' : 1; },
+
+  '""'    =>      sub { $_[0] -> bstr(); },
+
+  '0+'    =>      sub { $_[0] -> numify(); },
+
+  '='     =>      sub { $_[0]->copy(); },
+
+  ;
 
 ##############################################################################
 # global constants, flags and assorted stuff
@@ -141,7 +298,6 @@ sub new {
     # avoid numify-calls by not using || on $wanted!
 
     unless (defined $wanted) {
-        #require Carp;
         #Carp::carp("Use of uninitialized value in new");
         return $self->bzero(@r);
     }
@@ -185,13 +341,41 @@ sub new {
         return $self->binf($sgn);
     }
 
+    # Handle explicit NaNs (not the ones returned due to invalid input).
+
+    if ($wanted =~ /^\s*([+-]?)nan\s*\z/i) {
+        return $downgrade->new($wanted) if $downgrade;
+        $self = $class -> bnan();
+        $self->round(@r) unless @r >= 2 && !defined $r[0] && !defined $r[1];
+        return $self;
+    }
+
+    # Handle hexadecimal numbers.
+
+    if ($wanted =~ /^\s*[+-]?0[Xx]/) {
+        $self = $class -> from_hex($wanted);
+        $self->round(@r) unless @r >= 2 && !defined $r[0] && !defined $r[1];
+        return $self;
+    }
+
+    # Handle binary numbers.
+
+    if ($wanted =~ /^\s*[+-]?0[Bb]/) {
+        $self = $class -> from_bin($wanted);
+        $self->round(@r) unless @r >= 2 && !defined $r[0] && !defined $r[1];
+        return $self;
+    }
+
     # Shortcut for simple forms like '12' that have no trailing zeros.
     if ($wanted =~ /^([+-]?)0*([1-9][0-9]*[1-9])$/) {
-        $self->{_e} = $MBI->_zero();
-        $self->{_es} = '+';
+        $self->{_e}   = $MBI -> _zero();
+        $self->{_es}  = '+';
         $self->{sign} = $1 || '+';
-        $self->{_m} = $MBI->_new($2);
-        return $self->round(@r) if !$downgrade;
+        $self->{_m}   = $MBI -> _new($2);
+        if (!$downgrade) {
+            $self->round(@r) unless @r >= 2 && !defined $r[0] && !defined $r[1];
+            return $self;
+        }
     }
 
   my ($mis,$miv,$mfv,$es,$ev) = Math::BigInt::_split($wanted);
@@ -199,8 +383,7 @@ sub new {
     {
     if ($_trap_nan)
       {
-      require Carp;
-      Carp::croak ("$wanted is not a number initialized to $class");
+      Carp::croak("$wanted is not a number initialized to $class");
       }
     
     return $downgrade->bnan() if $downgrade;
@@ -249,7 +432,10 @@ sub new {
     $self->{sign} = '+', $self->{_e} = $MBI->_zero()
      if $$miv eq '0' and $$mfv eq '';
 
-    return $self->round(@r) if !$downgrade;
+    if (!$downgrade) {
+        $self->round(@r) unless @r >= 2 && !defined $r[0] && !defined $r[1];
+        return $self;
+    }
     }
   # if downgrade, inf, NaN or integers go down
 
@@ -261,8 +447,160 @@ sub new {
       }
     return $downgrade->new($self->bsstr()); 
     }
-  $self->bnorm()->round(@r);			# first normalize, then round
-  }
+    $self->bnorm();
+    $self->round(@r) unless @r >= 2 && !defined $r[0] && !defined $r[1];
+    return $self;
+}
+
+sub bnan {
+    # create/assign a 'NaN'
+
+    if (@_ == 0) {
+        Carp::carp("Using bnan() as a function is deprecated;",
+                   " use bnan() as a method instead");
+        unshift @_, __PACKAGE__;
+    }
+
+    my $self    = shift;
+    my $selfref = ref $self;
+    my $class   = $selfref || $self;
+
+    {
+        no strict 'refs';
+        if (${"${class}::_trap_nan"}) {
+            Carp::croak("Tried to create NaN in $class->bnan()");
+        }
+    }
+
+    $self->import() if $IMPORT == 0;            # make require work
+    return if $self->modify('bnan');
+
+    $self = bless {}, $class unless $selfref;
+
+    $self -> {sign} = $nan;
+    $self -> {_m}   = $MBI -> _zero();
+    $self -> {_es}  = '+';
+    $self -> {_e}   = $MBI -> _zero();
+
+    return $self;
+}
+
+sub binf {
+    # create/assign a '+inf' or '-inf'
+
+    if (@_ == 0 || !ref($_[0]) && $_[0] =~ /^\s*[+-](inf(inity)?)?\s*$/) {
+        Carp::carp("Using binf() as a function is deprecated;",
+                   " use binf() as a method instead");
+        unshift @_, __PACKAGE__;
+    }
+
+    my $self    = shift;
+    my $selfref = ref $self;
+    my $class   = $selfref || $self;
+
+    {
+        no strict 'refs';
+        if (${"${class}::_trap_inf"}) {
+            Carp::croak("Tried to create +-inf in $class->binf()");
+        }
+    }
+
+    $self->import() if $IMPORT == 0;            # make require work
+    return if $self->modify('binf');
+
+    my $sign = shift;
+    $sign = defined $sign && $sign =~ /^\s*-/ ? "-" : "+";
+
+    $self = bless {}, $class unless $selfref;
+
+    $self -> {sign} = $sign . 'inf';
+    $self -> {_m}   = $MBI -> _zero();
+    $self -> {_es}  = '+';
+    $self -> {_e}   = $MBI -> _zero();
+
+    return $self;
+}
+
+sub bzero {
+    # create/assign '+0'
+
+    if (@_ == 0) {
+        Carp::carp("Using bone() as a function is deprecated;",
+                   " use bone() as a method instead");
+        unshift @_, __PACKAGE__;
+    }
+
+    my $self    = shift;
+    my $selfref = ref $self;
+    my $class   = $selfref || $self;
+
+    $self->import() if $IMPORT == 0;            # make require work
+    return if $self->modify('bzero');
+
+    $self = bless {}, $class unless $selfref;
+
+    $self -> {sign} = '+';
+    $self -> {_m}   = $MBI -> _zero();
+    $self -> {_es}  = '+';
+    $self -> {_e}   = $MBI -> _zero();
+
+    if (@_ > 0) {
+        if (@_ > 3) {
+            # call like: $x->bzero($a, $p, $r, $y);
+            ($self, $self->{_a}, $self->{_p}) = $self->_find_round_parameters(@_);
+        } else {
+            # call like: $x->bzero($a, $p, $r);
+            $self->{_a} = $_[0]
+              if !defined $self->{_a} || (defined $_[0] && $_[0] > $self->{_a});
+            $self->{_p} = $_[1]
+              if !defined $self->{_p} || (defined $_[1] && $_[1] > $self->{_p});
+        }
+    }
+
+    return $self;
+}
+
+sub bone {
+    # Create or assign '+1' (or -1 if given sign '-').
+
+    if (@_ == 0 && $_[0] eq '+' || $_[0] eq '-') {
+        Carp::carp("Using bone() as a function is deprecated;",
+                   " use bone() as a method instead");
+        unshift @_, __PACKAGE__;
+    }
+
+    my $self    = shift;
+    my $selfref = ref $self;
+    my $class   = $selfref || $self;
+
+    $self->import() if $IMPORT == 0;            # make require work
+    return if $self->modify('bone');
+
+    my $sign = shift;
+    $sign = defined $sign && $sign =~ /^\s*-/ ? "-" : "+";
+
+    $self = bless {}, $class unless $selfref;
+
+    $self -> {sign} = $sign;
+    $self -> {_m}   = $MBI -> _one();
+    $self -> {_es}  = '+';
+    $self -> {_e}   = $MBI -> _zero();
+
+    if (@_ > 0) {
+        if (@_ > 3) {
+            # call like: $x->bone($sign, $a, $p, $r, $y, ...);
+            ($self, $self->{_a}, $self->{_p}) = $self->_find_round_parameters(@_);
+        } else {
+            # call like: $x->bone($sign, $a, $p, $r);
+            $self->{_a} = $_[0]
+              if ( (!defined $self->{_a}) || (defined $_[0] && $_[0] > $self->{_a}));
+            $self->{_p} = $_[1]
+              if ( (!defined $self->{_p}) || (defined $_[1] && $_[1] > $self->{_p}));
+        }
+    }
+
+    return $self;
+}
 
 sub copy {
     my $self    = shift;
@@ -284,62 +622,6 @@ sub copy {
 
     return $copy;
 }
-
-sub _bnan
-  {
-  # used by parent class bone() to initialize number to NaN
-  my $self = shift;
-  
-  if ($_trap_nan)
-    {
-    require Carp;
-    my $class = ref($self);
-    Carp::croak ("Tried to set $self to NaN in $class\::_bnan()");
-    }
-
-  $IMPORT=1;					# call our import only once
-  $self->{_m} = $MBI->_zero();
-  $self->{_e} = $MBI->_zero();
-  $self->{_es} = '+';
-  }
-
-sub _binf
-  {
-  # used by parent class bone() to initialize number to +-inf
-  my $self = shift;
-  
-  if ($_trap_inf)
-    {
-    require Carp;
-    my $class = ref($self);
-    Carp::croak ("Tried to set $self to +-inf in $class\::_binf()");
-    }
-
-  $IMPORT=1;					# call our import only once
-  $self->{_m} = $MBI->_zero();
-  $self->{_e} = $MBI->_zero();
-  $self->{_es} = '+';
-  }
-
-sub _bone
-  {
-  # used by parent class bone() to initialize number to 1
-  my $self = shift;
-  $IMPORT=1;					# call our import only once
-  $self->{_m} = $MBI->_one();
-  $self->{_e} = $MBI->_zero();
-  $self->{_es} = '+';
-  }
-
-sub _bzero
-  {
-  # used by parent class bzero() to initialize number to 0
-  my $self = shift;
-  $IMPORT=1;					# call our import only once
-  $self->{_m} = $MBI->_zero();
-  $self->{_e} = $MBI->_zero();
-  $self->{_es} = '+';
-  }
 
 sub isa
   {
@@ -486,14 +768,6 @@ sub bneg
   $x->{sign} =~ tr/+-/-+/ unless ($x->{sign} eq '+' && $MBI->_is_zero($x->{_m}));
   $x;
   }
-
-# tels 2001-08-04 
-# XXX TODO this must be overwritten and return NaN for non-integer values
-# band(), bior(), bxor(), too
-#sub bnot
-#  {
-#  $class->SUPER::bnot($class,@_);
-#  }
 
 sub bcmp 
   {
@@ -806,6 +1080,41 @@ sub badd
   }
 
 # sub bsub is inherited from Math::BigInt!
+
+sub bsub {
+    # (BINT or num_str, BINT or num_str) return BINT
+    # subtract second arg from first, modify first
+
+    # set up parameters
+    my ($self, $x, $y, @r) = (ref($_[0]), @_);
+
+    # objectify is costly, so avoid it
+    if ((!ref($_[0])) || (ref($_[0]) ne ref($_[1]))) {
+        ($self, $x, $y, @r) = objectify(2, @_);
+    }
+
+    return $x if $x -> modify('bsub');
+
+    return $upgrade -> new($x) -> bsub($upgrade -> new($y), @r)
+      if defined $upgrade && ((!$x -> isa($self)) || (!$y -> isa($self)));
+
+    return $x -> round(@r) if $y -> is_zero();
+
+    # To correctly handle the lone special case $x -> bsub($x), we note the
+    # sign of $x, then flip the sign from $y, and if the sign of $x did change,
+    # too, then we caught the special case:
+
+    my $xsign = $x -> {sign};
+    $y -> {sign} =~ tr/+-/-+/;  # does nothing for NaN
+    if ($xsign ne $x -> {sign}) {
+        # special case of $x -> bsub($x) results in 0
+        return $x -> bzero(@r) if $xsign =~ /^[+-]$/;
+        return $x -> bnan();    # NaN, -inf, +inf
+    }
+    $x -> badd($y, @r);         # badd does not leave internal zeros
+    $y -> {sign} =~ tr/+-/-+/;  # refix $y (does nothing for NaN)
+    $x;                         # already rounded by badd() or no rounding
+}
 
 sub binc
   {
@@ -3581,7 +3890,7 @@ sub bround
 
   if (($_[0] || 0) < 0)
     {
-    require Carp; Carp::croak ('bround() needs positive accuracy');
+    Carp::croak('bround() needs positive accuracy');
     }
 
   my ($scale,$mode) = $x->_scale_a(@_);
@@ -3693,13 +4002,18 @@ sub brsft
   return $x if $x->modify('brsft');
   return $x if $x->{sign} !~ /^[+-]$/;	# nan, +inf, -inf
 
-  $n = 2 if !defined $n; $n = $self->new($n);
+  $n = 2 unless defined $n;
+  $n = $self -> new($n);
 
-  # negative amount?
-  return $x->blsft($y->copy()->babs(),$n) if $y->{sign} =~ /^-/;
+  my $z = Math::BigInt -> new($x -> bint());
+  $z -> brsft($y, $n, $a, $p, $r);
+  $z = $self -> new($z);
 
-  # the following call to bdiv() will return either quo or (quo,remainder):
-  $x->bdiv($n->bpow($y),$a,$p,$r,$y);
+  $x -> {sign} = $z -> {sign};
+  $x -> {_m}   = $z -> {_m};
+  $x -> {_es}  = $z -> {_es};
+  $x -> {_e}   = $z -> {_e};
+  return $x;
   }
 
 sub blsft
@@ -3715,15 +4029,117 @@ sub blsft
     }
 
   return $x if $x->modify('blsft');
-  return $x if $x->{sign} !~ /^[+-]$/;	# nan, +inf, -inf
 
-  $n = 2 if !defined $n; $n = $self->new($n);
+  $n = 2 unless defined $n;
+  $n = $self -> new($n);
 
-  # negative amount?
-  return $x->brsft($y->copy()->babs(),$n) if $y->{sign} =~ /^-/;
+  my $xtmp = Math::BigInt -> new($x -> bint());     # to Math::BigInt
+  $xtmp -> blsft($y, $n, $a, $p, $r);
+  $xtmp = $self -> new($xtmp);                      # back to Math::BigFloat
 
-  $x->bmul($n->bpow($y),$a,$p,$r,$y);
+  $x -> {sign} = $xtmp -> {sign};
+  $x -> {_m}   = $xtmp -> {_m};
+  $x -> {_es}  = $xtmp -> {_es};
+  $x -> {_e}   = $xtmp -> {_e};
+
+  return $x;
   }
+
+sub band {
+    my $x     = shift;
+    my $xref  = ref($x);
+    my $class = $xref || $x;
+
+    Carp::croak 'band() is an instance method, not a class method' unless $xref;
+    Carp::croak 'Not enough arguments for band()' if @_ < 1;
+
+    my $y = shift;
+    $y = $class -> new($y) unless ref($y);
+
+    my @r = @_;
+
+    my $xtmp = Math::BigInt -> new($x -> bint());   # to Math::BigInt
+    $xtmp -> band($y);
+    $xtmp = $class -> new($xtmp);                   # back to Math::BigFloat
+
+    $x -> {sign} = $xtmp -> {sign};
+    $x -> {_m}   = $xtmp -> {_m};
+    $x -> {_es}  = $xtmp -> {_es};
+    $x -> {_e}   = $xtmp -> {_e};
+
+    return $x -> round(@r);
+}
+
+sub bior {
+    my $x     = shift;
+    my $xref  = ref($x);
+    my $class = $xref || $x;
+
+    Carp::croak 'bior() is an instance method, not a class method' unless $xref;
+    Carp::croak 'Not enough arguments for bior()' if @_ < 1;
+
+    my $y = shift;
+    $y = $class -> new($y) unless ref($y);
+
+    my @r = @_;
+
+    my $xtmp = Math::BigInt -> new($x -> bint());   # to Math::BigInt
+    $xtmp -> bior($y);
+    $xtmp = $class -> new($xtmp);                   # back to Math::BigFloat
+
+    $x -> {sign} = $xtmp -> {sign};
+    $x -> {_m}   = $xtmp -> {_m};
+    $x -> {_es}  = $xtmp -> {_es};
+    $x -> {_e}   = $xtmp -> {_e};
+
+    return $x -> round(@r);
+}
+
+sub bxor {
+    my $x     = shift;
+    my $xref  = ref($x);
+    my $class = $xref || $x;
+
+    Carp::croak 'bxor() is an instance method, not a class method' unless $xref;
+    Carp::croak 'Not enough arguments for bxor()' if @_ < 1;
+
+    my $y = shift;
+    $y = $class -> new($y) unless ref($y);
+
+    my @r = @_;
+
+    my $xtmp = Math::BigInt -> new($x -> bint());   # to Math::BigInt
+    $xtmp -> bxor($y);
+    $xtmp = $class -> new($xtmp);                   # back to Math::BigFloat
+
+    $x -> {sign} = $xtmp -> {sign};
+    $x -> {_m}   = $xtmp -> {_m};
+    $x -> {_es}  = $xtmp -> {_es};
+    $x -> {_e}   = $xtmp -> {_e};
+
+    return $x -> round(@r);
+}
+
+sub bnot {
+    my $x     = shift;
+    my $xref  = ref($x);
+    my $class = $xref || $x;
+
+    Carp::croak 'bnot() is an instance method, not a class method' unless $xref;
+
+    my @r = @_;
+
+    my $xtmp = Math::BigInt -> new($x -> bint());   # to Math::BigInt
+    $xtmp -> bnot();
+    $xtmp = $class -> new($xtmp);                   # back to Math::BigFloat
+
+    $x -> {sign} = $xtmp -> {sign};
+    $x -> {_m}   = $xtmp -> {_m};
+    $x -> {_es}  = $xtmp -> {_es};
+    $x -> {_e}   = $xtmp -> {_e};
+
+    return $x -> round(@r);
+}
 
 ###############################################################################
 
@@ -3747,14 +4163,12 @@ sub AUTOLOAD
     if (!defined $name)
       {
       # delayed load of Carp and avoid recursion	
-      require Carp;
-      Carp::croak ("$c: Can't call a method without name");
+      Carp::croak("$c: Can't call a method without name");
       }
     if (!_method_hand_up($name))
       {
       # delayed load of Carp and avoid recursion	
-      require Carp;
-      Carp::croak ("Can't call $c\-\>$name, not a valid method");
+      Carp::croak("Can't call $c\-\>$name, not a valid method");
       }
     # try one level up, but subst. bxxx() for fxxx() since MBI only got bxxx()
     $name =~ s/^f/b/;
@@ -3774,9 +4188,9 @@ sub exponent
   if ($x->{sign} !~ /^[+-]$/)
     {
     my $s = $x->{sign}; $s =~ s/^[+-]//;
-    return Math::BigInt->new($s); 		# -inf, +inf => +inf
+    return Math::BigInt->new($s, undef, undef); 		# -inf, +inf => +inf
     }
-  Math::BigInt->new( $x->{_es} . $MBI->_str($x->{_e}));
+  Math::BigInt->new($x->{_es} . $MBI->_str($x->{_e}), undef, undef);
   }
 
 sub mantissa
@@ -3787,9 +4201,9 @@ sub mantissa
   if ($x->{sign} !~ /^[+-]$/)
     {
     my $s = $x->{sign}; $s =~ s/^[+]//;
-    return Math::BigInt->new($s);		# -inf, +inf => +inf
+    return Math::BigInt->new($s, undef, undef);	# -inf, +inf => +inf
     }
-  my $m = Math::BigInt->new( $MBI->_str($x->{_m}));
+  my $m = Math::BigInt->new($MBI->_str($x->{_m}), undef, undef);
   $m->bneg() if $x->{sign} eq '-';
 
   $m;
@@ -3884,7 +4298,7 @@ sub import
     }
   if ($@)
     {
-    require Carp; Carp::croak ("Couldn't load $lib: $! $@");
+    Carp::croak("Couldn't load $lib: $! $@");
     }
   # find out which one was actually loaded
   $MBI = Math::BigInt->config()->{lib};
