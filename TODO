@@ -18,7 +18,6 @@ Math::BigFloat:
  * blog() is still quite slow for non-integer results. See if we can reuse the
    integer calculation somehow
  * finish broot() by using different algorithm
- * hexadecimal integers work, but what about '0xABC.DEF'? Really needed?
 
 Math::BigInt:
  * finish 'upgrade'
@@ -33,12 +32,12 @@ Math::BigInt:
    rounding parameters, so that $x->foo($y,$a,$p,$r) may return $x without a
    set $a or $p, thus failing later on:
 
-	use Test;
-	BEGIN { plan tests => 1; }
-	use Math::BigInt;
-	$x = Math::BigInt->bone();
-	$x->bsqrt(3,0,'odd');		# $x = 0, but _a is not 3!
-	ok ($x + '12345','12300');	# fails (12346 instead of 12300)
+        use Test;
+        BEGIN { plan tests => 1; }
+        use Math::BigInt;
+        $x = Math::BigInt->bone();
+        $x->bsqrt(3,0,'odd');           # $x = 0, but _a is not 3!
+        ok ($x + '12345','12300');      # fails (12346 instead of 12300)
 
    The shortcuts in code that return $x->bzero() or similar things need to
    do $x->bzero($a,$p); and this needs tests.
@@ -58,5 +57,3 @@ Math::BigInt::Calc:
 
 Please send me test-reports, your experiences with this and your ideas - I love
 to hear about my work!
-
-Tels <http://bloodgate.com/>
