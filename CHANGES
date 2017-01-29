@@ -1695,7 +1695,7 @@ there are so many changes, I let this be a development release.
    step along the way to a pure object oriented design.
 
  * When bnan() and binf() are used as instance methods, they no longer delete
-   the accuracy and precision instance variables. 
+   the accuracy and precision instance variables.
 
  * Add test files from_bin-mbf.t, from_oct-mbf.t, and new-mbf.t.
 
@@ -1784,9 +1784,19 @@ there are so many changes, I let this be a development release.
 
  * Fix documentation errors.
 
-Please send us test-reports, your experiences with this and your ideas - we love
-to hear about our work!
+2016-06-19 v1.999724 pjacklam
+
+ * In Math/BigInt.pm and Math/BigFloat.pm, correct and improve to the
+   documentation, e.g., reorder the methods so that methods that belogin
+   together are grouped together.
+
+ * In Math/BigInt.pm and Math/BigFloat.pm, refactor the code so that methods
+   that belong together are grouped together. Also use consistent code
+   formatting.
+
+ * In Math/BigInt/Calc.pm, reformat the code.
+
+Please send us test-reports, your experiences with this and your ideas - we
+love to hear about our work!
 
 The Math-BigInt developers <bignum@lists.scsys.co.uk>
-
- 
