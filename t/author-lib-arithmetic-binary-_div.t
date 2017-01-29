@@ -87,6 +87,8 @@ for (my $i = 0 ; $i <= $#data ; ++ $i) {
              . qq|\$y = $LIB->_new("$in1"); |
              . qq|\@got = $LIB->_div(\$x, \$y);|;
 
+    diag("\n$test\n\n") if $ENV{AUTHOR_DEBUGGING};
+
     eval $test;
     is($@, "", "'$test' gives emtpy \$\@");
 
@@ -150,6 +152,8 @@ for (my $i = 0 ; $i <= $#data ; ++ $i) {
     my $test = qq|\$x = $LIB->_new("$in0"); |
              . qq|\$y = $LIB->_new("$in1"); |
              . qq|\$got = $LIB->_div(\$x, \$y);|;
+
+    diag("\n$test\n\n") if $ENV{AUTHOR_DEBUGGING};
 
     eval $test;
     is($@, "", "'$test' gives emtpy \$\@");

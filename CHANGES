@@ -1,3 +1,47 @@
+2016-12-23 v1.999807 pjacklam
+
+ * Add a message to Makefile.PL recommending upgrade if old libraries are
+   installed. This message is more or less equivalent to the one appearing in
+   Math-BigInt up until v1.997.
+
+ * Improve the documentation (POD) in Math::BigInt::Lib.
+
+ * Speed up _sqrt() and _root() in Math::BigInt::Lib.
+
+ * Remove checking for exception cases (cases that would return +Inf, -Inf, or
+   NaN) in Math::BigInt::Lib. It has been documented for a long time that such
+   checking should be done by the caller.
+
+ * Add library methods _to_bin(), _to_oct(), _to_hex(), which are equivalent to
+   the _as_bin(), _as_oct(), and _as_hex() methods respectively, except that
+   the _to_*() methods don't use a prefix in the output. This removes the need
+   for the frequent removal of the various prefixes. Now each _as_*() method
+   calls the equivalent _to_*() method, adds a prefix, and returns the output.
+   The _to_*() methods are faster than the equivalent _as_*() methods were.
+
+ * Add author test files for the methods _to_bin(), _to_oct(), and _to_hex().
+
+ * Add library method _to_bytes(). The method _as_bytes() would have been
+   called _to_bytes() if I had thought of it earlier. The method _as_bytes() is
+   now just an alias to _to_bytes(). The _to_bytes() method also fixes a bug
+   that was present in the _as_bytes() method. (CPAN RT #119346).
+
+ * Add author test files for the method _to_bytes().
+
+ * Add more tests for library methods _inc() and _dec(). When trying to bring
+   the Math::BigInt::BitVect library back to life I realized that the test
+   suite didn't catch certain errors in _inc() and _dec().
+
+ * Die if trying to use as_bytes() or from_bytes() with a backend library that
+   doesn't support the corresponding library methods.
+
+ * Correct minor errors in the output messages in the test files.
+
+ * Improve/correct various comments in the source code.
+
+ * More diagnostic output is displayed by the author test files if the
+   AUTHOR_DEBUGGING environment variable is set.
+
 2016-12-13 v1.999806 pjacklam
 
  * Add more logic to Makefile.PL regarding INSTALLDIRS (CPAN RT #119199

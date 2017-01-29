@@ -20,7 +20,7 @@ use warnings;
 
 use Carp ();
 
-our $VERSION = '1.999806';
+our $VERSION = '1.999807';
 
 our @ISA = qw(Exporter);
 our @EXPORT_OK = qw(objectify bgcd blcm);
@@ -883,6 +883,9 @@ sub from_bytes {
     # Don't modify constant (read-only) objects.
 
     return if $selfref && $self->modify('from_bytes');
+
+    Carp::croak("from_bytes() requires a newer version of the $CALC library.")
+        unless $CALC->can('_from_bytes');
 
     my $str = shift;
 
@@ -3527,6 +3530,10 @@ sub as_bytes {
 
     Carp::croak("as_bytes() requires a finite, non-negative integer")
         if $x -> is_neg() || ! $x -> is_int();
+
+    Carp::croak("as_bytes() requires a newer version of the $CALC library.")
+        unless $CALC->can('_as_bytes');
+
     return $CALC->_as_bytes($x->{value});
 }
 

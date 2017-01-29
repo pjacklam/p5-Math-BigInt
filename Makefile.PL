@@ -4,6 +4,53 @@ use strict;
 use warnings;
 use ExtUtils::MakeMaker;
 
+# This is a list of known backend libraries and the version number when these
+# libraries became subclasses of Math::BigInt::Lib. New library methods are
+# added to Math::BigInt::Lib first. Later, optimized versions are implemented
+# for the specific libraries. In the meantime, these new methods won't be
+# available to libraries that aren't a subclass of Math::BigInt::Lib.
+
+my $recommend_versions =
+  {
+   'Math::BigInt::Calc'        => '1.999800',
+   'Math::BigInt::FastCalc'    => '0.5000',
+   'Math::BigInt::GMP'         => '1.6000',
+   'Math::BigInt::Pari'        => '1.3000',
+   'Math::BigInt::BitVect'     => '1.13',
+   #'Math::BigInt::GMPz'        => '0.001',
+  };
+
+my $recommend_update = [];
+while (my ($module, $recommend_version) = each %$recommend_versions) {
+    next unless eval "require $module";
+    my $version = $module -> VERSION();
+    next if $version >= $recommend_version;
+    push @$recommend_update, [ $module, $recommend_version, $version ];
+}
+
+if (@$recommend_update) {
+    print <<"EOF";
+##########################################################################
+#
+# Certain methods will not work unless the following installed modules are
+# updated. It is recommended that after installing this distribution, you
+# update these modules to at least the recommended version listed below.
+#
+# Module                         Recommended    Installed
+# ------                         -----------    ---------
+EOF
+    for my $entry (@$recommend_update) {
+        printf "# %-30s %-14s %s\n", @$entry;
+    }
+    print <<"EOF";
+#
+##########################################################################
+
+Sleeping for a few seconds ...
+EOF
+    sleep 5;
+}
+
 my %WriteMakefileArgs =
   (
    'NAME'               => 'Math::BigInt',

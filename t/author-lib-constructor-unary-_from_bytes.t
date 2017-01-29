@@ -71,6 +71,8 @@ for (my $i = 0 ; $i <= $#data ; ++ $i) {
 
     my $test = qq|\@got = $LIB->_from_bytes("$in0");|;
 
+    diag("\n$test\n\n") if $ENV{AUTHOR_DEBUGGING};
+
     eval $test;
     is($@, "", "'$test' gives emtpy \$\@");
 
@@ -99,6 +101,8 @@ for (my $i = 0 ; $i <= $#data ; ++ $i) {
     my ($x, $got);
 
     my $test = qq|\$got = $LIB->_from_bytes("$in0");|;
+
+    diag("\n$test\n\n") if $ENV{AUTHOR_DEBUGGING};
 
     eval $test;
     is($@, "", "'$test' gives emtpy \$\@");
