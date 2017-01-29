@@ -1863,6 +1863,13 @@ Fixes:
  * Re-insert Math::BigFloat->DESTROY, which was accidentally removed in
    v1.999725.
 
+2016-11-04 v1.999727 pjacklam
+
+ * Skip test exceeding the range of VAX floating point number in t/bigintpm.inc
+   (CPAN RT 118468).
+
+ * Fix typo in lib/Math/BigInt.pm (CPAN RT 118550).
+
 Please send us test-reports, your experiences with this and your ideas - we
 love to hear about our work!
 
