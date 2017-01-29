@@ -19,7 +19,7 @@ use warnings;
 use Carp ();
 use Math::BigInt ();
 
-our $VERSION = '1.999801';
+our $VERSION = '1.999802';
 $VERSION = eval $VERSION;
 
 require Exporter;
@@ -776,7 +776,7 @@ sub bzero {
     my $class   = $selfref || $self;
 
     $self->import() if $IMPORT == 0;            # make require work
-    return if $self->modify('bzero');
+    return if $selfref && $self->modify('bzero');
 
     $self = bless {}, $class unless $selfref;
 
@@ -815,7 +815,7 @@ sub bone {
     my $class   = $selfref || $self;
 
     $self->import() if $IMPORT == 0;            # make require work
-    return if $self->modify('bone');
+    return if $selfref && $self->modify('bone');
 
     my $sign = shift;
     $sign = defined $sign && $sign =~ /^\s*-/ ? "-" : "+";
@@ -866,7 +866,7 @@ sub binf {
     }
 
     $self->import() if $IMPORT == 0;            # make require work
-    return if $self->modify('binf');
+    return if $selfref && $self->modify('binf');
 
     my $sign = shift;
     $sign = defined $sign && $sign =~ /^\s*-/ ? "-" : "+";
@@ -902,7 +902,7 @@ sub bnan {
     }
 
     $self->import() if $IMPORT == 0;            # make require work
-    return if $self->modify('bnan');
+    return if $selfref && $self->modify('bnan');
 
     $self = bless {}, $class unless $selfref;
 
@@ -3531,7 +3531,6 @@ sub bfloor {
     my ($class, $x, $a, $p, $r) = ref($_[0]) ? (ref($_[0]), @_) : objectify(1, @_);
 
     return $x if $x->modify('bfloor');
-
     return $x if $x->{sign} !~ /^[+-]$/; # nan, +inf, -inf
 
     # if $x has digits after dot
@@ -3597,15 +3596,12 @@ sub bgcd {
 
     my $x = shift @args;
     $x = ref($x) && $x -> isa($class) ? $x -> copy() : $class -> new($x);
-    $x -> babs();
     return $class->bnan() unless $x -> is_int();
 
     while (@args) {
         my $y = shift @args;
-        $y = ref($y) && $y -> isa($class) ? $y -> copy() -> babs()
-                                          : $class -> new($y);
+        $y = $class->new($y) unless ref($y) && $y -> isa($class);
         return $class->bnan() unless $y -> is_int();
-        $y -> babs();
 
         # greatest common divisor
         while (! $y->is_zero()) {
@@ -3614,30 +3610,32 @@ sub bgcd {
 
         last if $x -> is_one();
     }
-    $x;
+    return $x -> babs();
 }
 
 sub blcm {
     # (BFLOAT or num_str, BFLOAT or num_str) return BFLOAT
     # does not modify arguments, but returns new object
-    # Lowest Common Multiplicator
+    # Least Common Multiple
 
     unshift @_, __PACKAGE__
       unless ref($_[0]) || $_[0] =~ /^[a-z]\w*(?:::[a-z]\w*)*$/i;
 
     my ($class, @args) = objectify(0, @_);
 
-    my $x = $class -> bone();
+    my $x = shift @args;
+    $x = ref($x) && $x -> isa($class) ? $x -> copy() : $class -> new($x);
+    return $class->bnan() if $x->{sign} !~ /^[+-]$/;    # x NaN?
+
     while (@args) {
         my $y = shift @args;
-        $y = ref($y) && $y -> isa($class) ? $y -> copy() -> babs()
-                                          : $class -> new($y);
+        $y = $class -> new($y) unless ref($y) && $y -> isa($class);
         return $x->bnan() unless $y -> is_int();
-
         my $gcd = $x -> bgcd($y);
         $x -> bdiv($gcd) -> bmul($y);
     }
-    $x;
+
+    return $x -> babs();
 }
 
 ###############################################################################

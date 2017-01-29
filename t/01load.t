@@ -12,6 +12,7 @@ BEGIN {
 
 my @mods = ('Math::BigInt',
             'Math::BigFloat',
+            'Math::BigInt::Lib',
             'Math::BigInt::Calc',
             );
 

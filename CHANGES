@@ -1941,6 +1941,15 @@ Fixes:
    if the specified library can't be loaded rather than using the fallback
    library.
 
+2016-11-28 v1.999802 pjacklam
+
+ * When bzero(), bone(), binf(), and bnan() are used as constructors, don't
+   check whether the class allows the object to be modified. This applies to
+   both Math::BigInt and Math::BigFloat.
+
+ * Improve bgcd() and blcm(). This applies to both Math::BigInt and
+   Math::BigFloat.
+
 Please send us test-reports, your experiences with this and your ideas - we
 love to hear about our work!
 

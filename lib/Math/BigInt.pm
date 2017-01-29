@@ -20,7 +20,7 @@ use warnings;
 
 use Carp ();
 
-our $VERSION = '1.999801';
+our $VERSION = '1.999802';
 $VERSION = eval $VERSION;
 
 our @ISA = qw(Exporter);
@@ -879,7 +879,7 @@ sub bzero {
     my $class   = $selfref || $self;
 
     $self->import() if $IMPORT == 0;            # make require work
-    return if $self->modify('bzero');
+    return if $selfref && $self->modify('bzero');
 
     $self = bless {}, $class unless $selfref;
 
@@ -916,7 +916,7 @@ sub bone {
     my $class   = $selfref || $self;
 
     $self->import() if $IMPORT == 0;            # make require work
-    return if $self->modify('bzero');
+    return if $selfref && $self->modify('bone');
 
     my $sign = shift;
     $sign = defined $sign && $sign =~ /^\s*-/ ? "-" : "+";
@@ -965,7 +965,7 @@ sub binf {
     }
 
     $self->import() if $IMPORT == 0;            # make require work
-    return if $self->modify('binf');
+    return if $selfref && $self->modify('binf');
 
     my $sign = shift;
     $sign = defined $sign && $sign =~ /^\s*-/ ? "-" : "+";
@@ -999,7 +999,7 @@ sub bnan {
     }
 
     $self->import() if $IMPORT == 0;            # make require work
-    return if $self->modify('bnan');
+    return if $selfref && $self->modify('bnan');
 
     $self = bless {}, $class unless $selfref;
 
@@ -3097,7 +3097,7 @@ sub bgcd {
 
     my $x = shift @args;
     $x = ref($x) && $x -> isa($class) ? $x -> copy() : $class -> new($x);
-    $x -> babs();
+
     return $class->bnan() if $x->{sign} !~ /^[+-]$/;    # x NaN?
 
     while (@args) {
@@ -3107,17 +3107,20 @@ sub bgcd {
         $x->{value} = $CALC->_gcd($x->{value}, $y->{value});
         last if $CALC->_is_one($x->{value});
     }
-    $x;
+
+    return $x -> babs();
 }
 
 sub blcm {
     # (BINT or num_str, BINT or num_str) return BINT
     # does not modify arguments, but returns new object
-    # Lowest Common Multiple
+    # Least Common Multiple
 
     my ($class, @args) = objectify(0, @_);
 
-    my $x = $class -> bone();
+    my $x = shift @args;
+    $x = ref($x) && $x -> isa($class) ? $x -> copy() : $class -> new($x);
+    return $class->bnan() if $x->{sign} !~ /^[+-]$/;    # x NaN?
 
     while (@args) {
         my $y = shift @args;
@@ -3125,7 +3128,8 @@ sub blcm {
         return $x->bnan() if $y->{sign} !~ /^[+-]$/;     # y not integer
         $x -> {value} = $CALC->_lcm($x -> {value}, $y -> {value});
     }
-    $x;
+
+    return $x -> babs();
 }
 
 ###############################################################################
