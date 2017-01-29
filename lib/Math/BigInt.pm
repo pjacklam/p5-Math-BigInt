@@ -20,7 +20,7 @@ use warnings;
 
 use Carp ();
 
-our $VERSION = '1.999807';
+our $VERSION = '1.999808';
 
 our @ISA = qw(Exporter);
 our @EXPORT_OK = qw(objectify bgcd blcm);
@@ -731,12 +731,14 @@ sub from_hex {
 
     if ($str =~ s/
                      ^
+                     \s*
                      ( [+-]? )
                      (0?x)?
                      (
                          [0-9a-fA-F]*
                          ( _ [0-9a-fA-F]+ )*
                      )
+                     \s*
                      $
                  //x)
     {
@@ -785,11 +787,13 @@ sub from_oct {
 
     if ($str =~ s/
                      ^
+                     \s*
                      ( [+-]? )
                      (
                          [0-7]*
                          ( _ [0-7]+ )*
                      )
+                     \s*
                      $
                  //x)
     {
@@ -838,12 +842,14 @@ sub from_bin {
 
     if ($str =~ s/
                      ^
+                     \s*
                      ( [+-]? )
                      (0?b)?
                      (
                          [01]*
                          ( _ [01]+ )*
                      )
+                     \s*
                      $
                  //x)
     {
@@ -2711,6 +2717,17 @@ sub bfac {
     $x->round(@r);
 }
 
+sub bdfac {
+    # compute factorial number from $x, modify $x in place
+    my ($class, $x, @r) = ref($_[0]) ? (undef, @_) : objectify(1, @_);
+
+    return $x if $x->modify('bdfac') || $x->{sign} eq '+inf'; # inf => inf
+    return $x->bnan() if $x->{sign} ne '+'; # NaN, <0 etc => NaN
+
+    $x->{value} = $CALC->_dfac($x->{value});
+    $x->round(@r);
+}
+
 sub blsft {
     # (BINT or num_str, BINT or num_str) return BINT
     # compute x << y, base n, y >= 0
@@ -3488,6 +3505,53 @@ sub bdstr {
     return $x->{sign} eq '-' ? "-$str" : $str;
 }
 
+sub to_hex {
+    # return as hex string, with prefixed 0x
+    my $x = shift;
+    $x = $class->new($x) if !ref($x);
+
+    return $x->bstr() if $x->{sign} !~ /^[+-]$/; # inf, nan etc
+
+    my $hex = $CALC->_to_hex($x->{value});
+    return $x->{sign} eq '-' ? "-$hex" : $hex;
+}
+
+sub to_oct {
+    # return as octal string, with prefixed 0
+    my $x = shift;
+    $x = $class->new($x) if !ref($x);
+
+    return $x->bstr() if $x->{sign} !~ /^[+-]$/; # inf, nan etc
+
+    my $oct = $CALC->_to_oct($x->{value});
+    return $x->{sign} eq '-' ? "-$oct" : $oct;
+}
+
+sub to_bin {
+    # return as binary string, with prefixed 0b
+    my $x = shift;
+    $x = $class->new($x) if !ref($x);
+
+    return $x->bstr() if $x->{sign} !~ /^[+-]$/; # inf, nan etc
+
+    my $bin = $CALC->_to_bin($x->{value});
+    return $x->{sign} eq '-' ? "-$bin" : $bin;
+}
+
+sub to_bytes {
+    # return a byte string
+    my $x = shift;
+    $x = $class->new($x) if !ref($x);
+
+    Carp::croak("to_bytes() requires a finite, non-negative integer")
+        if $x -> is_neg() || ! $x -> is_int();
+
+    Carp::croak("to_bytes() requires a newer version of the $CALC library.")
+        unless $CALC->can('_to_bytes');
+
+    return $CALC->_to_bytes($x->{value});
+}
+
 sub as_hex {
     # return as hex string, with prefixed 0x
     my $x = shift;
@@ -3495,9 +3559,8 @@ sub as_hex {
 
     return $x->bstr() if $x->{sign} !~ /^[+-]$/; # inf, nan etc
 
-    my $s = '';
-    $s = $x->{sign} if $x->{sign} eq '-';
-    $s . $CALC->_as_hex($x->{value});
+    my $hex = $CALC->_as_hex($x->{value});
+    return $x->{sign} eq '-' ? "-$hex" : $hex;
 }
 
 sub as_oct {
@@ -3518,24 +3581,11 @@ sub as_bin {
 
     return $x->bstr() if $x->{sign} !~ /^[+-]$/; # inf, nan etc
 
-    my $s = '';
-    $s = $x->{sign} if $x->{sign} eq '-';
-    return $s . $CALC->_as_bin($x->{value});
+    my $bin = $CALC->_as_bin($x->{value});
+    return $x->{sign} eq '-' ? "-$bin" : $bin;
 }
 
-sub as_bytes {
-    # return a byte string
-    my $x = shift;
-    $x = $class->new($x) if !ref($x);
-
-    Carp::croak("as_bytes() requires a finite, non-negative integer")
-        if $x -> is_neg() || ! $x -> is_int();
-
-    Carp::croak("as_bytes() requires a newer version of the $CALC library.")
-        unless $CALC->can('_as_bytes');
-
-    return $CALC->_as_bytes($x->{value});
-}
+*as_bytes = \&to_bytes;
 
 ###############################################################################
 # Other conversion methods
@@ -4275,10 +4325,15 @@ Math::BigInt - Arbitrary size integer/float math package
   $x->bnstr();        # string in normalized notation
   $x->bestr();        # string in engineering notation
   $x->bdstr();        # string in decimal notation
+
+  $x->to_hex();       # as signed hexadecimal string
+  $x->to_bin();       # as signed binary string
+  $x->to_oct();       # as signed octal string
+  $x->to_bytes();     # as byte string
+
   $x->as_hex();       # as signed hexadecimal string with prefixed 0x
   $x->as_bin();       # as signed binary string with prefixed 0b
   $x->as_oct();       # as signed octal string with prefixed 0
-  $x->as_bytes();     # as byte string
 
   # Other conversion methods
 
@@ -5110,6 +5165,18 @@ Calculates the N'th root of C<$x>.
 
     $x->bfac();                 # factorial of $x (1*2*3*4*..*$x)
 
+Returns the factorial of C<$x>, i.e., the product of all positive integers up
+to and including C<$x>.
+
+=item bdfac()
+
+    $x->bdfac();                # double factorial of $x (1*2*3*4*..*$x)
+
+Returns the double factorial of C<$x>. If C<$x> is an even integer, returns the
+product of all positive, even integers up to and including C<$x>, i.e.,
+2*4*6*...*$x. If C<$x> is an odd integer, returns the product of all positive,
+odd integers, i.e., 1*3*5*...*$x.
+
 =item brsft()
 
     $x->brsft($n);              # right shift $n places in base 2
@@ -5385,34 +5452,53 @@ corresponds to the output from C<dparts()>.
     12000 is returned as "12000"
     10000 is returned as "10000"
 
+=item to_hex()
+
+    $x->to_hex();
+
+Returns a hexadecimal string representation of the number.
+
+=item to_bin()
+
+    $x->to_bin();
+
+Returns a binary string representation of the number.
+
+=item to_oct()
+
+    $x->to_oct();
+
+Returns an octal string representation of the number.
+
+=item to_bytes()
+
+    $x = Math::BigInt->new("1667327589");
+    $s = $x->to_bytes();                    # $s = "cafe"
+
+Returns a byte string representation of the number using big endian byte
+order. The invocand must be a non-negative, finite integer.
+
 =item as_hex()
 
     $x->as_hex();
 
-Returns a string representing the number using hexadecimal notation. The output
-is prefixed by "0x".
+As, C<to_hex()>, but with a "0x" prefix.
 
 =item as_bin()
 
     $x->as_bin();
 
-Returns a string representing the number using binary notation. The output is
-prefixed by "0b".
+As, C<to_bin()>, but with a "0b" prefix.
 
 =item as_oct()
 
     $x->as_oct();
 
-Returns a string representing the number using octal notation. The output is
-prefixed by "0".
+As, C<to_oct()>, but with a "0" prefix.
 
 =item as_bytes()
 
-    $x = Math::BigInt->new("1667327589");
-    $s = $x->as_bytes();                    # $s = "cafe"
-
-Returns a byte string representing the number using big endian byte order. The
-invocand must be a non-negative, finite integer.
+This is just an alias for C<to_bytes()>.
 
 =back
 

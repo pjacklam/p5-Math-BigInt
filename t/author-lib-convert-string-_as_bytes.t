@@ -69,7 +69,7 @@ for (my $i = 0 ; $i <= $#data ; ++ $i) {
     eval $test;
     is($@, "", "'$test' gives emtpy \$\@");
 
-    subtest "_as_hex() in list context: $test", sub {
+    subtest "_as_bytes() in list context: $test", sub {
         plan tests => 3,
 
         cmp_ok(scalar @got, '==', 1,
@@ -99,7 +99,7 @@ for (my $i = 0 ; $i <= $#data ; ++ $i) {
     eval $test;
     is($@, "", "'$test' gives emtpy \$\@");
 
-    subtest "_as_hex() in scalar context: $test", sub {
+    subtest "_as_bytes() in scalar context: $test", sub {
         plan tests => 2,
 
         is(ref($got), "",

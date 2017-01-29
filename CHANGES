@@ -1,3 +1,34 @@
+2017-01-11 v1.999808 pjacklam
+
+ * In Math::BigInt and Math::BigFloat, add methods bdfac() for double
+   factorial. Add tests for this method.
+
+ * In Math::BigInt and Math::BigFloat, add methods to_hex(), to_oct(), and
+   to_bin() for hexadecimal, octal, and binary string output without prefix.
+   Even for Math::BigFloat there is still only support for integer output. Add
+   tests for these methods.
+
+ * Add test for as_oct() corresponding to the old tests for as_hex() and
+   as_bin().
+
+ * In Math::BigInt::Lib, add method _dfac() for double factorial. Add
+   corresponding tests.
+
+ * In Math::BigInt::Lib, fix bug in overloaded "int".
+
+ * In Math::BigInt::Lib, implement much faster versions of _from_hex(),
+   _from_oct(), and _from_bin().
+
+ * In Makefile.PL, improve the wording in the message displayed if some of
+   the installed backend libraries are not a subclass of Math::BigInt::Lib (and
+   hence will not provide
+
+ * Fix minor bugs in some of the author library test files (t/author-lib*.t).
+
+ * Allow leading and trailing whitespace in the input to from_hex(),
+   from_oct(), and from_bin().  Add tests to verify. This is a regressions
+   (CPAN RT #119805).
+
 2016-12-23 v1.999807 pjacklam
 
  * Add a message to Makefile.PL recommending upgrade if old libraries are

@@ -4,7 +4,7 @@ use 5.006001;
 use strict;
 use warnings;
 
-our $VERSION = '1.999807';
+our $VERSION = '1.999808';
 
 use Carp;
 
@@ -237,7 +237,7 @@ use overload
                 return $class -> _sqrt($class -> _copy($_[0]));
             },
 
-  'int'  => sub { $_[0] -> copy() -> bint(); },
+  'int'  => sub { $_[0] },
 
   # overload key: conversion
 
@@ -579,6 +579,25 @@ sub _fac {
     my $i = $class -> _copy($x);
     while ($class -> _acmp($i, $two) > 0) {
         $i = $class -> _dec($i);
+        $x = $class -> _mul($x, $i);
+    }
+
+    return $x;
+}
+
+sub _dfac {
+    # double factorial
+    my ($class, $x) = @_;
+
+    my $two = $class -> _two();
+
+    if ($class -> _acmp($x, $two) < 0) {
+        return $class -> _one();
+    }
+
+    my $i = $class -> _copy($x);
+    while ($class -> _acmp($i, $two) > 0) {
+        $i = $class -> _sub($i, $two);
         $x = $class -> _mul($x, $i);
     }
 
@@ -1062,7 +1081,7 @@ sub _to_bin {
     my ($class, $x) = @_;
     my $str    = '';
     my $tmp    = $class -> _copy($x);
-    my $chunk = $class -> _new("16777216");
+    my $chunk = $class -> _new("16777216");     # 2^24 = 24 binary digits
     my $rem;
     until ($class -> _acmp($tmp, $chunk) < 0) {
         ($tmp, $rem) = $class -> _div($tmp, $chunk);
@@ -1079,7 +1098,7 @@ sub _to_oct {
     my ($class, $x) = @_;
     my $str    = '';
     my $tmp    = $class -> _copy($x);
-    my $chunk = $class -> _new("16777216");    # 2^24 / 8 octal digits
+    my $chunk = $class -> _new("16777216");     # 2^24 = 8 octal digits
     my $rem;
     until ($class -> _acmp($tmp, $chunk) < 0) {
         ($tmp, $rem) = $class -> _div($tmp, $chunk);
@@ -1096,7 +1115,7 @@ sub _to_hex {
     my ($class, $x) = @_;
     my $str    = '';
     my $tmp    = $class -> _copy($x);
-    my $chunk = $class -> _new("16777216");
+    my $chunk = $class -> _new("16777216");     # 2^24 = 6 hexadecimal digits
     my $rem;
     until ($class -> _acmp($tmp, $chunk) < 0) {
         ($tmp, $rem) = $class -> _div($tmp, $chunk);
@@ -1143,46 +1162,92 @@ sub _to_bytes {
 
 *_as_bytes = \&_to_bytes;
 
-sub _from_oct {
-    # convert a string of octal digits to a number
-    my ($class, $str) = @_;
-    $str =~ s/^0+//;
-    my $x    = $class -> _zero();
-    my $base = $class -> _new("8");
-    my $n    = length($str);
-    for (my $i = 0 ; $i < $n ; ++$i) {
-        $x = $class -> _mul($x, $base);
-        $x = $class -> _add($x, $class -> _new(substr($str, $i, 1)));
+sub _from_hex {
+    # Convert a string of hexadecimal digits to a number.
+
+    my ($class, $hex) = @_;
+    $hex =~ s/^0[xX]//;
+
+    # Find the largest number of hexadecimal digits that we can safely use with
+    # 32 bit integers. There are 4 bits pr hexadecimal digit, and we use only
+    # 31 bits to play safe. This gives us int(31 / 4) = 7.
+
+    my $len = length $hex;
+    my $rem = 1 + ($len - 1) % 7;
+
+    # Do the first chunk.
+
+    my $ret = $class -> _new(int hex substr $hex, 0, $rem);
+    return $ret if $rem == $len;
+
+    # Do the remaining chunks, if any.
+
+    my $shift = $class -> _new(1 << (4 * 7));
+    for (my $offset = $rem ; $offset < $len ; $offset += 7) {
+        my $part = int hex substr $hex, $offset, 7;
+        $ret = $class -> _mul($ret, $shift);
+        $ret = $class -> _add($ret, $class -> _new($part));
     }
-    return $x;
+
+    return $ret;
 }
 
-sub _from_hex {
-    # convert a string of hexadecimal digits to a number
-    my ($class, $str) = @_;
-    $str =~ s/^0[Xx]//;
-    my $x    = $class -> _zero();
-    my $base = $class -> _new("16");
-    my $n    = length($str);
-    for (my $i = 0 ; $i < $n ; ++$i) {
-        $x = $class -> _mul($x, $base);
-        $x = $class -> _add($x, $class -> _new(hex substr($str, $i, 1)));
+sub _from_oct {
+    # Convert a string of octal digits to a number.
+
+    my ($class, $oct) = @_;
+
+    # Find the largest number of octal digits that we can safely use with 32
+    # bit integers. There are 3 bits pr octal digit, and we use only 31 bits to
+    # play safe. This gives us int(31 / 3) = 10.
+
+    my $len = length $oct;
+    my $rem = 1 + ($len - 1) % 10;
+
+    # Do the first chunk.
+
+    my $ret = $class -> _new(int oct substr $oct, 0, $rem);
+    return $ret if $rem == $len;
+
+    # Do the remaining chunks, if any.
+
+    my $shift = $class -> _new(1 << (3 * 10));
+    for (my $offset = $rem ; $offset < $len ; $offset += 10) {
+        my $part = int oct substr $oct, $offset, 10;
+        $ret = $class -> _mul($ret, $shift);
+        $ret = $class -> _add($ret, $class -> _new($part));
     }
-    return $x;
+
+    return $ret;
 }
 
 sub _from_bin {
-    # convert a string of binary digits to a number
-    my ($class, $str) = @_;
-    $str =~ s/^0[Bb]//;
-    my $x    = $class -> _zero();
-    my $base = $class -> _new("2");
-    my $n    = length($str);
-    for (my $i = 0 ; $i < $n ; ++$i) {
-        $x = $class -> _mul($x, $base);
-        $x = $class -> _add($x, $class -> _new(substr($str, $i, 1)));
+    # Convert a string of binary digits to a number.
+
+    my ($class, $bin) = @_;
+    $bin =~ s/^0[bB]//;
+
+    # The largest number of binary digits that we can safely use with 32 bit
+    # integers is 31. We use only 31 bits to play safe.
+
+    my $len = length $bin;
+    my $rem = 1 + ($len - 1) % 31;
+
+    # Do the first chunk.
+
+    my $ret = $class -> _new(int oct '0b' . substr $bin, 0, $rem);
+    return $ret if $rem == $len;
+
+    # Do the remaining chunks, if any.
+
+    my $shift = $class -> _new(1 << 31);
+    for (my $offset = $rem ; $offset < $len ; $offset += 31) {
+        my $part = int oct '0b' . substr $bin, $offset, 31;
+        $ret = $class -> _mul($ret, $shift);
+        $ret = $class -> _add($ret, $class -> _new($part));
     }
-    return $x;
+
+    return $ret;
 }
 
 sub _from_bytes {
@@ -1527,8 +1592,15 @@ Returns the Nth root of OBJ, truncated to an integer.
 
 =item CLASS-E<gt>_fac(OBJ)
 
-Returns factorial of OBJ, i.e., the product of all positive integers up to and
-including OBJ.
+Returns the factorial of OBJ, i.e., the product of all positive integers up to
+and including OBJ.
+
+=item CLASS-E<gt>_dfac(OBJ)
+
+Returns the double factorial of OBJ. If OBJ is an even integer, returns the
+product of all positive, even integers up to and including OBJ, i.e.,
+2*4*6*...*OBJ. If OBJ is an odd integer, returns the product of all positive,
+odd integers, i.e., 1*3*5*...*OBJ.
 
 =item CLASS-E<gt>_pow(OBJ1, OBJ2)
 
@@ -1583,7 +1655,7 @@ Returns the greatest common divisor of OBJ1 and OBJ2.
 
 =item CLASS-E<gt>_lcm(OBJ1, OBJ2)
 
-Rseturn the least common multiple of OBJ1 and OBJ2.
+Return the least common multiple of OBJ1 and OBJ2.
 
 =back
 
@@ -1653,31 +1725,31 @@ should have no leading zeros, i.e., it should match C<^(0|[1-9]\d*)$>.
 
 Returns the binary string representation of OBJ.
 
-=item CLASS-E<gt>_as_bin(OBJ)
-
-Like C<_to_bin()> but with a '0b' prefix.
-
 =item CLASS-E<gt>_to_oct(OBJ)
 
 Returns the octal string representation of the number.
 
-=item CLASS-E<gt>_as_oct(OBJ)
-
-Like C<_to_oct()> but with a '0' prefix.
-
 =item CLASS-E<gt>_to_hex(OBJ)
 
 Returns the hexadecimal string representation of the number.
-
-=item CLASS-E<gt>_as_hex(OBJ)
-
-Like C<_to_hex()> but with a '0x' prefix.
 
 =item CLASS-E<gt>_to_bytes(OBJ)
 
 Returns a byte string representation of OBJ. The byte string is in big endian
 byte order, so if OBJ represents the number 256, the output should be the
 two-byte string "\x01\x00".
+
+=item CLASS-E<gt>_as_bin(OBJ)
+
+Like C<_to_bin()> but with a '0b' prefix.
+
+=item CLASS-E<gt>_as_oct(OBJ)
+
+Like C<_to_oct()> but with a '0' prefix.
+
+=item CLASS-E<gt>_as_hex(OBJ)
+
+Like C<_to_hex()> but with a '0x' prefix.
 
 =item CLASS-E<gt>_as_bytes(OBJ)
 

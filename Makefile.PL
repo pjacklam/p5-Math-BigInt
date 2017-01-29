@@ -32,9 +32,9 @@ if (@$recommend_update) {
     print <<"EOF";
 ##########################################################################
 #
-# Certain methods will not work unless the following installed modules are
-# updated. It is recommended that after installing this distribution, you
-# update these modules to at least the recommended version listed below.
+# Some of the new methods will not work unless the following installed
+# modules are updated. It is therefore recommended that the modules listed
+# below are upgraded after installing this distribution.
 #
 # Module                         Recommended    Installed
 # ------                         -----------    ---------

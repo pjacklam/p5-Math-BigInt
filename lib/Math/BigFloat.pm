@@ -19,7 +19,7 @@ use warnings;
 use Carp ();
 use Math::BigInt ();
 
-our $VERSION = '1.999807';
+our $VERSION = '1.999808';
 
 require Exporter;
 our @ISA        = qw/Math::BigInt/;
@@ -529,6 +529,7 @@ sub from_hex {
 
     if ($str =~ s/
                      ^
+                     \s*
 
                      # sign
                      ( [+-]? )
@@ -555,6 +556,7 @@ sub from_hex {
                          ( \d+ (?: _ \d+ )* )
                      )?
 
+                     \s*
                      $
                  //x)
     {
@@ -618,6 +620,7 @@ sub from_oct {
 
     if ($str =~ s/
                      ^
+                     \s*
 
                      # sign
                      ( [+-]? )
@@ -641,6 +644,7 @@ sub from_oct {
                          ( \d+ (?: _ \d+ )* )
                      )?
 
+                     \s*
                      $
                  //x)
     {
@@ -704,6 +708,7 @@ sub from_bin {
 
     if ($str =~ s/
                      ^
+                     \s*
 
                      # sign
                      ( [+-]? )
@@ -730,6 +735,7 @@ sub from_bin {
                          ( \d+ (?: _ \d+ )* )
                      )?
 
+                     \s*
                      $
                  //x)
     {
@@ -3236,6 +3242,31 @@ sub bfac {
     $x->bnorm()->round(@r);     # norm again and round result
 }
 
+sub bdfac {
+    # compute double factorial
+
+    # set up parameters
+    my ($class, $x, @r) = (ref($_[0]), @_);
+    # objectify is costly, so avoid it
+    ($class, $x, @r) = objectify(1, @_) if !ref($x);
+
+    # inf => inf
+    return $x if $x->modify('bfac') || $x->{sign} eq '+inf';
+
+    return $x->bnan()
+      if (($x->{sign} ne '+') || # inf, NaN, <0 etc => NaN
+          ($x->{_es} ne '+'));   # digits after dot?
+
+    # use BigInt's bdfac() for faster calc
+    if (! $MBI->_is_zero($x->{_e})) {
+        $x->{_m} = $MBI->_lsft($x->{_m}, $x->{_e}, 10); # change 12e1 to 120e0
+        $x->{_e} = $MBI->_zero();           # normalize
+        $x->{_es} = '+';
+    }
+    $x->{_m} = $MBI->_dfac($x->{_m});       # calculate factorial
+    $x->bnorm()->round(@r);     # norm again and round result
+}
+
 sub blsft {
     # shift left by $y (multiply by $b ** $y)
 
@@ -3997,6 +4028,57 @@ sub bestr {
     #$eabs = '0' . $eabs if length($eabs) < 2;
 
     return $mant . 'e' . $esgn . $eabs;
+}
+
+sub to_hex {
+    # return number as hexadecimal string (only for integers defined)
+    my ($class, $x) = ref($_[0]) ? (ref($_[0]), $_[0]) : objectify(1, @_);
+
+    return $x->bstr() if $x->{sign} !~ /^[+-]$/; # inf, nan etc
+    return '0x0' if $x->is_zero();
+
+    return $nan if $x->{_es} ne '+';    # how to do 1e-1 in hex?
+
+    my $z = $MBI->_copy($x->{_m});
+    if (! $MBI->_is_zero($x->{_e})) {   # > 0
+        $z = $MBI->_lsft($z, $x->{_e}, 10);
+    }
+    $z = Math::BigInt->new($x->{sign} . $MBI->_num($z));
+    $z->to_hex();
+}
+
+sub to_oct {
+    # return number as octal digit string (only for integers defined)
+    my ($class, $x) = ref($_[0]) ? (ref($_[0]), $_[0]) : objectify(1, @_);
+
+    return $x->bstr() if $x->{sign} !~ /^[+-]$/; # inf, nan etc
+    return '0' if $x->is_zero();
+
+    return $nan if $x->{_es} ne '+';    # how to do 1e-1 in octal?
+
+    my $z = $MBI->_copy($x->{_m});
+    if (! $MBI->_is_zero($x->{_e})) {   # > 0
+        $z = $MBI->_lsft($z, $x->{_e}, 10);
+    }
+    $z = Math::BigInt->new($x->{sign} . $MBI->_num($z));
+    $z->to_oct();
+}
+
+sub to_bin {
+    # return number as binary digit string (only for integers defined)
+    my ($class, $x) = ref($_[0]) ? (ref($_[0]), $_[0]) : objectify(1, @_);
+
+    return $x->bstr() if $x->{sign} !~ /^[+-]$/; # inf, nan etc
+    return '0b0' if $x->is_zero();
+
+    return $nan if $x->{_es} ne '+';    # how to do 1e-1 in binary?
+
+    my $z = $MBI->_copy($x->{_m});
+    if (! $MBI->_is_zero($x->{_e})) {   # > 0
+        $z = $MBI->_lsft($z, $x->{_e}, 10);
+    }
+    $z = Math::BigInt->new($x->{sign} . $MBI->_num($z));
+    $z->to_bin();
 }
 
 sub as_hex {
