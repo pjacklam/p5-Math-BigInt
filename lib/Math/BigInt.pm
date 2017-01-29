@@ -21,7 +21,7 @@ use warnings;
 
 use Carp ();
 
-our $VERSION = '1.999720';
+our $VERSION = '1.999721';
 $VERSION = eval $VERSION;
 
 our @ISA = qw(Exporter);

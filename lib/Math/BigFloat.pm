@@ -18,7 +18,7 @@ use warnings;
 
 use Carp ();
 
-our $VERSION = '1.999720';
+our $VERSION = '1.999721';
 $VERSION = eval $VERSION;
 
 require Exporter;
@@ -4047,6 +4047,8 @@ sub band {
     Carp::croak 'band() is an instance method, not a class method' unless $xref;
     Carp::croak 'Not enough arguments for band()' if @_ < 1;
 
+    return if $x -> modify('band');
+
     my $y = shift;
     $y = $class -> new($y) unless ref($y);
 
@@ -4071,6 +4073,8 @@ sub bior {
 
     Carp::croak 'bior() is an instance method, not a class method' unless $xref;
     Carp::croak 'Not enough arguments for bior()' if @_ < 1;
+
+    return if $x -> modify('bior');
 
     my $y = shift;
     $y = $class -> new($y) unless ref($y);
@@ -4097,6 +4101,8 @@ sub bxor {
     Carp::croak 'bxor() is an instance method, not a class method' unless $xref;
     Carp::croak 'Not enough arguments for bxor()' if @_ < 1;
 
+    return if $x -> modify('bxor');
+
     my $y = shift;
     $y = $class -> new($y) unless ref($y);
 
@@ -4120,6 +4126,8 @@ sub bnot {
     my $class = $xref || $x;
 
     Carp::croak 'bnot() is an instance method, not a class method' unless $xref;
+
+    return if $x -> modify('bnot');
 
     my @r = @_;
 

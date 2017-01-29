@@ -6,7 +6,7 @@ use strict;
 use warnings;
 use lib 't';
 
-my $VERSION = '1.999720';       # adjust manually to match latest release
+my $VERSION = '1.999721';       # adjust manually to match latest release
 $VERSION = eval $VERSION;
 
 use Test::More tests => 5;

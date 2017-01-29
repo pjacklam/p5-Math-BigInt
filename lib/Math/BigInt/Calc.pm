@@ -4,7 +4,7 @@ use 5.006001;
 use strict;
 use warnings;
 
-our $VERSION = '1.999720';
+our $VERSION = '1.999721';
 $VERSION = eval $VERSION;
 
 # Package to store unsigned big integers in decimal and do math with them

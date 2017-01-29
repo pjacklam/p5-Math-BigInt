@@ -1765,6 +1765,11 @@ there are so many changes, I let this be a development release.
 
  * Better documentation of blsft() and brsft().
 
+2016-04-26 v1.999721 pjacklam
+
+ * Prevent Math::BigFloat methods band(), bior(), bxor(), and bnot() from
+   modifying unmodifiable objects.
+
 Please send us test-reports, your experiences with this and your ideas - we love
 to hear about our work!
 
