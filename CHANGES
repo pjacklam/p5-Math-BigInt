@@ -1746,16 +1746,24 @@ there are so many changes, I let this be a development release.
 
  * Revert the change to Math::BigFloat's blsft() and brsft() methods, which
    truncated the input (and output) to integers. However, now convert the base
-   to an object only when the base isn't an object already.
+   to an object only when the base isn't an object already. Also return NaN if
+   any of the three operands is a NaN.
 
- * Change t/bigfltpm.inc so when a method should be tested, actually test that
-   method, not the overloaded operator, which doesn't necessarily behave
-   exactly the same way as the method. This applies to the methods binc(),
-   bdec(), bpow(), badd(), bsub(), bmul(), bdiv() in scalar context, brsft(),
-   blsft(), and bmod().
+ * Change t/bigfltpm.inc to reflect the changes to blsft() and brsft(). Also,
+   when a method should be tested, actually test that method, not the
+   overloaded operator, which doesn't necessarily behave in the exact same
+   manner as the method. This applies to the methods binc(), bdec(), bpow(),
+   badd(), bsub(), bmul(), bdiv() in scalar context, brsft(), blsft(), and
+   bmod().
 
  * The first output argument from objectify() is the class name, so use the
    variable name $class, not $self.
+
+2016-04-26 v1.999720 pjacklam
+
+ * Overloaded 'int' should not modify it's argument.
+
+ * Better documentation of blsft() and brsft().
 
 Please send us test-reports, your experiences with this and your ideas - we love
 to hear about our work!

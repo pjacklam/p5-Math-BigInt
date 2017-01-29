@@ -21,7 +21,7 @@ use warnings;
 
 use Carp ();
 
-our $VERSION = '1.999719';
+our $VERSION = '1.999720';
 $VERSION = eval $VERSION;
 
 our @ISA = qw(Exporter);
@@ -202,7 +202,7 @@ use overload
 
   'sqrt'  =>      sub { $_[0] -> copy() -> bsqrt(); },
 
-  'int'   =>      sub { $_[0] -> bint(); },
+  'int'   =>      sub { $_[0] -> copy() -> bint(); },
 
   # overload key: conversion
 
@@ -4075,14 +4075,12 @@ Math::BigInt - Arbitrary size integer/float math package
   $x->bmodpow($y,$mod); # modular exponentiation (($x ** $y) % $mod)
   $x->bmodinv($mod);    # modular multiplicative inverse
   $x->bpow($y);         # power of arguments (x ** y)
-  $x->blsft($y);        # left shift in base 2
-  $x->brsft($y);        # right shift in base 2
-                        # returns (quo,rem) or quo if in sca-
-                        # lar context
-  $x->blsft($y,$n);     # left shift by $y places in base $n
-  $x->brsft($y,$n);     # right shift by $y places in base $n
-                        # returns (quo,rem) or quo if in sca-
-                        # lar context
+  $x->blsft($n);        # left shift $n places in base 2
+  $x->brsft($n);        # right shift $n places in base 2
+                        # returns (quo,rem) or quo (scalar context)
+  $x->blsft($n,$b);     # left shift $n places in base $b
+  $x->brsft($n,$b);     # right shift $n places in base $b
+                        # returns (quo,rem) or quo (scalar context)
 
   $x->band($y);         # bitwise and
   $x->bior($y);         # bitwise inclusive or
@@ -4823,13 +4821,21 @@ This method was added in v1.87 of Math::BigInt (June 2007).
 
 =item blsft()
 
-    $x->blsft($y);              # left shift in base 2
-    $x->blsft($y,$n);           # left shift, in base $n (like 10)
+    $x->blsft($n);              # left shift $n places in base 2
+    $x->blsft($n, $b);          # left shift $n places in base $b
+
+The latter is equivalent to
+
+    $x -> bmul($b -> copy() -> bpow($n))
 
 =item brsft()
 
-    $x->brsft($y);              # right shift in base 2
-    $x->brsft($y,$n);           # right shift, in base $n (like 10)
+    $x->brsft($n);              # right shift $n places in base 2
+    $x->brsft($n, $b);          # right shift $n places in base $b
+
+The latter is equivalent to
+
+    $x -> bdiv($b -> copy() -> bpow($n))
 
 =item band()
 

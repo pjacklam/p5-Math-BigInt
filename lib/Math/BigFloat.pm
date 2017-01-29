@@ -18,7 +18,7 @@ use warnings;
 
 use Carp ();
 
-our $VERSION = '1.999719';
+our $VERSION = '1.999720';
 $VERSION = eval $VERSION;
 
 require Exporter;
@@ -188,7 +188,7 @@ use overload
 
   'sqrt'  =>      sub { $_[0] -> copy() -> bsqrt(); },
 
-  'int'   =>      sub { $_[0] -> bint(); },
+  'int'   =>      sub { $_[0] -> copy() -> bint(); },
 
   # overload key: conversion
 
@@ -4031,6 +4031,8 @@ sub blsft {
     $b = 2 if !defined $b;
     $b = $class -> new($b) unless ref($b) && $b -> isa($class);
 
+    return $x -> bnan() if $x -> is_nan() || $y -> is_nan() || $b -> is_nan();
+
     # shift by a negative amount?
     return $x -> brsft($y -> copy() -> babs(), $b) if $y -> {sign} =~ /^-/;
 
@@ -4785,9 +4787,12 @@ Math::BigFloat - Arbitrary size floating point math package
  $x->bmod($y);		 # modulus ($x % $y)
  $x->bpow($y);		 # power of arguments ($x ** $y)
  $x->bmodpow($exp,$mod); # modular exponentiation (($num**$exp) % $mod))
- $x->blsft($y, $n);	 # left shift by $y places in base $n
- $x->brsft($y, $n);	 # right shift by $y places in base $n
-			 # returns (quo,rem) or quo if in scalar context
+ $x->blsft($n);          # left shift $n places in base 2
+ $x->brsft($n);          # right shift $n places in base 2
+                         # returns (quo,rem) or quo (scalar context)
+ $x->blsft($n,$b);       # left shift $n places in base $b
+ $x->brsft($n,$b);       # right shift $n places in base $b
+                         # returns (quo,rem) or quo (scalar context)
 
  $x->blog();		 # logarithm of $x to base e (Euler's number)
  $x->blog($base);	 # logarithm of $x to base $base (f.i. 2)
