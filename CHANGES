@@ -1773,7 +1773,20 @@ there are so many changes, I let this be a development release.
    warnings about using an unitialized variable. This fix applies to both
    Math::BigInt and Math::BigFloat.
 
+2016-06-09 v1.999723 pjacklam
+
+ * Add Math::BigInt and Math::BigFloat methods bnstr(), bestr(), and bdstr(),
+   as well as corresponding methods nparts(), eparts(), and dparts(). Also add
+   test files bdstr-mbf.t, bdstr-mbi.t, bestr-mbf.t, bestr-mbi.t, bnstr-mbf.t,
+   bnstr-mbi.t, bsstr-mbf.t, bsstr-mbi.t, dparts-mbf.t, dparts-mbi.t,
+   eparts-mbf.t, eparts-mbi.t, nparts-mbf.t, nparts-mbi.t, sparts-mbf.t, and
+   sparts-mbi.t.
+
+ * Fix documentation errors.
+
 Please send us test-reports, your experiences with this and your ideas - we love
 to hear about our work!
 
 The Math-BigInt developers <bignum@lists.scsys.co.uk>
+
+ 

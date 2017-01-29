@@ -18,7 +18,7 @@ use warnings;
 
 use Carp ();
 
-our $VERSION = '1.999722';
+our $VERSION = '1.999723';
 $VERSION = eval $VERSION;
 
 require Exporter;
@@ -717,23 +717,85 @@ sub bstr
   $es;
   }
 
-sub bsstr
-  {
-  # (ref to BFLOAT or num_str ) return num_str
-  # Convert number from internal format to scientific string format.
-  # internal format is always normalized (no leading zeros, "-0E0" => "+0E0")
-  my ($class,$x) = ref($_[0]) ? (undef,$_[0]) : objectify(1,@_);
+# Decimal notation, e.g., "12345.6789".
 
-  if ($x->{sign} !~ /^[+-]$/)
-    {
-    return $x->{sign} unless $x->{sign} eq '+inf';      # -inf, NaN
-    return 'inf';                                       # +inf
+sub bdstr {
+    my $x = shift;
+
+    if ($x->{sign} ne '+' && $x->{sign} ne '-') {
+        return $x->{sign} unless $x->{sign} eq '+inf';  # -inf, NaN
+        return 'inf';                                   # +inf
     }
-  my $sep = 'e'.$x->{_es};
-  my $sign = $x->{sign}; $sign = '' if $sign eq '+';
-  $sign . $MBI->_str($x->{_m}) . $sep . $MBI->_str($x->{_e});
-  }
-    
+
+    my $mant = $MBI->_str($x->{_m});
+    my $expo = $x -> exponent();
+
+    my $str = $mant;
+    if ($expo >= 0) {
+        $str .= "0" x $expo;
+    } else {
+        my $mantlen = CORE::length($mant);
+        my $c = $mantlen + $expo;
+        $str = "0" x (1 - $c) . $str if $c <= 0;
+        substr($str, $expo, 0) = '.';
+    }
+
+    return $x->{sign} eq '-' ? "-$str" : $str;
+}
+
+# Scientific notation with significand/mantissa as an integer, e.g., "12345.6789"
+# is written as "123456789e-4".
+
+sub bsstr {
+    my ($class, $x) = ref($_[0]) ? (undef, $_[0]) : objectify(1, @_);
+
+    if ($x->{sign} ne '+' && $x->{sign} ne '-') {
+        return $x->{sign} unless $x->{sign} eq '+inf';  # -inf, NaN
+        return 'inf';                                   # +inf
+    }
+
+    my $str = $MBI->_str($x->{_m}) . 'e' . $x->{_es}. $MBI->_str($x->{_e});
+    return $x->{sign} eq '-' ? "-$str" : $str;
+}
+
+# Normalized notation, e.g., "12345.6789" is written as "1.23456789e+4".
+
+sub bnstr {
+    my $x = shift;
+
+    if ($x->{sign} ne '+' && $x->{sign} ne '-') {
+        return $x->{sign} unless $x->{sign} eq '+inf';  # -inf, NaN
+        return 'inf';                                   # +inf
+    }
+
+    my ($mant, $expo) = $x -> nparts();
+
+    my $esgn = $expo < 0 ? '-' : '+';
+    my $eabs = $expo -> babs() -> bfround(0) -> bstr();
+    #$eabs = '0' . $eabs if length($eabs) < 2;
+
+    return $mant . 'e' . $esgn . $eabs;
+}
+
+# Engineering notation, e.g., "12345.6789" is written as "12.3456789e+3".
+
+sub bestr {
+    my $x = shift;
+
+    if ($x->{sign} ne '+' && $x->{sign} ne '-') {
+        return $x->{sign} unless $x->{sign} eq '+inf';  # -inf, NaN
+        return 'inf';                                   # +inf
+    }
+
+    my ($mant, $expo) = $x -> eparts();
+
+    my $esgn = $expo < 0 ? '-' : '+';
+    my $eabs = $expo -> babs() -> bfround(0) -> bstr();
+    #$eabs = '0' . $eabs if length($eabs) < 2;
+
+    return $mant . 'e' . $esgn . $eabs;
+}
+
 sub numify 
   {
   # Make a Perl scalar number from a Math::BigFloat object.
@@ -4229,6 +4291,150 @@ sub parts
   ($m, Math::BigInt->new( $x->{_es} . $MBI->_num($x->{_e}) ));
   }
 
+sub sparts {
+    my $self  = shift;
+    my $class = ref $self;
+
+    Carp::croak("sparts() is an instance method, not a class method")
+        unless $class;
+
+    # Not-a-number.
+
+    if ($self -> is_nan()) {
+        my $mant = $self -> copy();             # mantissa
+        return $mant unless wantarray;          # scalar context
+        my $expo = $class -> bnan();            # exponent
+        return ($mant, $expo);                  # list context
+    }
+
+    # Infinity.
+
+    if ($self -> is_inf()) {
+        my $mant = $self -> copy();             # mantissa
+        return $mant unless wantarray;          # scalar context
+        my $expo = $class -> binf('+');         # exponent
+        return ($mant, $expo);                  # list context
+    }
+
+    # Finite number.
+
+    my $mant = $class -> bzero();
+    $mant -> {sign} = $self -> {sign};
+    $mant -> {_m}   = $MBI->_copy($self -> {_m});
+    return $mant unless wantarray;
+
+    my $expo = $class -> bzero();
+    $expo -> {sign} = $self -> {_es};
+    $expo -> {_m}   = $MBI->_copy($self -> {_e});
+
+    return ($mant, $expo);
+}
+
+sub nparts {
+    my $self  = shift;
+    my $class = ref $self;
+
+    Carp::croak("nparts() is an instance method, not a class method")
+        unless $class;
+
+    # Not-a-number.
+
+    if ($self -> is_nan()) {
+        my $mant = $self -> copy();             # mantissa
+        return $mant unless wantarray;          # scalar context
+        my $expo = $class -> bnan();            # exponent
+        return ($mant, $expo);                  # list context
+    }
+
+    # Infinity.
+
+    if ($self -> is_inf()) {
+        my $mant = $self -> copy();             # mantissa
+        return $mant unless wantarray;          # scalar context
+        my $expo = $class -> binf('+');         # exponent
+        return ($mant, $expo);                  # list context
+    }
+
+    # Finite number.
+
+    my ($mant, $expo) = $self -> sparts();
+
+    if ($mant -> bcmp(0)) {
+        my ($ndigtot, $ndigfrac) = $mant -> length();
+        my $expo10adj = $ndigtot - $ndigfrac - 1;
+
+        if ($expo10adj != 0) {
+            my $factor  = "1e" . -$expo10adj;
+            $mant -> bmul($factor);
+            return $mant unless wantarray;
+            $expo -> badd($expo10adj);
+            return ($mant, $expo);
+        }
+    }
+
+    return $mant unless wantarray;
+    return ($mant, $expo);
+}
+
+sub eparts {
+    my $self  = shift;
+    my $class = ref $self;
+
+    Carp::croak("eparts() is an instance method, not a class method")
+        unless $class;
+
+    # Not-a-number and Infinity.
+
+    return $self -> sparts() if $self -> is_nan() || $self -> is_inf();
+
+    # Finite number.
+
+    my ($mant, $expo) = $self -> nparts();
+
+    my $c = $expo -> copy() -> bmod(3);
+    $mant -> blsft($c, 10);
+    return $mant unless wantarray;
+
+    $expo -> bsub($c);
+    return ($mant, $expo);
+}
+
+sub dparts {
+    my $self  = shift;
+    my $class = ref $self;
+
+    Carp::croak("dparts() is an instance method, not a class method")
+        unless $class;
+
+    # Not-a-number and Infinity.
+
+    if ($self -> is_nan() || $self -> is_inf()) {
+        my $int = $self -> copy();
+        return $int unless wantarray;
+        my $frc = $class -> bzero();
+        return ($int, $frc);
+    }
+
+    my $int = $self  -> copy();
+    my $frc = $class -> bzero();
+
+    # If the input has a fraction part.
+
+    if ($int->{_es} eq '-') {
+        $int->{_m} = $MBI -> _rsft($int->{_m}, $int->{_e}, 10);
+        $int->{_e} = $MBI -> _zero();
+        $int->{_es} = '+';
+        $int->{sign} = '+' if $MBI->_is_zero($int->{_m});   # avoid -0
+
+        return $int unless wantarray;
+        $frc = $self -> copy() -> bsub($int);
+        return ($int, $frc);
+    }
+
+    return $int unless wantarray;
+    return ($int, $frc);
+}
+
 ##############################################################################
 # private stuff (internal use only)
 
@@ -4830,12 +5036,19 @@ Math::BigFloat - Arbitrary size floating point math package
  blcm(@values);		 # lowest common multiplicator
 
  $x->bstr();		 # return string
- $x->bsstr();		 # return string in scientific notation
+ $x->bsstr();            # string in scientific notation with integers
+ $x->bnstr();            # string in normalized notation
+ $x->bestr();            # string in engineering notation
+ $x->bdstr();            # string in decimal notation
 
- $x->as_int();		 # return $x as BigInt 
+ $x->as_int();		 # return $x as BigInt
  $x->exponent();	 # return exponent as BigInt
  $x->mantissa();	 # return mantissa as BigInt
  $x->parts();		 # return (mantissa,exponent) as BigInt
+ $x->sparts();           # mantissa and exponent (as integers)
+ $x->nparts();           # mantissa and exponent (normalised)
+ $x->eparts();           # mantissa and exponent (engineering notation)
+ $x->dparts();           # integer and fraction part
 
  $x->length();		 # number of digits (w/o sign and '.')
  ($l,$f) = $x->length(); # number of digits, and length of fraction
@@ -4896,18 +5109,7 @@ object.
 
 =head2 Output
 
-Output values are BigFloat objects (normalized), except for bstr() and bsstr().
-
-The string output will always have leading and trailing zeros stripped and drop
-a plus sign. C<bstr()> will give you always the form with a decimal point,
-while C<bsstr()> (s for scientific) gives you the scientific notation.
-
-	Input			bstr()		bsstr()
-	'-0'			'0'		'0E1'
-   	'  -123 123 123'	'-123123123'	'-123123123E0'
-	'00.0123'		'0.0123'	'123E-4'
-	'123.45E-2'		'1.2345'	'12345E-4'
-	'10E+3'			'10000'		'1E4'
+Output values are usually BigFloat objects.
 
 Some routines (C<is_odd()>, C<is_even()>, C<is_zero()>, C<is_one()>,
 C<is_nan()>) return true or false, while others (C<bcmp()>, C<bacmp()>)
@@ -4920,7 +5122,47 @@ The sign C</^[+-]$/> is stored separately. The string 'NaN' is used to
 represent the result when input arguments are not numbers, and 'inf' and
 '-inf' are used to represent positive and negative infinity, respectively.
 
-=head2 mantissa(), exponent() and parts()
+    Input       bdstr()   bsstr()     bnstr()      bestr()
+    -0          0         0e+0        0e+0         0e+0
+    -123_123    -123123   -123123e+0  -1.23123e+5  -123.123e+3
+    00.0123     0.0123    123e-4      1.23e-2      12.3e-3
+    123.45e-2   1.2345    12345e-4    1.2345e+0    1.2345e+0
+    10e+3       10000     1e+4        1e+4         10e+3
+
+=over
+
+=item bstr()
+
+Returns a string representing the number using decimal notation. If accuracy or
+precision is specified, the output is zero padded accordingly.
+
+=item bsstr()
+
+Returns a string representing the number using scientific notation where both
+the significand (mantissa) and the exponent are integers. The output
+corresponds to the output from C<sparts()>.
+
+=item bnstr()
+
+Returns a string representing the number using normalized notation, the most
+common variant of scientific notation. For finite non-zero numbers, the
+absolute value of the significand is less than or equal to 1 and less than 10.
+The output corresponds to the output from C<nparts()>.
+
+=item bestr()
+
+Returns a string representing the number using engineering notation. For finite
+non-zero numbers, the absolute value of the significand is less than or equal
+to 1 and less than 1000, and the exponent is a multiple of 3. The output
+corresponds to the output from C<eparts()>.
+
+=item bdstr()
+
+Returns a string representing the number using decimal notation. Unlike the
+output fro bstr(), the output from bdstr() is never padded with trailing zeros.
+The output corresponds to the output from C<dparts()>.
+
+=item mantissa(), exponent() and parts()
 
 mantissa() and exponent() return the said parts of the BigFloat
 as BigInts such that:
@@ -4935,6 +5177,39 @@ C<< ($m,$e) = $x->parts(); >> is just a shortcut giving you both of them.
 Currently the mantissa is reduced as much as possible, favouring higher
 exponents over lower ones (e.g. returning 1e7 instead of 10e6 or 10000000e0).
 This might change in the future, so do not depend on it.
+
+=item sparts()
+
+Returns the significand (mantissa) and the exponent as integers. In scalar
+context, only the significand is returned. The significand is the integer with
+the smallest absolute value. The output of C<sparts()> corresponds to the
+output from C<bsstr()>.
+
+Unlike C<parts()>, which returns Math::BigInt objects, C<sparts()> returns
+objects of the same class of the invocand.
+
+=item nparts()
+
+Returns the significand (mantissa) and exponent corresponding to normalized
+notation. In scalar context, only the significand is returned. For finite
+non-zero numbers, the significand's absolute value is greater than or equal to
+1 and less than 10. The output of C<nparts()> corresponds to the output from
+C<bnstr()>.
+
+=item eparts()
+
+Returns the significand (mantissa) and exponent corresponding to engineering
+notation. In scalar context, only the significand is returned. For finite
+non-zero numbers, the significand's absolute value is greater than or equal to
+1 and less than 1000, and the exponent is a multiple of 3. The output of
+C<eparts()> corresponds to the output from C<bestr()>.
+
+=item dparts()
+
+Returns the integer part and the fraction part. The output of C<dparts()>
+corresponds to the output from C<bdstr()>.
+
+=back
 
 =head2 Accuracy vs. Precision
 
