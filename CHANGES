@@ -1360,7 +1360,8 @@ The changes are now grouped by distribution.
    $x->bdiv($y) in list context should return quotient $q and remainder $r so
    that $x = $q * $y + $r, and that the remainder (modulo) $r should correspond
    to Perl's % operator as well as the bmod() method. This has not been the
-   actual behaviour. This is now fixed.
+   actual behaviour. This is now fixed. In scalar context, only the quotient is
+   returned.
 
  * Clearer POD documentation for the bdiv() and bmod() methods.
 
@@ -1627,7 +1628,7 @@ there are so many changes, I let this be a development release.
 
  * Add tests for as_oct().
 
- * Minor simplifications in Math::BigInt->as_oct() as
+ * Minor simplifications in Math::BigInt->as_oct() and
    Math::BigInt::Calc::_as_oct().
 
 2016-01-05 v1.999715 pjacklam
@@ -1642,6 +1643,31 @@ there are so many changes, I let this be a development release.
  * Add better descriptions (test names) to a few tests.
 
  * Wrap long line in the CHANGES file.
+
+2016-04-03 v1.999716 pjacklam
+
+ * $x->new(...) can no longer be used to assign a value to $x. This was a
+   mistake introduced in v1.999712. As the name "new" implies, it should always
+   return a new object.
+
+ * Using new() with no argument no longer gives a warning. This use has been
+   discouraged, in favour of bzero(), for many years, but people are still
+   using it, so I am reintroducing the support for this.
+
+ * Added btdiv() and btmod() for truncated division (T-division) and ditto
+   remainder. Add tests.
+
+ * Add test files author-bmod-bdiv-mbi.t author-btmod-btdiv-mbi.t with more
+   thorough testing of bdiv(), bmod(), btdiv(), and btmod().
+
+ * When new() is used as an instance method, the new object is initialized as a
+   copy of the invocand.
+
+ * Move test for numfiy() of +Inf, -Inf, NaN, and big integers from
+   bigfltpm.inc and bigintpm.inc into author-numify-mbi.t and
+   author-numify-mbf.t.
+
+ * Improved wording and fixed typos in earlier changelog entries.
 
 Please send us test-reports, your experiences with this and your ideas - we love
 to hear about our work!

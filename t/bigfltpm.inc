@@ -284,18 +284,6 @@ unlike($CLASS->new("1e9999")->numify(), qr/^1(\.0*)?e\+?9+$/,
        qq|$CLASS->new("1e9999")->numify()|);
 
 ###############################################################################
-# Check numify on non-finite objects.
-
-{
-    require Math::Complex;
-    my $inf = Math::Complex::Inf();
-    my $nan = $inf - $inf;
-    is($CLASS -> binf("+") -> numify(),  $inf, "numify of +Inf");
-    is($CLASS -> binf("-") -> numify(), -$inf, "numify of -Inf");
-    is($CLASS -> bnan()    -> numify(),  $nan, "numify of NaN");
-}
-
-###############################################################################
 # bsqrt() with set global A/P or A/P enabled on $x, also a test whether bsqrt()
 # correctly modifies $x
 
