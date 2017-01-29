@@ -3,7 +3,8 @@
 BEGIN {
     unless ($ENV{AUTHOR_TESTING}) {
         require Test::More;
-        Test::More::plan(skip_all => 'these tests are for release candidate testing');
+        Test::More::plan(skip_all =>
+                         'these tests are for testing by the author');
     }
 }
 
@@ -19,8 +20,9 @@ BEGIN { $class = 'Math::BigInt'; }
 BEGIN { use_ok($class) }
 
 while (<DATA>) {
-    s/\s+\z//;
-    next if /^#/ || ! /\S/;
+    s/#.*$//;                   # remove comments
+    s/\s+$//;                   # remove trailing whitespace
+    next unless length;         # skip empty lines
 
     # $in0 - the x value
     # $in1 - the base

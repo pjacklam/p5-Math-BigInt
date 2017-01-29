@@ -12,11 +12,12 @@ package Math::BigFloat;
 #   _a	: accuracy
 #   _p	: precision
 
-use 5.006002;
+use 5.006001;
 use strict;
 use warnings;
 
-our $VERSION = '1.999710';
+our $VERSION = '1.999712';
+$VERSION = eval $VERSION;
 
 require Exporter;
 our @ISA	= qw/Math::BigInt/;
@@ -29,21 +30,19 @@ our ($AUTOLOAD, $accuracy, $precision, $div_scale, $round_mode, $rnd_mode,
 my $class = "Math::BigFloat";
 
 use overload
-'<=>'	=>	sub { my $rc = $_[2] ?
-                      ref($_[0])->bcmp($_[1],$_[0]) : 
-                      ref($_[0])->bcmp($_[0],$_[1]); 
+  '<=>'	=>	sub { my $rc = $_[2] ? ref($_[0])->bcmp($_[1], $_[0])
+                                     : ref($_[0])->bcmp($_[0], $_[1]);
 		      $rc = 1 unless defined $rc;
 		      $rc <=> 0;
 		},
 # we need '>=' to get things like "1 >= NaN" right:
-'>='	=>	sub { my $rc = $_[2] ?
-                      ref($_[0])->bcmp($_[1],$_[0]) : 
-                      ref($_[0])->bcmp($_[0],$_[1]);
+  '>='	=>	sub { my $rc = $_[2] ? ref($_[0])->bcmp($_[1],$_[0])
+                                     : ref($_[0])->bcmp($_[0],$_[1]);
 		      # if there was a NaN involved, return false
 		      return '' unless defined $rc;
 		      $rc >= 0;
 		},
-'int'	=>	sub { $_[0]->as_number() },		# 'trunc' to bigint
+  'int'	=>	sub { $_[0]->as_number() },		# 'trunc' to bigint
 ;
 
 ##############################################################################
@@ -127,51 +126,72 @@ BEGIN
 ##############################################################################
 # constructors
 
-sub new 
-  {
-  # create a new BigFloat object from a string or another bigfloat object. 
-  # _e: exponent
-  # _m: mantissa
-  # sign  => sign (+/-), or "NaN"
+sub new {
+    # Create a new BigFloat object from a string or another bigfloat object.
+    # _e: exponent
+    # _m: mantissa
+    # sign  => sign ("+", "-", "+inf", "-inf", or "NaN"
 
-  my ($class,$wanted,@r) = @_;
+    my $self    = shift;
+    my $selfref = ref $self;
+    my $class   = $selfref || $self;
 
-  # avoid numify-calls by not using || on $wanted!
-  return $class->bzero() if !defined $wanted;	# default to 0
-  return $wanted->copy() if UNIVERSAL::isa($wanted,'Math::BigFloat');
+    my ($wanted, @r) = @_;
 
-  $class->import() if $IMPORT == 0;             # make require work
+    # avoid numify-calls by not using || on $wanted!
 
-  my $self = {}; bless $self, $class;
-  # shortcut for bigints and its subclasses
-  if ((ref($wanted)) && UNIVERSAL::can( $wanted, "as_number"))
-    {
-    $self->{_m} = $wanted->as_number()->{value}; # get us a bigint copy
-    $self->{_e} = $MBI->_zero();
-    $self->{_es} = '+';
-    $self->{sign} = $wanted->sign();
-    return $self->bnorm();
-    }
-  # else: got a string or something masquerading as number (with overload)
-
-  # handle '+inf', '-inf' first
-  if ($wanted =~ /^[+-]?inf\z/)
-    {
-    return $downgrade->new($wanted) if $downgrade;
-
-    $self->{sign} = $wanted;		# set a default sign for bstr()
-    return $self->binf($wanted);
+    unless (defined $wanted) {
+        require Carp;
+        Carp::carp("Use of uninitialized value in new");
+        return $self->bzero(@r);
     }
 
-  # shortcut for simple forms like '12' that neither have trailing nor leading
-  # zeros
-  if ($wanted =~ /^([+-]?)([1-9][0-9]*[1-9])$/)
-    {
-    $self->{_e} = $MBI->_zero();
-    $self->{_es} = '+';
-    $self->{sign} = $1 || '+';
-    $self->{_m} = $MBI->_new($2);
-    return $self->round(@r) if !$downgrade;
+    # Using $wanted->isa("Math::BigFloat") here causes a 'Deep recursion on
+    # subroutine "Math::BigFloat::as_number"' in some tests. Fixme!
+
+    if (UNIVERSAL::isa($wanted, 'Math::BigFloat')) {
+        my $copy = $wanted -> copy();
+        if ($selfref) {
+            %$self = %$copy;
+        } else {
+            $self = $copy;
+        }
+        return $copy;
+    }
+
+    $class->import() if $IMPORT == 0;             # make require work
+
+    # If called as a class method, initialize a new object.
+
+    $self = bless {}, $class unless $selfref;
+
+    # shortcut for bigints and its subclasses
+    if ((ref($wanted)) && $wanted -> can("as_number")) {
+        $self->{_m} = $wanted->as_number()->{value};  # get us a bigint copy
+        $self->{_e} = $MBI->_zero();
+        $self->{_es} = '+';
+        $self->{sign} = $wanted->sign();
+        return $self->bnorm();
+    }
+
+    # else: got a string or something masquerading as number (with overload)
+
+    # Handle Infs.
+
+    if ($wanted =~ /^\s*([+-]?)inf(inity)?\s*\z/i) {
+        return $downgrade->new($wanted) if $downgrade;
+        my $sgn = $1 || '+';
+        $self->{sign} = $sgn . 'inf';   # set a default sign for bstr()
+        return $self->binf($sgn);
+    }
+
+    # Shortcut for simple forms like '12' that have no trailing zeros.
+    if ($wanted =~ /^([+-]?)0*([1-9][0-9]*[1-9])$/) {
+        $self->{_e} = $MBI->_zero();
+        $self->{_es} = '+';
+        $self->{sign} = $1 || '+';
+        $self->{_m} = $MBI->_new($2);
+        return $self->round(@r) if !$downgrade;
     }
 
   my ($mis,$miv,$mfv,$es,$ev) = Math::BigInt::_split($wanted);
@@ -244,34 +264,26 @@ sub new
   $self->bnorm()->round(@r);			# first normalize, then round
   }
 
-sub copy
-  {
-  # if two arguments, the first one is the class to "swallow" subclasses
-  if (@_ > 1)
-    {
-    my  $self = bless {
-	sign => $_[1]->{sign}, 
-	_es => $_[1]->{_es}, 
-	_m => $MBI->_copy($_[1]->{_m}),
-	_e => $MBI->_copy($_[1]->{_e}),
-    }, $_[0] if @_ > 1;
+sub copy {
+    my $self    = shift;
+    my $selfref = ref $self;
+    my $class   = $selfref || $self;
 
-    $self->{_a} = $_[1]->{_a} if defined $_[1]->{_a};
-    $self->{_p} = $_[1]->{_p} if defined $_[1]->{_p};
-    return $self;
-    }
+    # If called as a class method, the object to copy is the next argument.
 
-  my $self = bless {
-	sign => $_[0]->{sign}, 
-	_es => $_[0]->{_es}, 
-	_m => $MBI->_copy($_[0]->{_m}),
-	_e => $MBI->_copy($_[0]->{_e}),
-	}, ref($_[0]);
+    $self = shift() unless $selfref;
 
-  $self->{_a} = $_[0]->{_a} if defined $_[0]->{_a};
-  $self->{_p} = $_[0]->{_p} if defined $_[0]->{_p};
-  $self;
-  }
+    my $copy = bless {}, $class;
+
+    $copy->{sign} = $self->{sign};
+    $copy->{_es}  = $self->{_es};
+    $copy->{_m}   = $MBI->_copy($self->{_m});
+    $copy->{_e}   = $MBI->_copy($self->{_e});
+    $copy->{_a}   = $self->{_a} if exists $self->{_a};
+    $copy->{_p}   = $self->{_p} if exists $self->{_p};
+
+    return $copy;
+}
 
 sub _bnan
   {
@@ -1613,49 +1625,46 @@ sub bgcd
 
 ##############################################################################
 
-sub _e_add
-  {
-  # Internal helper sub to take two positive integers and their signs and
-  # then add them. Input ($CALC,$CALC,('+'|'-'),('+'|'-')), 
-  # output ($CALC,('+'|'-'))
-  my ($x,$y,$xs,$ys) = @_;
+sub _e_add {
+    # Internal helper sub to take two positive integers and their signs and
+    # then add them. Input ($CALC, $CALC, ('+'|'-'), ('+'|'-')), output
+    # ($CALC, ('+'|'-')).
 
-  # if the signs are equal we can add them (-5 + -3 => -(5 + 3) => -8)
-  if ($xs eq $ys)
-    {
-    $x = $MBI->_add ($x, $y );		# a+b
-    # the sign follows $xs
+    my ($x, $y, $xs, $ys) = @_;
+
+    # if the signs are equal we can add them (-5 + -3 => -(5 + 3) => -8)
+    if ($xs eq $ys) {
+        $x = $MBI->_add($x, $y);                # +a + +b or -a + -b
+    } else {
+        my $a = $MBI->_acmp($x, $y);
+        if ($a == 0) {
+            # This does NOT modify $x in-place. TODO: Fix this?
+            $x = $MBI->_zero();                 # result is 0
+            $xs = '+';
+            return ($x, $xs);
+        }
+        if ($a > 0) {
+            $x = $MBI->_sub($x, $y);            # abs sub
+        } else {                                # a < 0
+            $x = $MBI->_sub ( $y, $x, 1 );      # abs sub
+            $xs = $ys;
+        }
+    }
+
+    $xs = '+' if $xs eq '-' && $MBI->_is_zero($x);      # no "-0"
+
     return ($x, $xs);
-    }
+}
 
-  my $a = $MBI->_acmp($x,$y);
-  if ($a > 0)
-    {
-    $x = $MBI->_sub ($x , $y);				# abs sub
-    }
-  elsif ($a == 0)
-    {
-    $x = $MBI->_zero();					# result is 0
-    $xs = '+';
-    }
-  else # a < 0
-    {
-    $x = $MBI->_sub ( $y, $x, 1 );			# abs sub
-    $xs = $ys;
-    }
-  ($x,$xs);
-  }
-
-sub _e_sub
-  {
+sub _e_sub {
   # Internal helper sub to take two positive integers and their signs and
   # then subtract them. Input ($CALC,$CALC,('+'|'-'),('+'|'-')), 
   # output ($CALC,('+'|'-'))
   my ($x,$y,$xs,$ys) = @_;
 
   # flip sign
-  $ys =~ tr/+-/-+/;
-  _e_add($x,$y,$xs,$ys);		# call add (does subtract now)
+    $ys = $ys eq '+' ? '-' : '+';       # swap sign of second operand ...
+    _e_add($x, $y, $xs, $ys);           # ... and let _e_add() do the job
   }
 
 ###############################################################################
@@ -3340,7 +3349,8 @@ sub batan
   # to calculate PI/2 - atan(1/x):
   my $one = $MBI->_new(1);
   my $pi = undef;
-  if ($x->{_es} eq '+' && ($MBI->_acmp($x->{_m},$one) >= 0))
+  #if ($x->{_es} eq '+' && ($MBI->_acmp($x->{_m},$one) >= 0))
+  if ($x->bacmp($x->copy->bone) >= 0)
     {
     # calculate PI/2
     $pi = $self->bpi($scale - 3);
@@ -4014,6 +4024,8 @@ sub from_hex {
 
     my $str = shift;
 
+    # If called as a class method, initialize a new object.
+
     $self = $class -> bzero() unless $selfref;
 
     if ($str =~ s/
@@ -4061,9 +4073,9 @@ sub from_hex {
 
         # If there is a dot in the significand, remove it and adjust the
         # exponent according to the number of digits in the fraction part of
-        # the significand. Multiply the exponent adjustment value by 4 since
-        # the digits in the significand are in base 16, but the exponent is
-        # only in base 2.
+        # the significand. Since the digits in the significand are in base 16,
+        # but the exponent is only in base 2, multiply the exponent adjustment
+        # value by log(16) / log(2) = 4.
 
         my $idx = index($s_value, '.');
         if ($idx >= 0) {
@@ -4075,6 +4087,170 @@ sub from_hex {
 
         $self -> {sign} = $s_sign;
         $self -> {_m}   = $MBI -> _from_hex('0x' . $s_value);
+
+        if ($two_expon > 0) {
+            my $factor = $class -> new("2") -> bpow($two_expon);
+            $self -> bmul($factor);
+        } elsif ($two_expon < 0) {
+            my $factor = $class -> new("0.5") -> bpow(-$two_expon);
+            $self -> bmul($factor);
+        }
+
+        return $self;
+    }
+
+    return $self->bnan();
+}
+
+sub from_oct {
+    my $self    = shift;
+    my $selfref = ref $self;
+    my $class   = $selfref || $self;
+
+    my $str = shift;
+
+    # If called as a class method, initialize a new object.
+
+    $self = $class -> bzero() unless $selfref;
+
+    if ($str =~ s/
+                     ^
+
+                     # sign
+                     ( [+-]? )
+
+                     # significand using the octal digits 0..7
+                     (
+                         [0-7]+ (?: _ [0-7]+ )*
+                         (?:
+                             \.
+                             (?: [0-7]+ (?: _ [0-7]+ )* )?
+                         )?
+                     |
+                         \.
+                         [0-7]+ (?: _ [0-7]+ )*
+                     )
+
+                     # exponent (power of 2) using decimal digits
+                     (?:
+                         [Pp]
+                         ( [+-]? )
+                         ( \d+ (?: _ \d+ )* )
+                     )?
+
+                     $
+                 //x)
+    {
+        my $s_sign  = $1 || '+';
+        my $s_value = $2;
+        my $e_sign  = $3 || '+';
+        my $e_value = $4 || '0';
+        $s_value =~ tr/_//d;
+        $e_value =~ tr/_//d;
+
+        # The significand must be multiplied by 2 raised to this exponent.
+
+        my $two_expon = $class -> new($e_value);
+        $two_expon -> bneg() if $e_sign eq '-';
+
+        # If there is a dot in the significand, remove it and adjust the
+        # exponent according to the number of digits in the fraction part of
+        # the significand. Since the digits in the significand are in base 8,
+        # but the exponent is only in base 2, multiply the exponent adjustment
+        # value by log(8) / log(2) = 3.
+
+        my $idx = index($s_value, '.');
+        if ($idx >= 0) {
+            substr($s_value, $idx, 1) = '';
+            $two_expon -= $class -> new(CORE::length($s_value))
+                                 -> bsub($idx)
+                                 -> bmul("3");
+        }
+
+        $self -> {sign} = $s_sign;
+        $self -> {_m}   = $MBI -> _from_oct($s_value);
+
+        if ($two_expon > 0) {
+            my $factor = $class -> new("2") -> bpow($two_expon);
+            $self -> bmul($factor);
+        } elsif ($two_expon < 0) {
+            my $factor = $class -> new("0.5") -> bpow(-$two_expon);
+            $self -> bmul($factor);
+        }
+
+        return $self;
+    }
+
+    return $self->bnan();
+}
+
+sub from_bin {
+    my $self    = shift;
+    my $selfref = ref $self;
+    my $class   = $selfref || $self;
+
+    my $str = shift;
+
+    # If called as a class method, initialize a new object.
+
+    $self = $class -> bzero() unless $selfref;
+
+    if ($str =~ s/
+                     ^
+
+                     # sign
+                     ( [+-]? )
+
+                     # optional "bin marker"
+                     (?: 0? b )?
+
+                     # significand using the binary digits 0 and 1
+                     (
+                         [01]+ (?: _ [01]+ )*
+                         (?:
+                             \.
+                             (?: [01]+ (?: _ [01]+ )* )?
+                         )?
+                     |
+                         \.
+                         [01]+ (?: _ [01]+ )*
+                     )
+
+                     # exponent (power of 2) using decimal digits
+                     (?:
+                         [Pp]
+                         ( [+-]? )
+                         ( \d+ (?: _ \d+ )* )
+                     )?
+
+                     $
+                 //x)
+    {
+        my $s_sign  = $1 || '+';
+        my $s_value = $2;
+        my $e_sign  = $3 || '+';
+        my $e_value = $4 || '0';
+        $s_value =~ tr/_//d;
+        $e_value =~ tr/_//d;
+
+        # The significand must be multiplied by 2 raised to this exponent.
+
+        my $two_expon = $class -> new($e_value);
+        $two_expon -> bneg() if $e_sign eq '-';
+
+        # If there is a dot in the significand, remove it and adjust the
+        # exponent according to the number of digits in the fraction part of
+        # the significand.
+
+        my $idx = index($s_value, '.');
+        if ($idx >= 0) {
+            substr($s_value, $idx, 1) = '';
+            $two_expon -= $class -> new(CORE::length($s_value))
+                                 -> bsub($idx);
+        }
+
+        $self -> {sign} = $s_sign;
+        $self -> {_m}   = $MBI -> _from_bin('0b' . $s_value);
 
         if ($two_expon > 0) {
             my $factor = $class -> new("2") -> bpow($two_expon);
@@ -4115,7 +4291,9 @@ Math::BigFloat - Arbitrary size floating point math package
  my $mone = Math::BigFloat->bone('-');	# create a -1
  my $x = Math::BigFloat->bone('-');	#
 
- my $h = Math::BigFloat->from_hex('0xc.afep+3');    # from hexadecimal
+ my $x = Math::BigFloat->from_hex('0xc.afep+3');    # from hexadecimal
+ my $x = Math::BigFloat->from_bin('0b1.1001p-4');   # from binary
+ my $x = Math::BigFloat->from_oct('1.3267p-4');     # from octal
 
  my $pi = Math::BigFloat->bpi(100);	# PI to 100 digits
 
@@ -4587,9 +4765,33 @@ In Math::BigFloat, C<as_float()> has the same effect as C<copy()>.
     $x -> from_hex("0x1.921fb54442d18p+1");
     $x = Math::BigFloat -> from_hex("0x1.921fb54442d18p+1");
 
-Interpret input as a hexadecimal string. A "0x" or "x" prefix is optional. A
-single underscore character may be placed between any two digits. If the input
-is invalid, a NaN is returned. The exponent is in base 2 using decimal digits.
+Interpret input as a hexadecimal string.A prefix ("0x", "x", ignoring case) is
+optional. A single underscore character ("_") may be placed between any two
+digits. If the input is invalid, a NaN is returned. The exponent is in base 2
+using decimal digits.
+
+If called as an instance method, the value is assigned to the invocand.
+
+=item from_bin()
+
+    $x -> from_bin("0b1.1001p-4");
+    $x = Math::BigFloat -> from_bin("0b1.1001p-4");
+
+Interpret input as a hexadecimal string. A prefix ("0b" or "b", ignoring case)
+is optional. A single underscore character ("_") may be placed between any two
+digits. If the input is invalid, a NaN is returned. The exponent is in base 2
+using decimal digits.
+
+If called as an instance method, the value is assigned to the invocand.
+
+=item from_oct()
+
+    $x -> from_oct("1.3267p-4");
+    $x = Math::BigFloat -> from_oct("1.3267p-4");
+
+Interpret input as an octal string. A single underscore character ("_") may be
+placed between any two digits. If the input is invalid, a NaN is returned. The
+exponent is in base 2 using decimal digits.
 
 If called as an instance method, the value is assigned to the invocand.
 

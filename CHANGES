@@ -1363,8 +1363,9 @@ The changes are now grouped by distribution.
 
  * Clearer POD documentation for the bdiv() and bmod() methods.
 
- * All input values in the range (-1,1) written as a decimal number, e.g.,
-   -0.75 and 0.5, now return NaN, not 0.
+ * All non-integer input values to Math::BigInt gave a NaN, except non-zero
+   numbers in the range (-1,1) that were written without an exponent, e.g.,
+   "-0.75" and "0.5". Now also these return a NaN.
 
  * Input values with a large (absolute value) negative exponent, e.g.,
    1e-9999999, now return NaN. The former behaviour was to die with the message
@@ -1508,6 +1509,95 @@ The changes are now grouped by distribution.
  * New test file t/from_hex-mbf.t for testing Math::BigFloat -> from_hex().
 
  * Add 'from_hex' and 'from_bin' to list of methods in the Math::BigInt POD.
+
+2012-12-10 v1.9997_11 pjacklam
+
+This release introduces no changes in the library code, i.e., the .pm files in
+the 'lib' directory, but there are a lot of changes in the test files. Since
+there are so many changes, I let this be a development release.
+
+ * Add 'use strict;' and 'use warnings;' to all test files.
+
+ * Reformat code in the test files according to the "perlstyle" manual page.
+   This makes the code a lot easier to read -- for me, anyway.
+
+ * Decrement required version of Perl from v5.6.2 to v5.6.1. All tests pass
+   when running the test suite with Perl 5.6.1 on Cygwin.
+
+ * Replace "use vars ..." with "our ..." in test files.
+
+ * Replace "BEGIN { unshift @INC, 't'; }" with "use lib 't';" in test files.
+
+ * Use "our $x; $x = ...;" rather than "our $x = ...;" since the latter causes
+   Perl 5.6.1 to complain about variables only used once.
+
+ * Add comment to all tests. Now the tests no longer says just "ok 123", but
+   rather "ok 123 - $x->blog(2)" etc. This makes it easier to identify failed
+   tests, especially in the smoke testing reports.
+
+ * Fix various flawed tests, e.g., ok($x, 2) was used testing whether $x was 2.
+
+ * Use the skip() feature of Test::More for skipping tests.
+
+ * Use more descriptive variable names in test files.
+
+ * Remove unused variables in test files.
+
+ * Move variable declarations to limit their scope in test files.
+
+ * Remove trailing whitespace in test files.
+
+ * Wrap (most) lines to fit 80 columns in test files.
+
+2015-12-29 v1.999712 pjacklam
+
+ * Fix bug in internal function _e_add() and _e_sub() which causes it to return
+   "-0" in some cases.
+
+ * Let new() be used for assignment. Now $x->new(3) assigns 3 to $x.
+
+ * Improve code in new() for non-zero scalar integers with no exponent.
+
+ * Allow both "inf" and "infinity". Allow a leading sign, and ignore letter
+   case. This is to be consistent with core Perl.
+
+ * Be more consistent about allowed whitespace in input. E.g., "23 " gave 23,
+   but "inf " gave a NaN.
+
+ * Core Perl allows both "0x" and "0X" as hexadecimal prefix, and both "0b" and
+   "0B" as binary prefix, so we do too. Previously, only 0x and 0b were
+   allowed.
+
+ * Math::BigFloat now has its own from_bin() method which supports binary
+   floating point numbers, e.g., "0b1.1001p-4". This complements from_hex().
+
+ * Math::BigFloat now has its own from_oct() method which supports octal
+   floating point numbers, e.g., "1.3267p-4". This complements from_hex().
+
+ * The Math::BigInt and Math::BigFloat methods from_hex(), from_oct(), and
+   from_bin() can now be used as instance methods to assign values to the
+   invocand, e.g, $x->from_oct("10") assigns 8 to $x.
+
+ * Update documentation. Perl now uses "Inf", not "inf" to represent infinity.
+
+ * When the new() method is called with an undefined argument, the round
+   parameters are now passed on to bzero(). This applies to both Math::BigInt
+   and Math::BigFloat.
+
+ * Replace "UNIVERSAL::isa($this, $that)" with "$this->isa($that)", and ditto
+   for "can()", where possible. Not every instance of "UNIVERSAL::Isa()" has
+   been replaced, though, since the change causes some tests to fail. This must
+   be looked into.
+
+ * Simplify the copy() methods. Always copy accuracy and precision parameters,
+   even when they are undefined.
+
+ * Reformat more of the code in accordancw with the "perlstyle" manual page.
+   This makes the code a lot easier to read -- for me, anyway.
+
+ * Use a more generic regex in t/calling.t, since the exact wording of the
+   error message depends not on the Perl version, but on the module that does
+   the version checking.
 
 Please send us test-reports, your experiences with this and your ideas - we love
 to hear about our work!

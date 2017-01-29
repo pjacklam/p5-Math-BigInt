@@ -1,7 +1,7 @@
 #!perl
 
-# We need at least Perl 5.6
-require 5.006002;
+# We need at least Perl 5.6.1
+require 5.006001;
 use strict;
 
 # Load the Module::Install bundled in ./inc/
@@ -14,7 +14,7 @@ name            'Math-BigInt';
 all_from        'lib/Math/BigInt.pm';
 
 # Required versions.
-requires        'perl'              => 5.006002;
+requires        'perl'              => 5.006001;
 requires        'Math::Complex'     => 1.39,
 test_requires   'Test::More'        => 0.9301;
 
