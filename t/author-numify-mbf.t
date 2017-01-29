@@ -11,9 +11,9 @@ BEGIN {
 use strict;
 use warnings;
 
-use Math::BigFloat;
-
 use Test::More tests => 9;
+
+use Math::BigFloat;
 
 use Math::Complex;
 

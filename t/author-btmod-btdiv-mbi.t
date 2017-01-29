@@ -11,14 +11,12 @@ BEGIN {
 use strict;
 use warnings;
 
+use Test::More tests => 41301;;
+
 use Math::BigInt;
 
 use Math::Complex;
 use Scalar::Util;
-
-use Test::More;
-
-plan tests => 41301;
 
 my $inf = Math::Complex::Inf();
 my $nan = $inf - $inf;

@@ -11,9 +11,9 @@ BEGIN {
 use strict;
 use warnings;
 
-use Math::BigInt;
-
 use Test::More tests => 14;
+
+use Math::BigInt;
 
 use Math::Complex;
 
@@ -54,28 +54,30 @@ is(Math::BigInt -> bnan()    -> numify(),  $nan, "numify of NaN");
 
 ###############################################################################
 
-skip("insufficient 64 bit integer support", 4)
-  unless ($Config::Config{ptrsize} == 8 &&
-          $] >= 5.008                   &&
-          ($Config::Config{use64bitint} ||
-           $Config::Config{use64bitall}));
+SKIP: {
+    skip "insufficient 64 bit integer support", 4
+      unless ($Config::Config{ptrsize} == 8 &&
+              $] >= 5.008                   &&
+              ($Config::Config{use64bitint} ||
+               $Config::Config{use64bitall}));
 
-# The following should not give "1.84467440737096e+19".
+    # The following should not give "1.84467440737096e+19".
 
-{
-    my $x = Math::BigInt -> new(2) -> bpow(64) -> bdec();
-    is($x -> bstr(),   "18446744073709551615",
-       "Math::BigInt 2**64-1 as string");
-    is($x -> numify(), "18446744073709551615",
-       "Math::BigInt 2**64-1 as number");
-}
+    {
+        my $x = Math::BigInt -> new(2) -> bpow(64) -> bdec();
+        is($x -> bstr(),   "18446744073709551615",
+           "Math::BigInt 2**64-1 as string");
+        is($x -> numify(), "18446744073709551615",
+           "Math::BigInt 2**64-1 as number");
+    }
 
-# The following should not give "-9.22337203685478e+18".
+    # The following should not give "-9.22337203685478e+18".
 
-{
-    my $x = Math::BigInt -> new(2) -> bpow(63) -> bneg();
-    is($x -> bstr(),   "-9223372036854775808",
-       "Math::BigInt -2**63 as string");
-    is($x -> numify(), "-9223372036854775808",
-       "Math::BigInt -2**63 as number");
+    {
+        my $x = Math::BigInt -> new(2) -> bpow(63) -> bneg();
+        is($x -> bstr(),   "-9223372036854775808",
+           "Math::BigInt -2**63 as string");
+        is($x -> numify(), "-9223372036854775808",
+           "Math::BigInt -2**63 as number");
+    }
 }

@@ -1796,6 +1796,68 @@ there are so many changes, I let this be a development release.
 
  * In Math/BigInt/Calc.pm, reformat the code.
 
+2016-07-13 v1.999725 pjacklam
+
+Changes:
+
+ * Add method is_finite().
+
+ * In Math::BigInt and Math::BigFloat, remove warnings about deprecated usage,
+   at least until we have removed this usage from the "bignum" distribution.
+   These warnings were too annoying for some people.
+
+Improvements:
+
+ * Faster bnok() when the library (backend) does not support it.
+
+ * In the Math::BigFloat method bpi(), use a precomputed list of digits when
+   the accuracy is <= 1000. This speeds up the trigonometric functions
+   considerably, when I will introduce range reduction in a later release. This
+   makes the _atan_inv() method redundant, so remove it. Also, the _alen()
+   library method is now only used in _log_int(), which is good, because it
+   isn't clear from the docs and tests what it was supposed to do.
+
+Fixes:
+
+ * Fix bug in the Math::BigInt::Calc library method _digit(). It would
+   sometimes return undef or an empty string when it should have returned zero.
+
+ * Fix bug in the Math::BigInt::Calc library method _rsft(). It would sometimes
+   return two output arguments.
+
+ * Fix bug in the Math::BigInt::Calc library method _lsft(). When the number
+   zero was shifted N places in base 10, the result was not zero, but an
+   invalid object.
+
+ * Fix bug in the Math::BigInt::Calc library methods _and(), _or(), and _xor().
+   They always assigned zero to the first input argument (the invocand).
+
+ * Improve the Math::BigInt::Calc library method _log_int() for the cases when
+   the output is zero or one. Also simplify the code.
+
+ * Simplify the code for the Math::BigInt::Calc library method _zeros().
+
+ * Reformat Math::BigInt::Calc so it is easier to read, for me anyway.
+
+ * Add file t/author-bnok-mbi.t
+
+ * Add one test file for every method in the libraries, including
+   t/Math/BigInt/Lib/TestUtil.pm with test utilities.
+
+ * Clean up whitespace in all files in the distribution.
+
+ * Better testing in t/author-bpi-mbf.t
+
+ * The Math::BigInt::Calc library now always uses integers inside the objects,
+   so there is no longer any need for all the "0 + ..." to convert strings to
+   numbers, and the "int()" inside "length(int(...))" to determine the length
+   of an array element. The only case that needs "0 + ..." now is the
+   constructor _new(), whose input is a string.
+
+   Note, however, that the Math::BigInt::FastCalc library method _new() still
+   creates objects with leading zeros, so until that is fixed, we can't remove
+   all the "0 + ..." etc. until Math::BigInt::FastCalc has been modified.
+
 Please send us test-reports, your experiences with this and your ideas - we
 love to hear about our work!
 
