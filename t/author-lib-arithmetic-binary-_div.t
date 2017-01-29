@@ -16,14 +16,31 @@ use Test::More tests => 3997;
 ###############################################################################
 # Read and load configuration file and backend library.
 
-my $conffile = 't/author-lib-meta-config.conf';
-open CONFFILE, $conffile or die "$conffile: can't open file for reading: $!";
-my $confdata = do { local $/ = undef; <CONFFILE>; };
-close CONFFILE or die "$conffile: can't close file after reading: $!";
+use Config::Tiny ();
 
-our ($LIB, $REF);
-eval $confdata;
-die $@ if $@;
+my $config_file = 't/author-lib.ini';
+my $config = Config::Tiny -> read('t/author-lib.ini')
+  or die Config::Tiny -> errstr();
+
+# Read the library to test.
+
+our $LIB = $config->{_}->{lib};
+
+die "No library defined in file '$config_file'"
+  unless defined $LIB;
+die "Invalid library name '$LIB' in file '$config_file'"
+  unless $LIB =~ /^[A-Za-z]\w*(::\w+)*\z/;
+
+# Read the reference type(s) the library uses.
+
+our $REF = $config->{_}->{ref};
+
+die "No reference type defined in file '$config_file'"
+  unless defined $REF;
+die "Invalid reference type '$REF' in file '$config_file'"
+  unless $REF =~ /^[A-Za-z]\w*(::\w+)*\z/;
+
+# Load the library.
 
 eval "require $LIB";
 die $@ if $@;
@@ -40,7 +57,7 @@ diag "Skipping some tests since Scalar::Util is not installed."
 
 my @data;
 
-# Small numbers (625 tests).
+# Small numbers.
 
 for (my $x = 0; $x <= 24 ; ++ $x) {
     for (my $y = 1; $y <= 24 ; ++ $y) {
@@ -92,8 +109,13 @@ for (my $i = 0 ; $i <= $#data ; ++ $i) {
              "'$test' first output arg is not the second input arg")
           if $scalar_util_ok;
 
-        is(ref($got[1]), $REF,
-           "'$test' second output arg is a $REF");
+      SKIP: {
+            skip "$LIB doesn't use real objects", 1
+              if $LIB eq 'Math::BigInt::FastCalc';
+
+            is(ref($got[1]), $REF,
+               "'$test' second output arg is a $REF");
+        }
 
         is($LIB->_check($got[1]), 0,
            "'$test' second output arg is valid");
@@ -161,3 +183,4 @@ for (my $i = 0 ; $i <= $#data ; ++ $i) {
            "'$test' second output arg is unmodified");
     };
 }
+

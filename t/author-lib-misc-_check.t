@@ -16,14 +16,22 @@ use Test::More tests => 137;
 ###############################################################################
 # Read and load configuration file and backend library.
 
-my $conffile = 't/author-lib-meta-config.conf';
-open CONFFILE, $conffile or die "$conffile: can't open file for reading: $!";
-my $confdata = do { local $/ = undef; <CONFFILE>; };
-close CONFFILE or die "$conffile: can't close file after reading: $!";
+use Config::Tiny ();
 
-our ($LIB, $REF);
-eval $confdata;
-die $@ if $@;
+my $config_file = 't/author-lib.ini';
+my $config = Config::Tiny -> read('t/author-lib.ini')
+  or die Config::Tiny -> errstr();
+
+# Read the library to test.
+
+our $LIB = $config->{_}->{lib};
+
+die "No library defined in file '$config_file'"
+  unless defined $LIB;
+die "Invalid library name '$LIB' in file '$config_file'"
+  unless $LIB =~ /^[A-Za-z]\w*(::\w+)*\z/;
+
+# Load the library.
 
 eval "require $LIB";
 die $@ if $@;
@@ -74,11 +82,11 @@ for (my $i = 0 ; $i <= $#data ; ++ $i) {
            "'$test' output arg is a scalar");
 
         if ($out0) {                    # valid object
-            is($got[0], 0,
-               "'$test' output arg has the right value");
+            ok(! $got[0], "'$test' output arg is false (object OK)")
+              or diag("       got: $got[0]\n  expected: (something false)");
         } else {                        # invalid object
-            isnt($got[0], "",
-               "'$test' output arg is a non-empty string");
+            ok($got[0], "'$test' output arg is true (object not OK)")
+              or diag("       got: $got[0]\n  expected: (something true)");
         }
     };
 }
@@ -103,11 +111,12 @@ for (my $i = 0 ; $i <= $#data ; ++ $i) {
            "'$test' output arg is a scalar");
 
         if ($out0) {                    # valid object
-            is($got, 0,
-               "'$test' output arg has the right value");
+            ok(! $got, "'$test' output arg is false (object OK)")
+              or diag("       got: $got\n  expected: (something false)");
         } else {                        # invalid object
-            isnt($got, "",
-               "'$test' output arg is a non-empty string");
+            ok($got, "'$test' output arg is true (object not OK)")
+              or diag("       got: $got\n  expected: (something true)");
         }
     };
 }
+

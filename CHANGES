@@ -1870,6 +1870,39 @@ Fixes:
 
  * Fix typo in lib/Math/BigInt.pm (CPAN RT 118550).
 
+2016-11-15 v1.999800 pjacklam
+
+ * Upgrade bundled Module::Install from version 1.16 to version 1.17.
+
+ * Add Math::BigInt::Lib (lib/Math/BigInt/Lib.pm), a parent class for
+   Math::BigInt backend libraries.
+
+ * Use objects in Math::BigInt::Calc, not just array refs. Also use OO-style,
+   i.e., use $class->_add($x, $y) rather than _add($class, $x, $y).
+
+ * Not all library methods modify the invocand, so call library methods as,
+   e.g, $x = $LIB->method($x, $y) rather than just $LIB->method($x, $y).
+
+ * Math::BigInt::Calc is now a subclass of Math::BigInt::Lib.
+
+ * Add Math::BigInt::Lib::Minimal (t/Math/BigInt/Lib/Minimal.pm) for testing
+   inheritance from Math::BigInt::Lib.
+
+ * Minor simplification in Math::BigInt::Calc->_str().
+
+ * Speed up Math::BigInt::Calc->_root().
+
+ * Remove test files that were included in the previous release by accident.
+
+ * Add more tests and use more verbose output in some tests.
+
+ * Fix typo in lib/Math/BigFloat.pm 
+
+ * Fix documentation error in lib/Math/Calc.pm
+
+ * Use Config::Tiny and an .ini file to handle the library specific
+   configuration for the author-lib*.t test files.
+
 Please send us test-reports, your experiences with this and your ideas - we
 love to hear about our work!
 

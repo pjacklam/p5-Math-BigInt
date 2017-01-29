@@ -16,14 +16,31 @@ use Test::More tests => 7541;
 ###############################################################################
 # Read and load configuration file and backend library.
 
-my $conffile = 't/author-lib-meta-config.conf';
-open CONFFILE, $conffile or die "$conffile: can't open file for reading: $!";
-my $confdata = do { local $/ = undef; <CONFFILE>; };
-close CONFFILE or die "$conffile: can't close file after reading: $!";
+use Config::Tiny ();
 
-our ($LIB, $REF);
-eval $confdata;
-die $@ if $@;
+my $config_file = 't/author-lib.ini';
+my $config = Config::Tiny -> read('t/author-lib.ini')
+  or die Config::Tiny -> errstr();
+
+# Read the library to test.
+
+our $LIB = $config->{_}->{lib};
+
+die "No library defined in file '$config_file'"
+  unless defined $LIB;
+die "Invalid library name '$LIB' in file '$config_file'"
+  unless $LIB =~ /^[A-Za-z]\w*(::\w+)*\z/;
+
+# Read the reference type(s) the library uses.
+
+our $REF = $config->{_}->{ref};
+
+die "No reference type defined in file '$config_file'"
+  unless defined $REF;
+die "Invalid reference type '$REF' in file '$config_file'"
+  unless $REF =~ /^[A-Za-z]\w*(::\w+)*\z/;
+
+# Load the library.
 
 eval "require $LIB";
 die $@ if $@;
@@ -40,7 +57,7 @@ can_ok($LIB, '_mul');
 
 my @data;
 
-# Small numbers (625 tests).
+# Small numbers.
 
 for (my $x = 0; $x <= 24 ; ++ $x) {
     for (my $y = 0; $y <= 24 ; ++ $y) {
@@ -48,7 +65,7 @@ for (my $x = 0; $x <= 24 ; ++ $x) {
     }
 }
 
-# 9 * 11, 99 * 101, 999 * 1001, 9999 * 1001, ... (50 tests)
+# 9 * 11, 99 * 101, 999 * 1001, 9999 * 1001, ...
 
 for (my $p = 1; $p <= 50 ; ++ $p) {
     my $x = "9" x $p;
@@ -57,7 +74,7 @@ for (my $p = 1; $p <= 50 ; ++ $p) {
     push @data, [ $x, $y, $z ];
 }
 
-# 9 * 9, 99 * 99, 999 * 999, 9999 * 9999, ... (50 tests)
+# 9 * 9, 99 * 99, 999 * 999, 9999 * 9999, ...
 
 for (my $p = 1; $p <= 50 ; ++ $p) {
     my $x = "9" x $p;
@@ -65,7 +82,7 @@ for (my $p = 1; $p <= 50 ; ++ $p) {
     push @data, [ $x, $x, $z ];
 }
 
-# Powers of 10 (625 tests).
+# Powers of 10.
 
 for (my $p = 0; $p <= 24 ; ++ $p) {
     for (my $q = 0; $q <= 24 ; ++ $q) {
@@ -177,3 +194,4 @@ for (my $i = 0 ; $i <= $#data ; ++ $i) {
            "'$test' second output arg is unmodified");
     };
 }
+

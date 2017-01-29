@@ -16,14 +16,22 @@ use Test::More tests => 3397;
 ###############################################################################
 # Read and load configuration file and backend library.
 
-my $conffile = 't/author-lib-meta-config.conf';
-open CONFFILE, $conffile or die "$conffile: can't open file for reading: $!";
-my $confdata = do { local $/ = undef; <CONFFILE>; };
-close CONFFILE or die "$conffile: can't close file after reading: $!";
+use Config::Tiny ();
 
-our ($LIB, $REF);
-eval $confdata;
-die $@ if $@;
+my $config_file = 't/author-lib.ini';
+my $config = Config::Tiny -> read('t/author-lib.ini')
+  or die Config::Tiny -> errstr();
+
+# Read the library to test.
+
+our $LIB = $config->{_}->{lib};
+
+die "No library defined in file '$config_file'"
+  unless defined $LIB;
+die "Invalid library name '$LIB' in file '$config_file'"
+  unless $LIB =~ /^[A-Za-z]\w*(::\w+)*\z/;
+
+# Load the library.
 
 eval "require $LIB";
 die $@ if $@;
@@ -131,3 +139,4 @@ for (my $i = 0 ; $i <= $#data ; ++ $i) {
         }
     };
 }
+

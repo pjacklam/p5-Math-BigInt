@@ -6,7 +6,7 @@ use strict;
 use warnings;
 use lib 't';
 
-my $VERSION = '1.999727';       # adjust manually to match latest release
+my $VERSION = '1.999800';       # adjust manually to match latest release
 $VERSION = eval $VERSION;
 
 use Test::More tests => 5;
@@ -24,7 +24,7 @@ use overload;
 package Math::BigFloat::Test;
 
 use Math::BigFloat;
-our @ISA = qw/Math::BigFloat/;          # subclass of MBI
+our @ISA = qw/Math::BigFloat/;          # subclass of MBF
 use overload;
 
 ##############################################################################

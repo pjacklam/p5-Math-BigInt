@@ -16,7 +16,7 @@ all_from        'lib/Math/BigInt.pm';
 # Required versions.
 requires        'perl'              => 5.006001;
 requires        'Math::Complex'     => 1.39,
-test_requires   'Test::More'        => 0.9301;
+test_requires   'Test::More'        => 0.94;
 
 install_as_core();
 

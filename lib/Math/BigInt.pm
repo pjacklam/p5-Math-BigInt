@@ -20,7 +20,7 @@ use warnings;
 
 use Carp ();
 
-our $VERSION = '1.999727';
+our $VERSION = '1.999800';
 $VERSION = eval $VERSION;
 
 our @ISA = qw(Exporter);
@@ -53,7 +53,6 @@ use overload
 
   '/'     =>      sub { $_[2] ? ref($_[0]) -> new($_[1]) -> bdiv($_[0])
                               : $_[0] -> copy -> bdiv($_[1]); },
-
 
   '%'     =>      sub { $_[2] ? ref($_[0]) -> new($_[1]) -> bmod($_[0])
                               : $_[0] -> copy -> bmod($_[1]); },

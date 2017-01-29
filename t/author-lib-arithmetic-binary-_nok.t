@@ -11,7 +11,7 @@ BEGIN {
 use strict;
 use warnings;
 
-use Test::More tests => 2601;
+use Test::More tests => 81205;
 
 ###############################################################################
 # Read and load configuration file and backend library.
@@ -47,57 +47,45 @@ die $@ if $@;
 
 ###############################################################################
 
-can_ok($LIB, '_dec');
+my $scalar_util_ok = eval { require Scalar::Util; };
+Scalar::Util -> import('refaddr') if $scalar_util_ok;
+
+diag "Skipping some tests since Scalar::Util is not installed."
+  unless $scalar_util_ok;
+
+can_ok($LIB, '_nok');
 
 my @data;
 
-# Small numbers.
+# Add data in data file.
 
-for (my $x = 1; $x <= 500 ; ++ $x) {
-    push @data, [ $x, $x - 1 ];
+(my $datafile = $0) =~ s/\.t/.dat/;
+open DATAFILE, $datafile or die "$datafile: can't open file for reading: $!";
+while (<DATAFILE>) {
+    s/\s+\z//;
+    next if /^#/ || ! /\S/;
+    push @data, [ split /:/ ];
 }
-
-# 11 - 1, 101 - 1, 1001 - 1, 10001 - 1, ...
-
-for (my $p = 1; $p <= 50 ; ++ $p) {
-    my $x = "1" . ("0" x ($p - 1) . "1");
-    my $y = "1" . ("0" x $p);
-    push @data, [ $x, $y ];
-}
-
-# 10 - 1, 100 - 1, 1000 - 1, 10000 - 1, ...
-
-for (my $p = 1; $p <= 50 ; ++ $p) {
-    my $x = "1" . ("0" x $p);
-    my $y = ("9" x $p);
-    push @data, [ $x, $y ];
-}
-
-# 9 - 1, 99 - 1, 999 - 1, 9999 - 1, ...
-
-for (my $p = 1; $p <= 50 ; ++ $p) {
-    my $x = "9" x $p;
-    my $y = "9" x ($p - 1) . "8";
-    push @data, [ $x, $y ];
-}
+close DATAFILE or die "$datafile: can't close file after reading: $!";
 
 # List context.
 
 for (my $i = 0 ; $i <= $#data ; ++ $i) {
-    my ($in0, $out0) = @{ $data[$i] };
+    my ($in0, $in1, $out0) = @{ $data[$i] };
 
-    my ($x, @got);
+    my ($x, $y, @got);
 
     my $test = qq|\$x = $LIB->_new("$in0"); |
-             . qq|\@got = $LIB->_dec(\$x);|;
+             . qq|\$y = $LIB->_new("$in1"); |
+             . qq|\@got = $LIB->_nok(\$x, \$y);|;
 
     eval $test;
     is($@, "", "'$test' gives emtpy \$\@");
 
-    subtest "_dec() in list context: $test", sub {
-        plan tests => 6,
+    subtest "_nok() in list context: $test", sub {
+        plan tests => $scalar_util_ok ? 9 : 8;
 
-        cmp_ok(scalar @got, "==", 1,
+        cmp_ok(scalar @got, '==', 1,
                "'$test' gives one output arg");
 
         is(ref($got[0]), $REF,
@@ -109,29 +97,40 @@ for (my $i = 0 ; $i <= $#data ; ++ $i) {
         is($LIB->_str($got[0]), $out0,
            "'$test' output arg has the right value");
 
+        isnt(refaddr($got[0]), refaddr($y),
+             "'$test' output arg is not the second input arg")
+          if $scalar_util_ok;
+
         is(ref($x), $REF,
            "'$test' first input arg is still a $REF");
 
         ok($LIB->_str($x) eq $out0 || $LIB->_str($x) eq $in0,
-           "'$test' input arg has the correct value");
+           "'$test' first input arg has the correct value");
+
+        is(ref($y), $REF,
+           "'$test' second input arg is still a $REF");
+
+        is($LIB->_str($y), $in1,
+           "'$test' second output arg is unmodified");
     };
 }
 
 # Scalar context.
 
 for (my $i = 0 ; $i <= $#data ; ++ $i) {
-    my ($in0, $out0) = @{ $data[$i] };
+    my ($in0, $in1, $out0) = @{ $data[$i] };
 
-    my ($x, $got);
+    my ($x, $y, $got);
 
     my $test = qq|\$x = $LIB->_new("$in0"); |
-             . qq|\$got = $LIB->_dec(\$x);|;
+             . qq|\$y = $LIB->_new("$in1"); |
+             . qq|\$got = $LIB->_nok(\$x, \$y);|;
 
     eval $test;
     is($@, "", "'$test' gives emtpy \$\@");
 
-    subtest "_dec() in scalar context: $test", sub {
-        plan tests => 5,
+    subtest "_nok() in scalar context: $test", sub {
+        plan tests => $scalar_util_ok ? 8 : 7;
 
         is(ref($got), $REF,
            "'$test' output arg is a $REF");
@@ -142,11 +141,21 @@ for (my $i = 0 ; $i <= $#data ; ++ $i) {
         is($LIB->_str($got), $out0,
            "'$test' output arg has the right value");
 
+        isnt(refaddr($got), refaddr($y),
+             "'$test' output arg is not the second input arg")
+          if $scalar_util_ok;
+
         is(ref($x), $REF,
            "'$test' first input arg is still a $REF");
 
         ok($LIB->_str($x) eq $out0 || $LIB->_str($x) eq $in0,
-           "'$test' input arg has the correct value");
+           "'$test' first input arg has the correct value");
+
+        is(ref($y), $REF,
+           "'$test' second input arg is still a $REF");
+
+        is($LIB->_str($y), $in1,
+           "'$test' second output arg is unmodified");
     };
 }
 
