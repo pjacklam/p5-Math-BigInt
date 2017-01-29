@@ -19,7 +19,7 @@ use warnings;
 use Carp ();
 use Math::BigInt ();
 
-our $VERSION = '1.999725';
+our $VERSION = '1.999726';
 $VERSION = eval $VERSION;
 
 require Exporter;
@@ -265,6 +265,10 @@ BEGIN {
 
     # we need both of them in this package:
     *as_int = \&as_number;
+}
+
+sub DESTROY {
+    # going through AUTOLOAD for every DESTROY is costly, avoid it by empty sub
 }
 
 sub AUTOLOAD {
