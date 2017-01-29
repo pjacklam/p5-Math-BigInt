@@ -113,7 +113,7 @@ for (my $i = 0 ; $i <= $#data ; ++ $i) {
            "'$test' second input arg is still a $REF");
 
         is($LIB->_str($y), $in1,
-           "'$test' second output arg is unmodified");
+           "'$test' second input arg is unmodified");
     };
 }
 
@@ -157,6 +157,6 @@ for (my $i = 0 ; $i <= $#data ; ++ $i) {
            "'$test' second input arg is still a $REF");
 
         is($LIB->_str($y), $in1,
-           "'$test' second output arg is unmodified");
+           "'$test' second input arg is unmodified");
     };
 }

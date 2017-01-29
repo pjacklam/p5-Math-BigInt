@@ -83,7 +83,7 @@ while (<DATA>) {
         # modified.
 
         is(ref($y), $class, "second input arg is still a $class");
-        is_deeply($y, $yo, 'second output arg is unmodified');
+        is_deeply($y, $yo, 'second input arg is unmodified');
 
     };
 
