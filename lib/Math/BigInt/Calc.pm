@@ -7,7 +7,7 @@ use warnings;
 use Carp;
 use Math::BigInt::Lib;
 
-our $VERSION = '1.999809';
+our $VERSION = '1.999810';
 
 our @ISA = ('Math::BigInt::Lib');
 

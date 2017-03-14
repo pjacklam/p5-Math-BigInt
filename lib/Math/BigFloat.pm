@@ -19,7 +19,7 @@ use warnings;
 use Carp ();
 use Math::BigInt ();
 
-our $VERSION = '1.999809';
+our $VERSION = '1.999810';
 
 require Exporter;
 our @ISA        = qw/Math::BigInt/;
@@ -2143,16 +2143,24 @@ sub bpow {
 }
 
 sub blog {
-    my ($class, $x, $base, $a, $p, $r) = ref($_[0]) ? (ref($_[0]), @_) : objectify(2, @_);
+    # Return the logarithm of the operand. If a second operand is defined, that
+    # value is used as the base, otherwise the base is assumed to be Euler's
+    # constant.
 
-    # If called as $x -> blog() or $x -> blog(undef), don't objectify the
-    # undefined base, since undef signals that the base is Euler's number.
-    #unless (ref($x) && !defined($base)) {
-    #    # objectify is costly, so avoid it
-    #    if ((!ref($_[0])) || (ref($_[0]) ne ref($_[1]))) {
-    #        ($class, $x, $base, $a, $p, $r) = objectify(2, @_);
-    #    }
-    #}
+    my ($class, $x, $base, $a, $p, $r);
+
+    # Don't objectify the base, since an undefined base, as in $x->blog() or
+    # $x->blog(undef) signals that the base is Euler's number.
+
+    if (!ref($_[0]) && $_[0] =~ /^[A-Za-z]|::/) {
+        # E.g., Math::BigFloat->blog(256, 2)
+        ($class, $x, $base, $a, $p, $r) =
+          defined $_[2] ? objectify(2, @_) : objectify(1, @_);
+    } else {
+        # E.g., Math::BigFloat::blog(256, 2) or $x->blog(2)
+        ($class, $x, $base, $a, $p, $r) =
+          defined $_[1] ? objectify(2, @_) : objectify(1, @_);
+    }
 
     return $x if $x->modify('blog');
 

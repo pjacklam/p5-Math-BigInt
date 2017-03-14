@@ -1,3 +1,21 @@
+2017-03-01 v1.999810 pjacklam
+
+ * CPAN RT #120240 revealed that the problems with undefined values is still
+   present. After a close examination, I believe the only way to get this
+   really working is to to make blog() call objectify() differently depending
+   on whether the base for the logarithm is undefined or not. That way we can
+   avoid objectify() converting the undefined value to a zero. Ideally, we
+   should warn about undefined values when used in any other context, but we'll
+   handle that in a later release. See also the related changelog entry for
+   v1.999801.
+
+ * Fix the way the argument count is computed in objectify(). When an argument
+   count of 0 is given, it means that we should objectify all input arguments.
+   However, it turned out that the actual argument count was computed
+   incorrectly.
+
+ * Fix CPAN RT #120242 rearding c3 method resolution.
+
 2017-02-10 v1.999809 pjacklam
 
  * When a new method is added to Math::BigInt or Math::BigFloat, and this new
