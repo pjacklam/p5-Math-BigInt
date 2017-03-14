@@ -19,7 +19,7 @@ use warnings;
 use Carp ();
 use Math::BigInt ();
 
-our $VERSION = '1.999808';
+our $VERSION = '1.999809';
 
 require Exporter;
 our @ISA        = qw/Math::BigInt/;
@@ -3232,7 +3232,6 @@ sub bfac {
       if (($x->{sign} ne '+') || # inf, NaN, <0 etc => NaN
           ($x->{_es} ne '+'));   # digits after dot?
 
-    # use BigInt's bfac() for faster calc
     if (! $MBI->_is_zero($x->{_e})) {
         $x->{_m} = $MBI->_lsft($x->{_m}, $x->{_e}, 10); # change 12e1 to 120e0
         $x->{_e} = $MBI->_zero();           # normalize
@@ -3257,7 +3256,9 @@ sub bdfac {
       if (($x->{sign} ne '+') || # inf, NaN, <0 etc => NaN
           ($x->{_es} ne '+'));   # digits after dot?
 
-    # use BigInt's bdfac() for faster calc
+    Carp::croak("bdfac() requires a newer version of the $MBI library.")
+        unless $MBI->can('_dfac');
+
     if (! $MBI->_is_zero($x->{_e})) {
         $x->{_m} = $MBI->_lsft($x->{_m}, $x->{_e}, 10); # change 12e1 to 120e0
         $x->{_e} = $MBI->_zero();           # normalize

@@ -4,7 +4,7 @@ use 5.006001;
 use strict;
 use warnings;
 
-our $VERSION = '1.999808';
+our $VERSION = '1.999809';
 
 use Carp;
 
@@ -1405,6 +1405,100 @@ sub _lcm {
     return $x;
 }
 
+sub _lucas {
+    my ($class, $n) = @_;
+
+    $n = $class -> _num($n) if ref $n;
+
+    # In list context, use lucas(n) = lucas(n-1) + lucas(n-2)
+
+    if (wantarray) {
+        my @y;
+
+        push @y, $class -> _two();
+        return @y if $n == 0;
+
+        push @y, $class -> _one();
+        return @y if $n == 1;
+
+        for (my $i = 2 ; $i <= $n ; ++ $i) {
+            $y[$i] = $class -> _add($class -> _copy($y[$i - 1]), $y[$i - 2]);
+        }
+
+        return @y;
+    }
+
+    require Scalar::Util;
+
+    # In scalar context use that lucas(n) = fib(n-1) + fib(n+1).
+    #
+    # Remember that _fib() behaves differently in scalar context and list
+    # context, so we must add scalar() to get the desired behaviour.
+
+    return $class -> _two() if $n == 0;
+
+    return $class -> _add(scalar $class -> _fib($n - 1),
+                          scalar $class -> _fib($n + 1));
+}
+
+sub _fib {
+    my ($class, $n) = @_;
+
+    $n = $class -> _num($n) if ref $n;
+
+    # In list context, use fib(n) = fib(n-1) + fib(n-2)
+
+    if (wantarray) {
+        my @y;
+
+        push @y, $class -> _zero();
+        return @y if $n == 0;
+
+        push @y, $class -> _one();
+        return @y if $n == 1;
+
+        for (my $i = 2 ; $i <= $n ; ++ $i) {
+            $y[$i] = $class -> _add($class -> _copy($y[$i - 1]), $y[$i - 2]);
+        }
+
+        return @y;
+    }
+
+    # In scalar context use a fast algorithm that is much faster than the
+    # recursive algorith used in list context.
+
+    my $cache = {};
+    my $two = $class -> _two();
+    my $fib;
+
+    $fib = sub {
+        my $n = shift;
+        return $class -> _zero() if $n <= 0;
+        return $class -> _one()  if $n <= 2;
+        return $cache -> {$n}    if exists $cache -> {$n};
+
+        my $k = int($n / 2);
+        my $a = $fib -> ($k + 1);
+        my $b = $fib -> ($k);
+        my $y;
+
+        if ($n % 2 == 1) {
+            # a*a + b*b
+            $y = $class -> _add($class -> _mul($class -> _copy($a), $a),
+                                $class -> _mul($class -> _copy($b), $b));
+        } else {
+            # (2*a - b)*b
+            $y = $class -> _mul($class -> _sub($class -> _mul(
+                   $class -> _copy($two), $a), $b), $b);
+        }
+
+        $cache -> {$n} = $y;
+        return $y;
+    };
+
+    return $fib -> ($n);
+}
+
 ##############################################################################
 ##############################################################################
 
@@ -1656,6 +1750,18 @@ Returns the greatest common divisor of OBJ1 and OBJ2.
 =item CLASS-E<gt>_lcm(OBJ1, OBJ2)
 
 Return the least common multiple of OBJ1 and OBJ2.
+
+=item CLASS-E<gt>_fib(OBJ)
+
+In scalar context, returns the nth Fibonacci number: _fib(0) returns 0, _fib(1)
+returns 1, _fib(2) returns 1, _fib(3) returns 2 etc. In list context, returns
+the Fibonacci numbers from F(0) to F(n): 0, 1, 1, 2, 3, 5, 8, 13, 21, 34, ...
+
+=item CLASS-E<gt>_lucas(OBJ)
+
+In scalar context, returns the nth Lucas number: _lucas(0) returns 2, _lucas(1)
+returns 1, _lucas(2) returns 3, etc. In list context, returns the Lucas numbers
+from L(0) to L(n): 2, 1, 3, 4, 7, 11, 18, 29,47, 76, ...
 
 =back
 

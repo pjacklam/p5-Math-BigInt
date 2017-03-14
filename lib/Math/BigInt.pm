@@ -20,7 +20,7 @@ use warnings;
 
 use Carp ();
 
-our $VERSION = '1.999808';
+our $VERSION = '1.999809';
 
 our @ISA = qw(Exporter);
 our @EXPORT_OK = qw(objectify bgcd blcm);
@@ -2718,14 +2718,129 @@ sub bfac {
 }
 
 sub bdfac {
-    # compute factorial number from $x, modify $x in place
+    # compute double factorial, modify $x in place
     my ($class, $x, @r) = ref($_[0]) ? (undef, @_) : objectify(1, @_);
 
     return $x if $x->modify('bdfac') || $x->{sign} eq '+inf'; # inf => inf
     return $x->bnan() if $x->{sign} ne '+'; # NaN, <0 etc => NaN
 
+    Carp::croak("bdfac() requires a newer version of the $CALC library.")
+        unless $CALC->can('_dfac');
+
     $x->{value} = $CALC->_dfac($x->{value});
     $x->round(@r);
+}
+
+sub bfib {
+    # compute Fibonacci number(s)
+    my ($class, $x, @r) = objectify(1, @_);
+
+    Carp::croak("bfib() requires a newer version of the $CALC library.")
+        unless $CALC->can('_fib');
+
+    return $x if $x->modify('bfib');
+
+    # List context.
+
+    if (wantarray) {
+        return () if $x ->  is_nan();
+        Carp::croak("bfib() can't return an infinitely long list of numbers")
+            if $x -> is_inf();
+
+        # Use the backend library to compute the first $x Fibonacci numbers.
+
+        my @values = $CALC->_fib($x->{value});
+
+        # Make objects out of them. The last element in the array is the
+        # invocand.
+
+        for (my $i = 0 ; $i < $#values ; ++ $i) {
+            my $fib =  $class -> bzero();
+            $fib -> {value} = $values[$i];
+            $values[$i] = $fib;
+        }
+
+        $x -> {value} = $values[-1];
+        $values[-1] = $x;
+
+        # If negative, insert sign as appropriate.
+
+        if ($x -> is_neg()) {
+            for (my $i = 2 ; $i <= $#values ; $i += 2) {
+                $values[$i]{sign} = '-';
+            }
+        }
+
+        @values = map { $_ -> round(@r) } @values;
+        return @values;
+    }
+
+    # Scalar context.
+
+    else {
+        return $x if $x->modify('bdfac') || $x ->  is_inf('+');
+        return $x->bnan() if $x -> is_nan() || $x -> is_inf('-');
+
+        $x->{sign}  = $x -> is_neg() && $x -> is_even() ? '-' : '+';
+        $x->{value} = $CALC->_fib($x->{value});
+        return $x->round(@r);
+    }
+}
+
+sub blucas {
+    # compute Lucas number(s)
+    my ($class, $x, @r) = objectify(1, @_);
+
+    Carp::croak("blucas() requires a newer version of the $CALC library.")
+        unless $CALC->can('_lucas');
+
+    return $x if $x->modify('blucas');
+
+    # List context.
+
+    if (wantarray) {
+        return () if $x -> is_nan();
+        Carp::croak("blucas() can't return an infinitely long list of numbers")
+            if $x -> is_inf();
+
+        # Use the backend library to compute the first $x Lucas numbers.
+
+        my @values = $CALC->_lucas($x->{value});
+
+        # Make objects out of them. The last element in the array is the
+        # invocand.
+
+        for (my $i = 0 ; $i < $#values ; ++ $i) {
+            my $lucas =  $class -> bzero();
+            $lucas -> {value} = $values[$i];
+            $values[$i] = $lucas;
+        }
+
+        $x -> {value} = $values[-1];
+        $values[-1] = $x;
+
+        # If negative, insert sign as appropriate.
+
+        if ($x -> is_neg()) {
+            for (my $i = 2 ; $i <= $#values ; $i += 2) {
+                $values[$i]{sign} = '-';
+            }
+        }
+
+        @values = map { $_ -> round(@r) } @values;
+        return @values;
+    }
+
+    # Scalar context.
+
+    else {
+        return $x if $x ->  is_inf('+');
+        return $x->bnan() if $x -> is_nan() || $x -> is_inf('-');
+
+        $x->{sign}  = $x -> is_neg() && $x -> is_even() ? '-' : '+';
+        $x->{value} = $CALC->_lucas($x->{value});
+        return $x->round(@r);
+    }
 }
 
 sub blsft {
@@ -5176,6 +5291,74 @@ Returns the double factorial of C<$x>. If C<$x> is an even integer, returns the
 product of all positive, even integers up to and including C<$x>, i.e.,
 2*4*6*...*$x. If C<$x> is an odd integer, returns the product of all positive,
 odd integers, i.e., 1*3*5*...*$x.
+
+=item bfib()
+
+    $F = $n->bfib();            # a single Fibonacci number
+    @F = $n->bfib();            # a list of Fibonacci numbers
+
+In scalar context, returns a single Fibonacci number. In list context, returns
+a list of Fibonacci numbers. The invocand is the last element in the output.
+
+The Fibonacci sequence is defined by
+
+    F(0) = 0
+    F(1) = 1
+    F(n) = F(n-1) + F(n-2)
+
+In list context, F(0) and F(n) is the first and last number in the output,
+respectively. For example, if $n is 12, then C<< @F = $n->bfib() >> returns the
+following values, F(0) to F(12):
+
+    0, 1, 1, 2, 3, 5, 8, 13, 21, 34, 55, 89, 144
+
+The sequence can also be extended to negative index n using the re-arranged
+recurrence relation
+
+    F(n-2) = F(n) - F(n-1)
+
+giving the bidirectional sequence
+
+       n  -7  -6  -5  -4  -3  -2  -1   0   1   2   3   4   5   6   7
+    F(n)  13  -8   5  -3   2  -1   1   0   1   1   2   3   5   8  13
+
+If $n is -12, the following values, F(0) to F(12), are returned:
+
+    0, 1, -1, 2, -3, 5, -8, 13, -21, 34, -55, 89, -144
+
+=item blucas()
+
+    $F = $n->blucas();          # a single Lucas number
+    @F = $n->blucas();          # a list of Lucas numbers
+
+In scalar context, returns a single Lucas number. In list context, returns a
+list of Lucas numbers. The invocand is the last element in the output.
+
+The Lucas sequence is defined by
+
+    L(0) = 2
+    L(1) = 1
+    L(n) = L(n-1) + L(n-2)
+
+In list context, L(0) and L(n) is the first and last number in the output,
+respectively. For example, if $n is 12, then C<< @L = $n->blucas() >> returns
+the following values, L(0) to L(12):
+
+    2, 1, 3, 4, 7, 11, 18, 29, 47, 76, 123, 199, 322
+
+The sequence can also be extended to negative index n using the re-arranged
+recurrence relation
+
+    L(n-2) = L(n) - L(n-1)
+
+giving the bidirectional sequence
+
+       n  -7  -6  -5  -4  -3  -2  -1   0   1   2   3   4   5   6   7
+    L(n)  29 -18  11  -7   4  -3   1   2   1   3   4   7  11  18  29
+
+If $n is -12, the following values, L(0) to L(-12), are returned:
+
+    2, 1, -3, 4, -7, 11, -18, 29, -47, 76, -123, 199, -322
 
 =item brsft()
 
