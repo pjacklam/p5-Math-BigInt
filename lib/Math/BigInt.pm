@@ -20,7 +20,7 @@ use warnings;
 
 use Carp ();
 
-our $VERSION = '1.999810';
+our $VERSION = '1.999811';
 
 our @ISA = qw(Exporter);
 our @EXPORT_OK = qw(objectify bgcd blcm);

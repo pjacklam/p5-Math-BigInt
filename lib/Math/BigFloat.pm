@@ -19,7 +19,7 @@ use warnings;
 use Carp ();
 use Math::BigInt ();
 
-our $VERSION = '1.999810';
+our $VERSION = '1.999811';
 
 require Exporter;
 our @ISA        = qw/Math::BigInt/;
@@ -4041,10 +4041,11 @@ sub bestr {
 
 sub to_hex {
     # return number as hexadecimal string (only for integers defined)
+
     my ($class, $x) = ref($_[0]) ? (ref($_[0]), $_[0]) : objectify(1, @_);
 
     return $x->bstr() if $x->{sign} !~ /^[+-]$/; # inf, nan etc
-    return '0x0' if $x->is_zero();
+    return '0' if $x->is_zero();
 
     return $nan if $x->{_es} ne '+';    # how to do 1e-1 in hex?
 
@@ -4052,12 +4053,13 @@ sub to_hex {
     if (! $MBI->_is_zero($x->{_e})) {   # > 0
         $z = $MBI->_lsft($z, $x->{_e}, 10);
     }
-    $z = Math::BigInt->new($x->{sign} . $MBI->_num($z));
-    $z->to_hex();
+    my $str = $MBI->_to_hex($z);
+    return $x->{sign} eq '-' ? "-$str" : $str;
 }
 
 sub to_oct {
     # return number as octal digit string (only for integers defined)
+
     my ($class, $x) = ref($_[0]) ? (ref($_[0]), $_[0]) : objectify(1, @_);
 
     return $x->bstr() if $x->{sign} !~ /^[+-]$/; # inf, nan etc
@@ -4069,16 +4071,17 @@ sub to_oct {
     if (! $MBI->_is_zero($x->{_e})) {   # > 0
         $z = $MBI->_lsft($z, $x->{_e}, 10);
     }
-    $z = Math::BigInt->new($x->{sign} . $MBI->_num($z));
-    $z->to_oct();
+    my $str = $MBI->_to_oct($z);
+    return $x->{sign} eq '-' ? "-$str" : $str;
 }
 
 sub to_bin {
     # return number as binary digit string (only for integers defined)
+
     my ($class, $x) = ref($_[0]) ? (ref($_[0]), $_[0]) : objectify(1, @_);
 
     return $x->bstr() if $x->{sign} !~ /^[+-]$/; # inf, nan etc
-    return '0b0' if $x->is_zero();
+    return '0' if $x->is_zero();
 
     return $nan if $x->{_es} ne '+';    # how to do 1e-1 in binary?
 
@@ -4086,12 +4089,13 @@ sub to_bin {
     if (! $MBI->_is_zero($x->{_e})) {   # > 0
         $z = $MBI->_lsft($z, $x->{_e}, 10);
     }
-    $z = Math::BigInt->new($x->{sign} . $MBI->_num($z));
-    $z->to_bin();
+    my $str = $MBI->_to_bin($z);
+    return $x->{sign} eq '-' ? "-$str" : $str;
 }
 
 sub as_hex {
     # return number as hexadecimal string (only for integers defined)
+
     my ($class, $x) = ref($_[0]) ? (ref($_[0]), $_[0]) : objectify(1, @_);
 
     return $x->bstr() if $x->{sign} !~ /^[+-]$/; # inf, nan etc
@@ -4103,16 +4107,17 @@ sub as_hex {
     if (! $MBI->_is_zero($x->{_e})) {   # > 0
         $z = $MBI->_lsft($z, $x->{_e}, 10);
     }
-    $z = Math::BigInt->new($x->{sign} . $MBI->_num($z));
-    $z->as_hex();
+    my $str = $MBI->_as_hex($z);
+    return $x->{sign} eq '-' ? "-$str" : $str;
 }
 
 sub as_oct {
     # return number as octal digit string (only for integers defined)
+
     my ($class, $x) = ref($_[0]) ? (ref($_[0]), $_[0]) : objectify(1, @_);
 
     return $x->bstr() if $x->{sign} !~ /^[+-]$/; # inf, nan etc
-    return '0' if $x->is_zero();
+    return '00' if $x->is_zero();
 
     return $nan if $x->{_es} ne '+';    # how to do 1e-1 in octal?
 
@@ -4120,12 +4125,13 @@ sub as_oct {
     if (! $MBI->_is_zero($x->{_e})) {   # > 0
         $z = $MBI->_lsft($z, $x->{_e}, 10);
     }
-    $z = Math::BigInt->new($x->{sign} . $MBI->_num($z));
-    $z->as_oct();
+    my $str = $MBI->_as_oct($z);
+    return $x->{sign} eq '-' ? "-$str" : $str;
 }
 
 sub as_bin {
     # return number as binary digit string (only for integers defined)
+
     my ($class, $x) = ref($_[0]) ? (ref($_[0]), $_[0]) : objectify(1, @_);
 
     return $x->bstr() if $x->{sign} !~ /^[+-]$/; # inf, nan etc
@@ -4137,8 +4143,8 @@ sub as_bin {
     if (! $MBI->_is_zero($x->{_e})) {   # > 0
         $z = $MBI->_lsft($z, $x->{_e}, 10);
     }
-    $z = Math::BigInt->new($x->{sign} . $MBI->_num($z));
-    $z->as_bin();
+    my $str = $MBI->_as_bin($z);
+    return $x->{sign} eq '-' ? "-$str" : $str;
 }
 
 sub numify {
