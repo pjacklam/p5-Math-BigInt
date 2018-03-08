@@ -1,10 +1,14 @@
+2018-03-17 v1.999812 pjacklam
+
+ * Fix typo in one of the change log entries for version 1.999811.
+
 2017-03-15 v1.999811 pjacklam
 
- * Fix an old in the Math::BigFloat methods as_hex(), as_oct(), and as_bin()
-   methods resulting in loss of accuracy. This bug was introduced in bug in
-   Math-BigInt-1.76. Due to a naive copy and paste by me, and lack of tests,
-   this bug was also present in the newer to_hex(), to_oct(), and to_bin()
-   methods. This shows the bug, as it did not print "0xffff...":
+ * Fix an old bug in the Math::BigFloat methods as_hex(), as_oct(), and
+   as_bin() methods resulting in loss of accuracy. This bug was introduced in
+   bug in Math-BigInt-1.76. Due to a naive copy and paste by me, and lack of
+   tests, this bug was also present in the newer to_hex(), to_oct(), and
+   to_bin() methods. This shows the bug, as it did not print "0xffff...":
 
        print Math::BigFloat -> from_hex("f" x 30) -> as_hex();
 
