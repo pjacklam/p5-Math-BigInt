@@ -1,5 +1,8 @@
 2018-03-17 v1.999812 pjacklam
 
+ * Don't load Test::More when it isn't really needed. This speeds up processing
+   of author test files when they are skipped.
+
  * Fix CPAN RT #120717 regarding tests now that '.' is not in @INC by default.
 
  * Fix CPAN RT #122756 regarding testing for 64 bit integer support.
