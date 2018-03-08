@@ -1,5 +1,7 @@
 2018-03-17 v1.999812 pjacklam
 
+ * Fix CPAN RT #120351 regarding bpow(). Add test.
+
  * Don't load Test::More when it isn't really needed. This speeds up processing
    of author test files when they are skipped.
 

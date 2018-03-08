@@ -2309,52 +2309,29 @@ sub bpow {
 
     return $x if $x->modify('bpow');
 
-    return $x->bnan() if $x->{sign} eq $nan || $y->{sign} eq $nan;
+    # $x and/or $y is a NaN
+    return $x->bnan() if $x->is_nan() || $y->is_nan();
 
-    # inf handling
-    if (($x->{sign} =~ /^[+-]inf$/) || ($y->{sign} =~ /^[+-]inf$/)) {
-        if (($x->{sign} =~ /^[+-]inf$/) && ($y->{sign} =~ /^[+-]inf$/)) {
-            # +-inf ** +-inf
-            return $x->bnan();
-        }
-        # +-inf ** Y
-        if ($x->{sign} =~ /^[+-]inf/) {
-            # +inf ** 0 => NaN
-            return $x->bnan() if $y->is_zero();
-            # -inf ** -1 => 1/inf => 0
-            return $x->bzero() if $y->is_one('-') && $x->is_negative();
-
-            # +inf ** Y => inf
-            return $x if $x->{sign} eq '+inf';
-
-            # -inf ** Y => -inf if Y is odd
-            return $x if $y->is_odd();
-            return $x->babs();
-        }
-        # X ** +-inf
-
-        # 1 ** +inf => 1
-        return $x if $x->is_one();
-
-        # 0 ** inf => 0
-        return $x if $x->is_zero() && $y->{sign} =~ /^[+]/;
-
-        # 0 ** -inf => inf
-        return $x->binf() if $x->is_zero();
-
-        # -1 ** -inf => NaN
-        return $x->bnan() if $x->is_one('-') && $y->{sign} =~ /^[-]/;
-
-        # -X ** -inf => 0
-        return $x->bzero() if $x->{sign} eq '-' && $y->{sign} =~ /^[-]/;
-
-        # -1 ** inf => NaN
-        return $x->bnan() if $x->{sign} eq '-';
-
-        # X ** inf => inf
-        return $x->binf() if $y->{sign} =~ /^[+]/;
-        # X ** -inf => 0
+    # $x and/or $y is a +/-Inf
+    if ($x->is_inf("-")) {
+        return $x->bzero()   if $y->is_negative();
+        return $x->bnan()    if $y->is_zero();
+        return $x            if $y->is_odd();
+        return $x->bneg();
+    } elsif ($x->is_inf("+")) {
+        return $x->bzero()   if $y->is_negative();
+        return $x->bnan()    if $y->is_zero();
+        return $x;
+    } elsif ($y->is_inf("-")) {
+        return $x->bnan()    if $x -> is_one("-");
+        return $x->binf("+") if $x -> is_zero();
+        return $x->bone()    if $x -> is_one("+");
         return $x->bzero();
+    } elsif ($y->is_inf("+")) {
+        return $x->bnan()    if $x -> is_one("-");
+        return $x->bzero()   if $x -> is_zero();
+        return $x->bone()    if $x -> is_one("+");
+        return $x->binf("+");
     }
 
     return $upgrade->bpow($upgrade->new($x), $y, @r)

@@ -2101,8 +2101,33 @@ sub bpow {
 
     return $x if $x->modify('bpow');
 
-    return $x->bnan() if $x->{sign} eq $nan || $y->{sign} eq $nan;
-    return $x if $x->{sign} =~ /^[+-]inf$/;
+    # $x and/or $y is a NaN
+    return $x->bnan() if $x->is_nan() || $y->is_nan();
+
+    # $x and/or $y is a +/-Inf
+    if ($x->is_inf("-")) {
+        return $x->bzero()   if $y->is_negative();
+        return $x->bnan()    if $y->is_zero();
+        return $x            if $y->is_odd();
+        return $x->bneg();
+    } elsif ($x->is_inf("+")) {
+        return $x->bzero()   if $y->is_negative();
+        return $x->bnan()    if $y->is_zero();
+        return $x;
+    } elsif ($y->is_inf("-")) {
+        return $x->bnan()    if $x -> is_one("-");
+        return $x->binf("+") if $x > -1 && $x < 1;
+        return $x->bone()    if $x -> is_one("+");
+        return $x->bzero();
+    } elsif ($y->is_inf("+")) {
+        return $x->bnan()    if $x -> is_one("-");
+        return $x->bzero()   if $x > -1 && $x < 1;
+        return $x->bone()    if $x -> is_one("+");
+        return $x->binf("+");
+    }
+
+    # we don't support complex numbers, so return NaN
+    return $x->bnan() if $x->is_negative() && !$y->is_int();
 
     # cache the result of is_zero
     my $y_is_zero = $y->is_zero();
@@ -2110,12 +2135,11 @@ sub bpow {
     return $x         if $x->is_one() || $y->is_one();
 
     my $x_is_zero = $x->is_zero();
-    return $x->_pow($y, $a, $p, $r) if !$x_is_zero && !$y->is_int(); # non-integer power
+    return $x->_pow($y, $a, $p, $r) if !$x_is_zero && !$y->is_int();
 
     my $y1 = $y->as_number()->{value}; # make MBI part
 
-    # if ($x == -1)
-    if ($x->{sign} eq '-' && $MBI->_is_one($x->{_m}) && $MBI->_is_zero($x->{_e})) {
+    if ($x->is_one("-")) {
         # if $x == -1 and odd/even y => +1/-1  because +-1 ^ (+-1) => +-1
         return $MBI->_is_odd($y1) ? $x : $x->babs(1);
     }
