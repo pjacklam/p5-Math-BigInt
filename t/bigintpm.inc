@@ -678,7 +678,7 @@ require Config;
 SKIP: {
     skip("no 64 bit integer support", 4)
       if ! $Config::Config{use64bitint} || ! $Config::Config{use64bitall}
-          || $] <= 5.006002;
+          || "$]" < 5.007001;
 
     # The following should not give "1.84467440737096e+19".
 
