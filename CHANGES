@@ -1,5 +1,9 @@
 2018-03-17 v1.999812 pjacklam
 
+ * Math::BigInt isa Exporter, so Math::BigInt should require Exporter.
+   Math::BigFloat has Math::BigInt in @ISA, so it doesn't need to require
+   Exporter.
+
  * Fix CPAN RT #120351 regarding bpow(). Add test.
 
  * Don't load Test::More when it isn't really needed. This speeds up processing

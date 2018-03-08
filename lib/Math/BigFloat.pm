@@ -21,7 +21,6 @@ use Math::BigInt ();
 
 our $VERSION = '1.999811';
 
-require Exporter;
 our @ISA        = qw/Math::BigInt/;
 our @EXPORT_OK  = qw/bpi/;
 

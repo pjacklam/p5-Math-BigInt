@@ -22,6 +22,7 @@ use Carp ();
 
 our $VERSION = '1.999811';
 
+require Exporter;
 our @ISA = qw(Exporter);
 our @EXPORT_OK = qw(objectify bgcd blcm);
 
@@ -3885,8 +3886,6 @@ sub import {
     }
     # any non :constant stuff is handled by our parent, Exporter
     if (@a > 0) {
-        require Exporter;
-
         $class->SUPER::import(@a);            # need it for subclasses
         $class->export_to_level(1, $class, @a); # need it for MBF
     }
