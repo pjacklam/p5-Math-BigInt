@@ -559,9 +559,9 @@ is($CLASS->blsft(2**13, $CLASS->new(1)), 2**14,
 
 $z = 1050000000000000;          # may be int on systems with 64bit?
 $x = $CLASS->new($z);
-is($x->bsstr(), '105e+13',	# not 1.05e+15
+is($x->bsstr(), '105e+13',      # not 1.05e+15
    qq|\$x = $CLASS->new($z); \$x->bsstr() = "105e+13"|);
-$z = 1e+129;			# definitely a float (may fail on UTS)
+$z = 1e+129;                    # definitely a float (may fail on UTS)
 # don't compare to $z, since some Perl versions stringify $z into something
 # like '1.e+129' or something equally ugly
 SKIP:{
@@ -575,7 +575,7 @@ SKIP:{
 ###############################################################################
 # test for whitespace including newlines to be handled correctly
 
-# is($Math::BigInt::strict, 1);		# the default
+# is($Math::BigInt::strict, 1);         # the default
 
 foreach my $c (qw/1 12 123 1234 12345 123456 1234567
                   12345678 123456789 1234567890/)
@@ -651,12 +651,12 @@ is($x,        2,       "2 >>= 18 with $CLASS objects");
 # inheritance and overriding of _swap
 
 $x = Math::Foo->new(5);
-$x = $x - 8;		# 8 - 5 instead of 5-8
+$x = $x - 8;            # 8 - 5 instead of 5-8
 is($x, 3, '$x = Math::Foo->new(5); $x = $x - 8; $x = 3');
 is(ref($x), 'Math::Foo', '$x is an object of class "Math::Foo"');
 
 $x = Math::Foo->new(5);
-$x = 8 - $x;		# 5 - 8 instead of 8 - 5
+$x = 8 - $x;            # 5 - 8 instead of 8 - 5
 is($x, -3, '$x = Math::Foo->new(5); $x = 8 - $x; $x = -3');
 is(ref($x), 'Math::Foo', '$x is an object of class "Math::Foo"');
 
@@ -933,7 +933,7 @@ SKIP: {
 sub is_valid {
     my ($x, $f) = @_;
 
-    my $e = 0;			# error?
+    my $e = 0;                  # error?
 
     # allow the check to pass for all Lite, and all MBI and subclasses
     # ok as reference?

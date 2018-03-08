@@ -254,8 +254,8 @@ is($CLASS->binf("+"),    "inf",  qq|$CLASS->binf("+")|);
 is($CLASS->binf("-"),    "-inf", qq|$CLASS->binf("-")|);
 is($CLASS->binf("-inf"), "-inf", qq|$CLASS->binf("-inf")|);
 
-$CLASS->accuracy(undef);	# reset
-$CLASS->precision(undef);	# reset
+$CLASS->accuracy(undef);        # reset
+$CLASS->precision(undef);       # reset
 
 ###############################################################################
 # bsqrt() with set global A/P or A/P enabled on $x, also a test whether bsqrt()

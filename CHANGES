@@ -1,5 +1,7 @@
 2018-03-17 v1.999812 pjacklam
 
+ * Expand tabs to spaces and clean up whitepace.
+
  * Include tests that were previously commented out.
 
  * Use config() as a method, rather than a function. Also use config("xyz")

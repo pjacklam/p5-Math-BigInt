@@ -19,7 +19,7 @@ print "# IOR_BITS = $OR_BITS\n";
 
 # testing of Math::BigInt::Calc
 
-my $LIB = 'Math::BigInt::Calc';		# pass classname to sub's
+my $LIB = 'Math::BigInt::Calc';         # pass classname to sub's
 
 # _new and _str
 
@@ -66,7 +66,7 @@ $LIB->_inc($x1);
 is("$x1", "$x", q|"$x1" = "$x"|);
 is($LIB->_str($r1), "0", qq|$LIB->_str(\$r1) = "0"|);
 
-$x = $LIB->_new("39483");	# reset
+$x = $LIB->_new("39483");       # reset
 
 ###############################################################################
 
@@ -299,7 +299,7 @@ is($LIB->_acmp($y, $y), 0,  qq|$LIB->_acmp(\$y, \$y) = 0|);
 $x = $LIB->_new("8");
 $y = $LIB->_new("5033");
 my ($xmod, $sign) = $LIB->_modinv($x, $y);
-is($LIB->_str($xmod), "629", 	        # -629 % 5033 == 4404
+is($LIB->_str($xmod), "629",            # -629 % 5033 == 4404
    qq|$LIB->_str(\$xmod) = "629"|);
 is($sign, "-", q|$sign = "-"|);
 
@@ -348,7 +348,7 @@ is($LIB->_str($LIB->_sqrt($x)), "12000000",
 # _root
 
 $x = $LIB->_new("81");
-my $n = $LIB->_new("3"); 	# 4*4*4 = 64, 5*5*5 = 125
+my $n = $LIB->_new("3");        # 4*4*4 = 64, 5*5*5 = 125
 is($LIB->_str($LIB->_root($x, $n)), "4",
    qq|$LIB->_str($LIB->_root(\$x, \$n)) = "4"|); # 4.xx => 4.0
 

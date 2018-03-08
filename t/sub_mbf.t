@@ -14,7 +14,7 @@ our ($CLASS, $LIB);
 $CLASS = "Math::BigFloat::Subclass";
 $LIB   = Math::BigFloat->config('lib');         # backend library
 
-require './t/bigfltpm.inc';	# perform same tests as bigfltpm
+require './t/bigfltpm.inc';     # perform same tests as bigfltpm
 
 ###############################################################################
 # Now do custom tests for Subclass itself
@@ -29,7 +29,7 @@ ok(!$ms->isa('Math::BigInt'),
 
 use Math::BigFloat;
 
-my $bf = Math::BigFloat->new(23);	# same as other
+my $bf = Math::BigFloat->new(23);       # same as other
 $ms += $bf;
 is($ms, 46, '$ms is 46');
 is($ms->{_custom}, 1, '$ms has custom attribute $ms->{_custom}');
