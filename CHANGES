@@ -1,5 +1,7 @@
 2018-03-17 v1.999812 pjacklam
 
+ * Fix CPAN RT #120717 regarding tests now that '.' is not in @INC by default.
+
  * Fix CPAN RT #122756 regarding testing for 64 bit integer support.
 
  * Fix typo in one of the change log entries for version 1.999811.
