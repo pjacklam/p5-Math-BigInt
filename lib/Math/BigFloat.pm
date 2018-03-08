@@ -331,10 +331,16 @@ sub config {
     # return (later set?) configuration data as hash ref
     my $class = shift || 'Math::BigFloat';
 
+    # Getter/accessor.
+
     if (@_ == 1 && ref($_[0]) ne 'HASH') {
-        my $cfg = $class->SUPER::config();
-        return $cfg->{$_[0]};
+        my $param = shift;
+        return $class if $param eq 'class';
+        return $LIB   if $param eq 'with';
+        return $class->SUPER::config($param);
     }
+
+    # Setter.
 
     my $cfg = $class->SUPER::config(@_);
 
@@ -4729,7 +4735,7 @@ Math::BigFloat - Arbitrary size floating point math package
   Math::BigFloat->round_mode($m); # set global round mode, must be one of
                                   # 'even', 'odd', '+inf', '-inf', 'zero',
                                   # 'trunc', or 'common'
-  Math::BigFloat->config();       # return hash with configuration
+  Math::BigFloat->config("lib");  # name of backend math library
 
   # Constructor methods (when the class methods below are used as instance
   # methods, the value is assigned the invocand)

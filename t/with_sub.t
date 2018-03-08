@@ -16,7 +16,7 @@ $CLASS = "Math::BigFloat";
 $LIB   = "Math::BigInt::Calc";          # backend
 
 # the "with" argument should be ignored
-is(Math::BigFloat->config()->{with}, 'Math::BigInt::Calc',
-   "Math::BigFloat->config()->{with}");
+is(Math::BigFloat->config("with"), 'Math::BigInt::Calc',
+   qq|Math::BigFloat->config("with")|);
 
 require './t/bigfltpm.inc';	# all tests here for sharing

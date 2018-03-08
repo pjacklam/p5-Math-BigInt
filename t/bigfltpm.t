@@ -13,8 +13,8 @@ our ($CLASS, $LIB);
 $CLASS = "Math::BigFloat";
 $LIB   = Math::BigInt -> config('lib');         # backend library
 
-is($CLASS->config()->{class}, $CLASS, "$CLASS->config()->{class}");
-is($CLASS->config()->{with},  $LIB,   "$CLASS->config()->{with}");
+is($CLASS->config("class"), $CLASS, qq|$CLASS->config("class")|);
+is($CLASS->config("with"),  $LIB,   qq|$CLASS->config("with")|);
 
 # bug #17447: Can't call method Math::BigFloat->bsub, not a valid method
 my $c = Math::BigFloat->new('123.3');

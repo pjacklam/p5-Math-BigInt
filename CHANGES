@@ -1,5 +1,8 @@
 2018-03-17 v1.999812 pjacklam
 
+ * Use config() as a method, rather than a function. Also use config("xyz")
+   rather than config()->{xyz}.
+
  * Use $LIB as the variable name for backend math library.
 
  * Import "carp" and "croak" from the Carp module.

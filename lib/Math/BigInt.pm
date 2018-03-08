@@ -412,7 +412,7 @@ sub precision {
 }
 
 sub config {
-    # return (or set) configuration data as hash ref
+    # return (or set) configuration data.
     my $class = shift || __PACKAGE__;
 
     no strict 'refs';
@@ -4628,17 +4628,13 @@ This is used for instance by L<Math::BigInt::Constant>.
 
 =item config()
 
-    use Data::Dumper;
+    Math::BigInt->config("trap_nan" => 1);      # set
+    $accu = Math::BigInt->config("accuracy");   # get
 
-    print Dumper ( Math::BigInt->config() );
-    print Math::BigInt->config()->{lib},"\n";
-    print Math::BigInt->config('lib')},"\n";
+Set or get configuration parameter values. The following parameters are
+supported:
 
-Returns a hash containing the configuration, e.g. the version number, lib
-loaded etc. The following hash keys are currently filled in with the
-appropriate information.
-
-    key           Description
+    Parameter     Description
                   Example
     ============================================================
     lib           Name of the low-level math library
@@ -4666,16 +4662,10 @@ appropriate information.
     trap_inf      If true, traps creation of +inf/-inf via croak()
                   1
 
-The following values can be set by passing C<config()> a reference to a hash:
+The following values can be set:
 
         accuracy precision round_mode div_scale
         upgrade downgrade trap_inf trap_nan
-
-Example:
-
-    $new_cfg = Math::BigInt->config(
-        { trap_inf => 1, precision => 5 }
-    );
 
 =back
 
