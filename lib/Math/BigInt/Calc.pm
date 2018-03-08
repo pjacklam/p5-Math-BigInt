@@ -4,7 +4,7 @@ use 5.006001;
 use strict;
 use warnings;
 
-use Carp;
+use Carp qw< carp croak >;
 use Math::BigInt::Lib;
 
 our $VERSION = '1.999811';
@@ -104,8 +104,7 @@ sub _new {
 
     my ($class, $str) = @_;
     #unless ($str =~ /^([1-9]\d*|0)\z/) {
-    #    require Carp;
-    #    Carp::croak("Invalid input string '$str'");
+    #    croak("Invalid input string '$str'");
     #}
 
     my $input_len = length($str) - 1;
@@ -264,8 +263,7 @@ sub _str {
     my $idx = $#$ary;           # index of last element
 
     if ($idx < 0) {             # should not happen
-        require Carp;
-        Carp::croak("$_[1] has no elements");
+        croak("$_[1] has no elements");
     }
 
     # Handle first one differently, since it should not have any leading zeros.

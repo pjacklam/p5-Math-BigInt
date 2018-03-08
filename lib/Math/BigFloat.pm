@@ -16,7 +16,7 @@ use 5.006001;
 use strict;
 use warnings;
 
-use Carp ();
+use Carp qw< carp croak >;
 use Math::BigInt ();
 
 our $VERSION = '1.999811';
@@ -280,11 +280,11 @@ sub AUTOLOAD {
     if (!_method_alias($name)) {
         if (!defined $name) {
             # delayed load of Carp and avoid recursion
-            Carp::croak("$c: Can't call a method without name");
+            croak("$c: Can't call a method without name");
         }
         if (!_method_hand_up($name)) {
             # delayed load of Carp and avoid recursion
-            Carp::croak("Can't call $c\-\>$name, not a valid method");
+            croak("Can't call $c\-\>$name, not a valid method");
         }
         # try one level up, but subst. bxxx() for fxxx() since MBI only got bxxx()
         $name =~ s/^f/b/;
@@ -363,7 +363,7 @@ sub new {
     # avoid numify-calls by not using || on $wanted!
 
     unless (defined $wanted) {
-        #Carp::carp("Use of uninitialized value in new");
+        #carp("Use of uninitialized value in new");
         return $self->bzero(@r);
     }
 
@@ -446,7 +446,7 @@ sub new {
     my ($mis, $miv, $mfv, $es, $ev) = Math::BigInt::_split($wanted);
     if (!ref $mis) {
         if ($_trap_nan) {
-            Carp::croak("$wanted is not a number initialized to $class");
+            croak("$wanted is not a number initialized to $class");
         }
 
         return $downgrade->bnan() if $downgrade;
@@ -782,7 +782,7 @@ sub bzero {
     # create/assign '+0'
 
     if (@_ == 0) {
-        #Carp::carp("Using bone() as a function is deprecated;",
+        #carp("Using bone() as a function is deprecated;",
         #           " use bone() as a method instead");
         unshift @_, __PACKAGE__;
     }
@@ -821,7 +821,7 @@ sub bone {
     # Create or assign '+1' (or -1 if given sign '-').
 
     if (@_ == 0 || (defined($_[0]) && ($_[0] eq '+' || $_[0] eq '-'))) {
-        #Carp::carp("Using bone() as a function is deprecated;",
+        #carp("Using bone() as a function is deprecated;",
         #           " use bone() as a method instead");
         unshift @_, __PACKAGE__;
     }
@@ -865,7 +865,7 @@ sub binf {
     if (@_ == 0 || (defined($_[0]) && !ref($_[0]) &&
                     $_[0] =~ /^\s*[+-](inf(inity)?)?\s*$/))
     {
-        #Carp::carp("Using binf() as a function is deprecated;",
+        #carp("Using binf() as a function is deprecated;",
         #           " use binf() as a method instead");
         unshift @_, __PACKAGE__;
     }
@@ -877,7 +877,7 @@ sub binf {
     {
         no strict 'refs';
         if (${"${class}::_trap_inf"}) {
-            Carp::croak("Tried to create +-inf in $class->binf()");
+            croak("Tried to create +-inf in $class->binf()");
         }
     }
 
@@ -901,7 +901,7 @@ sub bnan {
     # create/assign a 'NaN'
 
     if (@_ == 0) {
-        #Carp::carp("Using bnan() as a function is deprecated;",
+        #carp("Using bnan() as a function is deprecated;",
         #           " use bnan() as a method instead");
         unshift @_, __PACKAGE__;
     }
@@ -913,7 +913,7 @@ sub bnan {
     {
         no strict 'refs';
         if (${"${class}::_trap_nan"}) {
-            Carp::croak("Tried to create NaN in $class->bnan()");
+            croak("Tried to create NaN in $class->bnan()");
         }
     }
 
@@ -3287,7 +3287,7 @@ sub bdfac {
       if (($x->{sign} ne '+') || # inf, NaN, <0 etc => NaN
           ($x->{_es} ne '+'));   # digits after dot?
 
-    Carp::croak("bdfac() requires a newer version of the $MBI library.")
+    croak("bdfac() requires a newer version of the $MBI library.")
         unless $MBI->can('_dfac');
 
     if (! $MBI->_is_zero($x->{_e})) {
@@ -3360,8 +3360,8 @@ sub band {
     my $xref  = ref($x);
     my $class = $xref || $x;
 
-    Carp::croak 'band() is an instance method, not a class method' unless $xref;
-    Carp::croak 'Not enough arguments for band()' if @_ < 1;
+    croak 'band() is an instance method, not a class method' unless $xref;
+    croak 'Not enough arguments for band()' if @_ < 1;
 
     return if $x -> modify('band');
 
@@ -3387,8 +3387,8 @@ sub bior {
     my $xref  = ref($x);
     my $class = $xref || $x;
 
-    Carp::croak 'bior() is an instance method, not a class method' unless $xref;
-    Carp::croak 'Not enough arguments for bior()' if @_ < 1;
+    croak 'bior() is an instance method, not a class method' unless $xref;
+    croak 'Not enough arguments for bior()' if @_ < 1;
 
     return if $x -> modify('bior');
 
@@ -3414,8 +3414,8 @@ sub bxor {
     my $xref  = ref($x);
     my $class = $xref || $x;
 
-    Carp::croak 'bxor() is an instance method, not a class method' unless $xref;
-    Carp::croak 'Not enough arguments for bxor()' if @_ < 1;
+    croak 'bxor() is an instance method, not a class method' unless $xref;
+    croak 'Not enough arguments for bxor()' if @_ < 1;
 
     return if $x -> modify('bxor');
 
@@ -3441,7 +3441,7 @@ sub bnot {
     my $xref  = ref($x);
     my $class = $xref || $x;
 
-    Carp::croak 'bnot() is an instance method, not a class method' unless $xref;
+    croak 'bnot() is an instance method, not a class method' unless $xref;
 
     return if $x -> modify('bnot');
 
@@ -3470,7 +3470,7 @@ sub bround {
     $x = $class->new(shift) if !ref($x);
 
     if (($_[0] || 0) < 0) {
-        Carp::croak('bround() needs positive accuracy');
+        croak('bround() needs positive accuracy');
     }
 
     my ($scale, $mode) = $x->_scale_a(@_);
@@ -3781,7 +3781,7 @@ sub sparts {
     my $self  = shift;
     my $class = ref $self;
 
-    Carp::croak("sparts() is an instance method, not a class method")
+    croak("sparts() is an instance method, not a class method")
         unless $class;
 
     # Not-a-number.
@@ -3820,7 +3820,7 @@ sub nparts {
     my $self  = shift;
     my $class = ref $self;
 
-    Carp::croak("nparts() is an instance method, not a class method")
+    croak("nparts() is an instance method, not a class method")
         unless $class;
 
     # Not-a-number.
@@ -3866,7 +3866,7 @@ sub eparts {
     my $self  = shift;
     my $class = ref $self;
 
-    Carp::croak("eparts() is an instance method, not a class method")
+    croak("eparts() is an instance method, not a class method")
         unless $class;
 
     # Not-a-number and Infinity.
@@ -3889,7 +3889,7 @@ sub dparts {
     my $self  = shift;
     my $class = ref $self;
 
-    Carp::croak("dparts() is an instance method, not a class method")
+    croak("dparts() is an instance method, not a class method")
         unless $class;
 
     # Not-a-number and Infinity.
@@ -4248,7 +4248,7 @@ my @a;
         Math::BigInt->import($lib_kind => $lib, 'objectify');
     }
     if ($@) {
-        Carp::croak("Couldn't load $lib: $! $@");
+        croak("Couldn't load $lib: $! $@");
     }
     # find out which one was actually loaded
     $MBI = Math::BigInt->config('lib');

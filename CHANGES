@@ -1,5 +1,7 @@
 2018-03-17 v1.999812 pjacklam
 
+ * Import "carp" and "croak" from the Carp module.
+
  * Math::BigInt isa Exporter, so Math::BigInt should require Exporter.
    Math::BigFloat has Math::BigInt in @ISA, so it doesn't need to require
    Exporter.
