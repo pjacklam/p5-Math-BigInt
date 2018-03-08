@@ -10,9 +10,9 @@ use lib 't';
 
 use Math::BigInt::Subclass;
 
-our ($CLASS, $CALC);
+our ($CLASS, $LIB);
 $CLASS = "Math::BigInt::Subclass";
-$CALC  = "Math::BigInt::Calc";          # backend
+$LIB   = "Math::BigInt::Calc";          # backend
 
 require './t/bigintpm.inc';	        # perform same tests as bigintpm
 

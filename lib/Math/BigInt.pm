@@ -11,7 +11,7 @@ package Math::BigInt;
 #   _a   : accuracy
 #   _p   : precision
 
-# Remember not to take shortcuts ala $xs = $x->{value}; $CALC->foo($xs); since
+# Remember not to take shortcuts ala $xs = $x->{value}; $LIB->foo($xs); since
 # underlying lib might change the reference!
 
 use 5.006001;
@@ -229,12 +229,12 @@ our $_trap_inf = 0;                         # are infs ok? set w/ config()
 
 my $nan = 'NaN';                        # constants for easier life
 
-my $CALC = 'Math::BigInt::Calc';        # module to do the low level math
+my $LIB = 'Math::BigInt::Calc';        # module to do the low level math
                                         # default is Calc.pm
 my $IMPORT = 0;                         # was import() called yet?
                                         # used to make require work
 my %WARN;                               # warn only once for low-level libs
-my %CAN;                                # cache for $CALC->can(...)
+my %CAN;                                # cache for $LIB->can(...)
 my %CALLBACKS;                          # callbacks to notify on lib loads
 my $EMU_LIB = 'Math/BigInt/CalcEmu.pm'; # emulate low-level math
 
@@ -452,8 +452,8 @@ sub config {
     # now return actual configuration
 
     my $cfg = {
-               lib         => $CALC,
-               lib_version => ${"${CALC}::VERSION"},
+               lib         => $LIB,
+               lib_version => ${"${LIB}::VERSION"},
                class       => $class,
                trap_nan    => ${"${class}::_trap_nan"},
                trap_inf    => ${"${class}::_trap_inf"},
@@ -587,7 +587,7 @@ sub new {
         my $sgn = $1;
         my $abs = $2;
         $self->{sign} = $sgn || '+';
-        $self->{value} = $CALC->_new($abs);
+        $self->{value} = $LIB->_new($abs);
 
         no strict 'refs';
         if (defined($a) || defined($p)
@@ -639,7 +639,7 @@ sub new {
         if ($_trap_nan) {
             croak("$wanted is not a number in $class");
         }
-        $self->{value} = $CALC->_zero();
+        $self->{value} = $LIB->_zero();
         $self->{sign} = $nan;
         return $self;
     }
@@ -654,7 +654,7 @@ sub new {
     # Make integer from mantissa by adjusting exponent, then convert to a
     # Math::BigInt.
     $self->{sign} = $$mis;           # store sign
-    $self->{value} = $CALC->_zero(); # for all the NaN cases
+    $self->{value} = $LIB->_zero(); # for all the NaN cases
     my $e = int("$$es$$ev");         # exponent (avoid recursion)
     if ($e > 0) {
         my $diff = $e - CORE::length($$mfv);
@@ -702,7 +702,7 @@ sub new {
 
     unless ($self->{sign} eq $nan) {
         $self->{sign} = '+' if $$miv eq '0';            # normalize -0 => +0
-        $self->{value} = $CALC->_new($$miv) if $self->{sign} =~ /^[+-]$/;
+        $self->{value} = $LIB->_new($$miv) if $self->{sign} =~ /^[+-]$/;
     }
 
     # If any of the globals are set, use them to round, and store them inside
@@ -753,11 +753,11 @@ sub from_hex {
 
         # The library method requires a prefix.
 
-        $self->{value} = $CALC->_from_hex('0x' . $chrs);
+        $self->{value} = $LIB->_from_hex('0x' . $chrs);
 
         # Place the sign.
 
-        $self->{sign} = $sign eq '-' && ! $CALC->_is_zero($self->{value})
+        $self->{sign} = $sign eq '-' && ! $LIB->_is_zero($self->{value})
                           ? '-' : '+';
 
         return $self;
@@ -808,11 +808,11 @@ sub from_oct {
 
         # The library method requires a prefix.
 
-        $self->{value} = $CALC->_from_oct('0' . $chrs);
+        $self->{value} = $LIB->_from_oct('0' . $chrs);
 
         # Place the sign.
 
-        $self->{sign} = $sign eq '-' && ! $CALC->_is_zero($self->{value})
+        $self->{sign} = $sign eq '-' && ! $LIB->_is_zero($self->{value})
                           ? '-' : '+';
 
         return $self;
@@ -864,11 +864,11 @@ sub from_bin {
 
         # The library method requires a prefix.
 
-        $self->{value} = $CALC->_from_bin('0b' . $chrs);
+        $self->{value} = $LIB->_from_bin('0b' . $chrs);
 
         # Place the sign.
 
-        $self->{sign} = $sign eq '-' && ! $CALC->_is_zero($self->{value})
+        $self->{sign} = $sign eq '-' && ! $LIB->_is_zero($self->{value})
                           ? '-' : '+';
 
         return $self;
@@ -891,8 +891,8 @@ sub from_bytes {
 
     return if $selfref && $self->modify('from_bytes');
 
-    croak("from_bytes() requires a newer version of the $CALC library.")
-        unless $CALC->can('_from_bytes');
+    croak("from_bytes() requires a newer version of the $LIB library.")
+        unless $LIB->can('_from_bytes');
 
     my $str = shift;
 
@@ -900,7 +900,7 @@ sub from_bytes {
 
     $self = $class -> bzero() unless $selfref;
     $self -> {sign}  = '+';
-    $self -> {value} = $CALC -> _from_bytes($str);
+    $self -> {value} = $LIB -> _from_bytes($str);
     return $self;
 }
 
@@ -926,7 +926,7 @@ sub bzero {
     $self = bless {}, $class unless $selfref;
 
     $self->{sign} = '+';
-    $self->{value} = $CALC->_zero();
+    $self->{value} = $LIB->_zero();
 
     if (@_ > 0) {
         if (@_ > 3) {
@@ -969,7 +969,7 @@ sub bone {
     $self = bless {}, $class unless $selfref;
 
     $self->{sign}  = $sign;
-    $self->{value} = $CALC->_one();
+    $self->{value} = $LIB->_one();
 
     if (@_ > 0) {
         if (@_ > 3) {
@@ -1021,7 +1021,7 @@ sub binf {
     $self = bless {}, $class unless $selfref;
 
     $self -> {sign}  = $sign . 'inf';
-    $self -> {value} = $CALC -> _zero();
+    $self -> {value} = $LIB -> _zero();
 
     return $self;
 }
@@ -1055,7 +1055,7 @@ sub bnan {
     $self = bless {}, $class unless $selfref;
 
     $self -> {sign}  = $nan;
-    $self -> {value} = $CALC -> _zero();
+    $self -> {value} = $LIB -> _zero();
 
     return $self;
 }
@@ -1089,7 +1089,7 @@ sub copy {
     my $copy = bless {}, $class;
 
     $copy->{sign}  = $self->{sign};
-    $copy->{value} = $CALC->_copy($self->{value});
+    $copy->{value} = $LIB->_copy($self->{value});
     $copy->{_a}    = $self->{_a} if exists $self->{_a};
     $copy->{_p}    = $self->{_p} if exists $self->{_p};
 
@@ -1112,7 +1112,7 @@ sub is_zero {
     my ($class, $x) = ref($_[0]) ? (undef, $_[0]) : objectify(1, @_);
 
     return 0 if $x->{sign} !~ /^\+$/; # -, NaN & +-inf aren't
-    $CALC->_is_zero($x->{value});
+    $LIB->_is_zero($x->{value});
 }
 
 sub is_one {
@@ -1122,7 +1122,7 @@ sub is_one {
     $sign = '+' if !defined $sign || $sign ne '-';
 
     return 0 if $x->{sign} ne $sign; # -1 != +1, NaN, +-inf aren't either
-    $CALC->_is_one($x->{value});
+    $LIB->_is_one($x->{value});
 }
 
 sub is_finite {
@@ -1171,7 +1171,7 @@ sub is_odd {
     my ($class, $x) = ref($_[0]) ? (undef, $_[0]) : objectify(1, @_);
 
     return 0 if $x->{sign} !~ /^[+-]$/; # NaN & +-inf aren't
-    $CALC->_is_odd($x->{value});
+    $LIB->_is_odd($x->{value});
 }
 
 sub is_even {
@@ -1179,7 +1179,7 @@ sub is_even {
     my ($class, $x) = ref($_[0]) ? (undef, $_[0]) : objectify(1, @_);
 
     return 0 if $x->{sign} !~ /^[+-]$/; # NaN & +-inf aren't
-    $CALC->_is_even($x->{value});
+    $LIB->_is_even($x->{value});
 }
 
 sub is_int {
@@ -1226,11 +1226,11 @@ sub bcmp {
     # post-normalized compare for internal use (honors signs)
     if ($x->{sign} eq '+') {
         # $x and $y both > 0
-        return $CALC->_acmp($x->{value}, $y->{value});
+        return $LIB->_acmp($x->{value}, $y->{value});
     }
 
     # $x && $y both < 0
-    $CALC->_acmp($y->{value}, $x->{value}); # swapped acmp (lib returns 0, 1, -1)
+    $LIB->_acmp($y->{value}, $x->{value}); # swapped acmp (lib returns 0, 1, -1)
 }
 
 sub bacmp {
@@ -1253,7 +1253,7 @@ sub bacmp {
         return 1 if $x->{sign} =~ /^[+-]inf$/ && $y->{sign} !~ /^[+-]inf$/;
         return -1;
     }
-    $CALC->_acmp($x->{value}, $y->{value}); # lib does only 0, 1, -1
+    $LIB->_acmp($x->{value}, $y->{value}); # lib does only 0, 1, -1
 }
 
 sub beq {
@@ -1341,7 +1341,7 @@ sub bneg {
     return $x if $x->modify('bneg');
 
     # for +0 do not negate (to have always normalized +0). Does nothing for 'NaN'
-    $x->{sign} =~ tr/+-/-+/ unless ($x->{sign} eq '+' && $CALC->_is_zero($x->{value}));
+    $x->{sign} =~ tr/+-/-+/ unless ($x->{sign} eq '+' && $LIB->_is_zero($x->{value}));
     $x;
 }
 
@@ -1381,11 +1381,11 @@ sub binc {
     return $x if $x->modify('binc');
 
     if ($x->{sign} eq '+') {
-        $x->{value} = $CALC->_inc($x->{value});
+        $x->{value} = $LIB->_inc($x->{value});
         return $x->round($a, $p, $r);
     } elsif ($x->{sign} eq '-') {
-        $x->{value} = $CALC->_dec($x->{value});
-        $x->{sign} = '+' if $CALC->_is_zero($x->{value}); # -1 +1 => -0 => +0
+        $x->{value} = $LIB->_dec($x->{value});
+        $x->{sign} = '+' if $LIB->_is_zero($x->{value}); # -1 +1 => -0 => +0
         return $x->round($a, $p, $r);
     }
     # inf, nan handling etc
@@ -1399,18 +1399,18 @@ sub bdec {
 
     if ($x->{sign} eq '-') {
         # x already < 0
-        $x->{value} = $CALC->_inc($x->{value});
+        $x->{value} = $LIB->_inc($x->{value});
     } else {
         return $x->badd($class->bone('-'), @r)
           unless $x->{sign} eq '+'; # inf or NaN
         # >= 0
-        if ($CALC->_is_zero($x->{value})) {
+        if ($LIB->_is_zero($x->{value})) {
             # == 0
-            $x->{value} = $CALC->_one();
+            $x->{value} = $LIB->_one();
             $x->{sign} = '-'; # 0 => -1
         } else {
             # > 0
-            $x->{value} = $CALC->_dec($x->{value});
+            $x->{value} = $LIB->_dec($x->{value});
         }
     }
     $x->round(@r);
@@ -1541,19 +1541,19 @@ sub badd {
     my ($sx, $sy) = ($x->{sign}, $y->{sign});  # get signs
 
     if ($sx eq $sy) {
-        $x->{value} = $CALC->_add($x->{value}, $y->{value}); # same sign, abs add
+        $x->{value} = $LIB->_add($x->{value}, $y->{value}); # same sign, abs add
     } else {
-        my $a = $CALC->_acmp ($y->{value}, $x->{value}); # absolute compare
+        my $a = $LIB->_acmp ($y->{value}, $x->{value}); # absolute compare
         if ($a > 0) {
-            $x->{value} = $CALC->_sub($y->{value}, $x->{value}, 1); # abs sub w/ swap
+            $x->{value} = $LIB->_sub($y->{value}, $x->{value}, 1); # abs sub w/ swap
             $x->{sign} = $sy;
         } elsif ($a == 0) {
             # speedup, if equal, set result to 0
-            $x->{value} = $CALC->_zero();
+            $x->{value} = $LIB->_zero();
             $x->{sign} = '+';
         } else                  # a < 0
         {
-            $x->{value} = $CALC->_sub($x->{value}, $y->{value}); # abs sub
+            $x->{value} = $LIB->_sub($x->{value}, $y->{value}); # abs sub
         }
     }
     $x->round(@r);
@@ -1627,8 +1627,8 @@ sub bmul {
 
     $x->{sign} = $x->{sign} eq $y->{sign} ? '+' : '-'; # +1 * +1 or -1 * -1 => +
 
-    $x->{value} = $CALC->_mul($x->{value}, $y->{value}); # do actual math
-    $x->{sign} = '+' if $CALC->_is_zero($x->{value});   # no -0
+    $x->{value} = $LIB->_mul($x->{value}, $y->{value}); # do actual math
+    $x->{sign} = '+' if $LIB->_is_zero($x->{value});   # no -0
 
     $x->round(@r);
 }
@@ -1670,25 +1670,25 @@ sub bmuladd {
 
     $x->{sign} = $x->{sign} eq $y->{sign} ? '+' : '-'; # +1 * +1 or -1 * -1 => +
 
-    $x->{value} = $CALC->_mul($x->{value}, $y->{value}); # do actual math
-    $x->{sign} = '+' if $CALC->_is_zero($x->{value});   # no -0
+    $x->{value} = $LIB->_mul($x->{value}, $y->{value}); # do actual math
+    $x->{sign} = '+' if $LIB->_is_zero($x->{value});   # no -0
 
     my ($sx, $sz) = ( $x->{sign}, $z->{sign} ); # get signs
 
     if ($sx eq $sz) {
-        $x->{value} = $CALC->_add($x->{value}, $z->{value}); # same sign, abs add
+        $x->{value} = $LIB->_add($x->{value}, $z->{value}); # same sign, abs add
     } else {
-        my $a = $CALC->_acmp ($z->{value}, $x->{value}); # absolute compare
+        my $a = $LIB->_acmp ($z->{value}, $x->{value}); # absolute compare
         if ($a > 0) {
-            $x->{value} = $CALC->_sub($z->{value}, $x->{value}, 1); # abs sub w/ swap
+            $x->{value} = $LIB->_sub($z->{value}, $x->{value}, 1); # abs sub w/ swap
             $x->{sign} = $sz;
         } elsif ($a == 0) {
             # speedup, if equal, set result to 0
-            $x->{value} = $CALC->_zero();
+            $x->{value} = $LIB->_zero();
             $x->{sign} = '+';
         } else                  # a < 0
         {
-            $x->{value} = $CALC->_sub($x->{value}, $z->{value}); # abs sub
+            $x->{value} = $LIB->_sub($x->{value}, $z->{value}); # abs sub
         }
     }
     $x->round(@r);
@@ -1825,10 +1825,10 @@ sub bdiv {
         $x -> bone();
     } else {
         ($x -> {value}, $rem -> {value}) =
-          $CALC -> _div($x -> {value}, $y -> {value});
+          $LIB -> _div($x -> {value}, $y -> {value});
 
-        if ($CALC -> _is_zero($rem -> {value})) {
-            if ($xsign eq $ysign || $CALC -> _is_zero($x -> {value})) {
+        if ($LIB -> _is_zero($rem -> {value})) {
+            if ($xsign eq $ysign || $LIB -> _is_zero($x -> {value})) {
                 $x -> {sign} = '+';
             } else {
                 $x -> {sign} = '-';
@@ -1850,7 +1850,7 @@ sub bdiv {
     $x -> round(@r);
 
     if ($wantarray) {
-        unless ($CALC -> _is_zero($rem -> {value})) {
+        unless ($LIB -> _is_zero($rem -> {value})) {
             if ($xsign ne $ysign) {
                 $rem = $y -> copy() -> babs() -> bsub($rem);
             }
@@ -1990,16 +1990,16 @@ sub btdiv {
         $x -> bone();
     } else {
         ($x -> {value}, $rem -> {value}) =
-          $CALC -> _div($x -> {value}, $y -> {value});
+          $LIB -> _div($x -> {value}, $y -> {value});
 
         $x -> {sign} = $xsign eq $ysign ? '+' : '-';
-        $x -> {sign} = '+' if $CALC -> _is_zero($x -> {value});
+        $x -> {sign} = '+' if $LIB -> _is_zero($x -> {value});
         $x -> round(@r);
     }
 
     if (wantarray) {
         $rem -> {sign} = $xsign;
-        $rem -> {sign} = '+' if $CALC -> _is_zero($rem -> {value});
+        $rem -> {sign} = '+' if $LIB -> _is_zero($rem -> {value});
         $rem -> {_a} = $x -> {_a};
         $rem -> {_p} = $x -> {_p};
         $rem -> round(@r);
@@ -2053,11 +2053,11 @@ sub bmod {
 
     # Calc new sign and in case $y == +/- 1, return $x.
 
-    $x -> {value} = $CALC -> _mod($x -> {value}, $y -> {value});
-    if ($CALC -> _is_zero($x -> {value})) {
+    $x -> {value} = $LIB -> _mod($x -> {value}, $y -> {value});
+    if ($LIB -> _is_zero($x -> {value})) {
         $x -> {sign} = '+';     # do not leave -0
     } else {
-        $x -> {value} = $CALC -> _sub($y -> {value}, $x -> {value}, 1) # $y-$x
+        $x -> {value} = $LIB -> _sub($y -> {value}, $x -> {value}, 1) # $y-$x
           if ($x -> {sign} ne $y -> {sign});
         $x -> {sign} = $y -> {sign};
     }
@@ -2110,10 +2110,10 @@ sub btmod {
     my $xsign = $x -> {sign};
     my $ysign = $y -> {sign};
 
-    $x -> {value} = $CALC -> _mod($x -> {value}, $y -> {value});
+    $x -> {value} = $LIB -> _mod($x -> {value}, $y -> {value});
 
     $x -> {sign} = $xsign;
-    $x -> {sign} = '+' if $CALC -> _is_zero($x -> {value});
+    $x -> {sign} = '+' if $LIB -> _is_zero($x -> {value});
     $x -> round(@r);
     return $x;
 }
@@ -2158,7 +2158,7 @@ sub bmodinv {
     # $x = 0 is when $y = 1 or $y = -1, but that was covered above.
     #
     # Note that computing $x modulo $y here affects the value we'll feed to
-    # $CALC->_modinv() below when $x and $y have opposite signs. E.g., if $x =
+    # $LIB->_modinv() below when $x and $y have opposite signs. E.g., if $x =
     # 5 and $y = 7, those two values are fed to _modinv(), but if $x = -5 and
     # $y = 7, the values fed to _modinv() are $x = 2 (= -5 % 7) and $y = 7.
     # The value if $x is affected only when $x and $y have opposite signs.
@@ -2169,7 +2169,7 @@ sub bmodinv {
     # Compute the modular multiplicative inverse of the absolute values. We'll
     # correct for the signs of $x and $y later. Return NaN if no GCD is found.
 
-    ($x->{value}, $x->{sign}) = $CALC->_modinv($x->{value}, $y->{value});
+    ($x->{value}, $x->{sign}) = $LIB->_modinv($x->{value}, $y->{value});
     return $x->bnan() if !defined $x->{value};
 
     # Library inconsistency workaround: _modinv() in Math::BigInt::GMP versions
@@ -2234,13 +2234,13 @@ sub bmodpow {
     # value is zero, the output is also zero, regardless of the signs on 'a' and
     # 'm'.
 
-    my $value = $CALC->_modpow($num->{value}, $exp->{value}, $mod->{value});
+    my $value = $LIB->_modpow($num->{value}, $exp->{value}, $mod->{value});
     my $sign  = '+';
 
     # If the resulting value is non-zero, we have four special cases, depending
     # on the signs on 'a' and 'm'.
 
-    unless ($CALC->_is_zero($value)) {
+    unless ($LIB->_is_zero($value)) {
 
         # There is a negative sign on 'a' (= $num**$exp) only if the number we
         # are exponentiating ($num) is negative and the exponent ($exp) is odd.
@@ -2262,8 +2262,8 @@ sub bmodpow {
 
             else {
                 # Use copy of $mod since _sub() modifies the first argument.
-                my $mod = $CALC->_copy($mod->{value});
-                $value = $CALC->_sub($mod, $value);
+                my $mod = $LIB->_copy($mod->{value});
+                $value = $LIB->_sub($mod, $value);
                 $sign  = '+';
             }
 
@@ -2276,8 +2276,8 @@ sub bmodpow {
 
             if ($mod->{sign} eq '-') {
                 # Use copy of $mod since _sub() modifies the first argument.
-                my $mod = $CALC->_copy($mod->{value});
-                $value = $CALC->_sub($mod, $value);
+                my $mod = $LIB->_copy($mod->{value});
+                $value = $LIB->_sub($mod, $value);
                 $sign  = '-';
             }
 
@@ -2347,14 +2347,14 @@ sub bpow {
 
     # 0 ** -7 => ( 1 / (0 ** 7)) => 1 / 0 => +inf
     return $x->binf()
-      if $y->{sign} eq '-' && $x->{sign} eq '+' && $CALC->_is_zero($x->{value});
+      if $y->{sign} eq '-' && $x->{sign} eq '+' && $LIB->_is_zero($x->{value});
     # 1 ** -y => 1 / (1 ** |y|)
     # so do test for negative $y after above's clause
-    return $x->bnan() if $y->{sign} eq '-' && !$CALC->_is_one($x->{value});
+    return $x->bnan() if $y->{sign} eq '-' && !$LIB->_is_one($x->{value});
 
-    $x->{value} = $CALC->_pow($x->{value}, $y->{value});
+    $x->{value} = $LIB->_pow($x->{value}, $y->{value});
     $x->{sign} = $new_sign;
-    $x->{sign} = '+' if $CALC->_is_zero($y->{value});
+    $x->{sign} = '+' if $LIB->_is_zero($y->{value});
     $x->round(@r);
 }
 
@@ -2422,7 +2422,7 @@ sub blog {
         return $x;
     }
 
-    my ($rc, $exact) = $CALC->_log_int($x->{value}, $base->{value});
+    my ($rc, $exact) = $LIB->_log_int($x->{value}, $base->{value});
     return $x->bnan() unless defined $rc; # not possible to take log?
     $x->{value} = $rc;
     $x->round(@r);
@@ -2477,8 +2477,8 @@ sub bnok {
     my $cmp = $x->bacmp($y);
     return $x->bzero() if $cmp < 0 || substr($y->{sign}, 0, 1) eq "-";
 
-    if ($CALC->can('_nok')) {
-        $x->{value} = $CALC->_nok($x->{value}, $y->{value});
+    if ($LIB->can('_nok')) {
+        $x->{value} = $LIB->_nok($x->{value}, $y->{value});
     } else {
         # ( 7 )       7!       1*2*3*4 * 5*6*7   5 * 6 * 7       6   7
         # ( - ) = --------- =  --------------- = --------- = 5 * - * -
@@ -2491,36 +2491,36 @@ sub bnok {
         # nok(n, n-k) to minimize the number if iterations in the loop.
 
         {
-            my $twok = $CALC->_mul($CALC->_two(), $CALC->_copy($k));
-            if ($CALC->_acmp($twok, $n) > 0) {
-                $k = $CALC->_sub($CALC->_copy($n), $k);
+            my $twok = $LIB->_mul($LIB->_two(), $LIB->_copy($k));
+            if ($LIB->_acmp($twok, $n) > 0) {
+                $k = $LIB->_sub($LIB->_copy($n), $k);
             }
         }
 
-        if ($CALC->_is_zero($k)) {
-            $n = $CALC->_one();
+        if ($LIB->_is_zero($k)) {
+            $n = $LIB->_one();
         } else {
 
             # Make a copy of the original n, since we'll be modifying n
             # in-place.
 
-            my $n_orig = $CALC->_copy($n);
+            my $n_orig = $LIB->_copy($n);
 
-            $CALC->_sub($n, $k);
-            $CALC->_inc($n);
+            $LIB->_sub($n, $k);
+            $LIB->_inc($n);
 
-            my $f = $CALC->_copy($n);
-            $CALC->_inc($f);
+            my $f = $LIB->_copy($n);
+            $LIB->_inc($f);
 
-            my $d = $CALC->_two();
+            my $d = $LIB->_two();
 
             # while f <= n (the original n, that is) ...
 
-            while ($CALC->_acmp($f, $n_orig) <= 0) {
-                $CALC->_mul($n, $f);
-                $CALC->_div($n, $d);
-                $CALC->_inc($f);
-                $CALC->_inc($d);
+            while ($LIB->_acmp($f, $n_orig) <= 0) {
+                $LIB->_mul($n, $f);
+                $LIB->_div($n, $d);
+                $LIB->_inc($f);
+                $LIB->_inc($d);
             }
         }
 
@@ -2584,7 +2584,7 @@ sub batan {
     # calculate the result and truncate it to integer
     my $t = Math::BigFloat->new($x)->batan(@r);
 
-    $x->{value} = $CALC->_new($x->as_int()->bstr());
+    $x->{value} = $LIB->_new($x->as_int()->bstr());
     $x->round(@r);
 }
 
@@ -2656,7 +2656,7 @@ sub bsqrt {
 
     return $upgrade->bsqrt($x, @r) if defined $upgrade;
 
-    $x->{value} = $CALC->_sqrt($x->{value});
+    $x->{value} = $LIB->_sqrt($x->{value});
     $x->round(@r);
 }
 
@@ -2684,7 +2684,7 @@ sub broot {
 
     return $upgrade->new($x)->broot($upgrade->new($y), @r) if defined $upgrade;
 
-    $x->{value} = $CALC->_root($x->{value}, $y->{value});
+    $x->{value} = $LIB->_root($x->{value}, $y->{value});
     $x->round(@r);
 }
 
@@ -2696,7 +2696,7 @@ sub bfac {
     return $x if $x->modify('bfac') || $x->{sign} eq '+inf'; # inf => inf
     return $x->bnan() if $x->{sign} ne '+'; # NaN, <0 etc => NaN
 
-    $x->{value} = $CALC->_fac($x->{value});
+    $x->{value} = $LIB->_fac($x->{value});
     $x->round(@r);
 }
 
@@ -2707,10 +2707,10 @@ sub bdfac {
     return $x if $x->modify('bdfac') || $x->{sign} eq '+inf'; # inf => inf
     return $x->bnan() if $x->{sign} ne '+'; # NaN, <0 etc => NaN
 
-    croak("bdfac() requires a newer version of the $CALC library.")
-        unless $CALC->can('_dfac');
+    croak("bdfac() requires a newer version of the $LIB library.")
+        unless $LIB->can('_dfac');
 
-    $x->{value} = $CALC->_dfac($x->{value});
+    $x->{value} = $LIB->_dfac($x->{value});
     $x->round(@r);
 }
 
@@ -2718,8 +2718,8 @@ sub bfib {
     # compute Fibonacci number(s)
     my ($class, $x, @r) = objectify(1, @_);
 
-    croak("bfib() requires a newer version of the $CALC library.")
-        unless $CALC->can('_fib');
+    croak("bfib() requires a newer version of the $LIB library.")
+        unless $LIB->can('_fib');
 
     return $x if $x->modify('bfib');
 
@@ -2732,7 +2732,7 @@ sub bfib {
 
         # Use the backend library to compute the first $x Fibonacci numbers.
 
-        my @values = $CALC->_fib($x->{value});
+        my @values = $LIB->_fib($x->{value});
 
         # Make objects out of them. The last element in the array is the
         # invocand.
@@ -2765,7 +2765,7 @@ sub bfib {
         return $x->bnan() if $x -> is_nan() || $x -> is_inf('-');
 
         $x->{sign}  = $x -> is_neg() && $x -> is_even() ? '-' : '+';
-        $x->{value} = $CALC->_fib($x->{value});
+        $x->{value} = $LIB->_fib($x->{value});
         return $x->round(@r);
     }
 }
@@ -2774,8 +2774,8 @@ sub blucas {
     # compute Lucas number(s)
     my ($class, $x, @r) = objectify(1, @_);
 
-    croak("blucas() requires a newer version of the $CALC library.")
-        unless $CALC->can('_lucas');
+    croak("blucas() requires a newer version of the $LIB library.")
+        unless $LIB->can('_lucas');
 
     return $x if $x->modify('blucas');
 
@@ -2788,7 +2788,7 @@ sub blucas {
 
         # Use the backend library to compute the first $x Lucas numbers.
 
-        my @values = $CALC->_lucas($x->{value});
+        my @values = $LIB->_lucas($x->{value});
 
         # Make objects out of them. The last element in the array is the
         # invocand.
@@ -2821,7 +2821,7 @@ sub blucas {
         return $x->bnan() if $x -> is_nan() || $x -> is_inf('-');
 
         $x->{sign}  = $x -> is_neg() && $x -> is_even() ? '-' : '+';
-        $x->{value} = $CALC->_lucas($x->{value});
+        $x->{value} = $LIB->_lucas($x->{value});
         return $x->round(@r);
     }
 }
@@ -2846,7 +2846,7 @@ sub blsft {
     $b = 2 if !defined $b;
     return $x -> bnan() if $b <= 0 || $y -> {sign} eq '-';
 
-    $x -> {value} = $CALC -> _lsft($x -> {value}, $y -> {value}, $b);
+    $x -> {value} = $LIB -> _lsft($x -> {value}, $y -> {value}, $b);
     $x -> round(@r);
 }
 
@@ -2904,7 +2904,7 @@ sub brsft {
         $x -> bdec();           # n == 2, but $y == 1: this fixes it
     }
 
-    $x -> {value} = $CALC -> _rsft($x -> {value}, $y -> {value}, $b);
+    $x -> {value} = $LIB -> _rsft($x -> {value}, $y -> {value}, $b);
     $x -> round(@r);
 }
 
@@ -2933,12 +2933,12 @@ sub band {
     my $sy = $y->{sign} eq '+' ? 1 : -1;
 
     if ($sx == 1 && $sy == 1) {
-        $x->{value} = $CALC->_and($x->{value}, $y->{value});
+        $x->{value} = $LIB->_and($x->{value}, $y->{value});
         return $x->round(@r);
     }
 
     if ($CAN{signed_and}) {
-        $x->{value} = $CALC->_signed_and($x->{value}, $y->{value}, $sx, $sy);
+        $x->{value} = $LIB->_signed_and($x->{value}, $y->{value}, $sx, $sy);
         return $x->round(@r);
     }
 
@@ -2969,13 +2969,13 @@ sub bior {
 
     # don't use lib for negative values
     if ($sx == 1 && $sy == 1) {
-        $x->{value} = $CALC->_or($x->{value}, $y->{value});
+        $x->{value} = $LIB->_or($x->{value}, $y->{value});
         return $x->round(@r);
     }
 
     # if lib can do negative values, let it handle this
     if ($CAN{signed_or}) {
-        $x->{value} = $CALC->_signed_or($x->{value}, $y->{value}, $sx, $sy);
+        $x->{value} = $LIB->_signed_or($x->{value}, $y->{value}, $sx, $sy);
         return $x->round(@r);
     }
 
@@ -3004,13 +3004,13 @@ sub bxor {
 
     # don't use lib for negative values
     if ($sx == 1 && $sy == 1) {
-        $x->{value} = $CALC->_xor($x->{value}, $y->{value});
+        $x->{value} = $LIB->_xor($x->{value}, $y->{value});
         return $x->round(@r);
     }
 
     # if lib can do negative values, let it handle this
     if ($CAN{signed_xor}) {
-        $x->{value} = $CALC->_signed_xor($x->{value}, $y->{value}, $sx, $sy);
+        $x->{value} = $LIB->_signed_xor($x->{value}, $y->{value}, $sx, $sy);
         return $x->round(@r);
     }
 
@@ -3130,7 +3130,7 @@ sub bround {
 
     # do not use digit(), it is very costly for binary => decimal
     # getting the entire string is also costly, but we need to do it only once
-    my $xs = $CALC->_str($x->{value});
+    my $xs = $LIB->_str($x->{value});
     my $pl = -$pad-1;
 
     # pad:   123: 0 => -1, at 1 => -2, at 2 => -3, at 3 => -4
@@ -3185,7 +3185,7 @@ sub bround {
         $xs = '1'.$xs if $c == 0;
 
     }
-    $x->{value} = $CALC->_new($xs) if $put_back == 1; # put back, if needed
+    $x->{value} = $LIB->_new($xs) if $put_back == 1; # put back, if needed
 
     $x->{_a} = $scale if $scale >= 0;
     if ($scale < 0) {
@@ -3263,8 +3263,8 @@ sub bgcd {
         my $y = shift @args;
         $y = $class->new($y) unless ref($y) && $y -> isa($class);
         return $class->bnan() if $y->{sign} !~ /^[+-]$/;    # y NaN?
-        $x->{value} = $CALC->_gcd($x->{value}, $y->{value});
-        last if $CALC->_is_one($x->{value});
+        $x->{value} = $LIB->_gcd($x->{value}, $y->{value});
+        last if $LIB->_is_one($x->{value});
     }
 
     return $x -> babs();
@@ -3285,7 +3285,7 @@ sub blcm {
         my $y = shift @args;
         $y = $class -> new($y) unless ref($y) && $y -> isa($class);
         return $x->bnan() if $y->{sign} !~ /^[+-]$/;     # y not integer
-        $x -> {value} = $CALC->_lcm($x -> {value}, $y -> {value});
+        $x -> {value} = $LIB->_lcm($x -> {value}, $y -> {value});
     }
 
     return $x -> babs();
@@ -3307,13 +3307,13 @@ sub digit {
     my ($class, $x, $n) = ref($_[0]) ? (undef, @_) : objectify(1, @_);
 
     $n = $n->numify() if ref($n);
-    $CALC->_digit($x->{value}, $n || 0);
+    $LIB->_digit($x->{value}, $n || 0);
 }
 
 sub length {
     my ($class, $x) = ref($_[0]) ? (undef, $_[0]) : objectify(1, @_);
 
-    my $e = $CALC->_len($x->{value});
+    my $e = $LIB->_len($x->{value});
     wantarray ? ($e, 0) : $e;
 }
 
@@ -3329,7 +3329,7 @@ sub exponent {
     return $class->bzero() if $x->is_zero();
 
     # 12300 => 2 trailing zeros => exponent is 2
-    $class->new($CALC->_zeros($x->{value}));
+    $class->new($LIB->_zeros($x->{value}));
 }
 
 sub mantissa {
@@ -3345,7 +3345,7 @@ sub mantissa {
     delete $m->{_a};
 
     # that's a bit inefficient:
-    my $zeros = $CALC->_zeros($m->{value});
+    my $zeros = $LIB->_zeros($m->{value});
     $m->brsft($zeros, 10) if $zeros != 0;
     $m;
 }
@@ -3385,7 +3385,7 @@ sub sparts {
     # Finite number.
 
     my $mant   = $self -> copy();
-    my $nzeros = $CALC -> _zeros($mant -> {value});
+    my $nzeros = $LIB -> _zeros($mant -> {value});
 
     $mant -> brsft($nzeros, 10) if $nzeros != 0;
     return $mant unless wantarray;
@@ -3504,7 +3504,7 @@ sub bstr {
         return $x->{sign} unless $x->{sign} eq '+inf'; # -inf, NaN
         return 'inf';                                  # +inf
     }
-    my $str = $CALC->_str($x->{value});
+    my $str = $LIB->_str($x->{value});
     return $x->{sign} eq '-' ? "-$str" : $str;
 }
 
@@ -3519,7 +3519,7 @@ sub bsstr {
         return 'inf';                                   # +inf
     }
     my ($m, $e) = $x -> parts();
-    my $str = $CALC->_str($m->{value}) . 'e+' . $CALC->_str($e->{value});
+    my $str = $LIB->_str($m->{value}) . 'e+' . $LIB->_str($e->{value});
     return $x->{sign} eq '-' ? "-$str" : $str;
 }
 
@@ -3542,15 +3542,15 @@ sub bnstr {
 
     my $fracpos = $mant -> length() - 1;
     if ($fracpos == 0) {
-        my $str = $CALC->_str($mant->{value}) . "e+" . $CALC->_str($expo->{value});
+        my $str = $LIB->_str($mant->{value}) . "e+" . $LIB->_str($expo->{value});
         return $x->{sign} eq '-' ? "-$str" : $str;
     }
 
     $expo += $fracpos;
-    my $mantstr = $CALC->_str($mant -> {value});
+    my $mantstr = $LIB->_str($mant -> {value});
     substr($mantstr, -$fracpos, 0) = '.';
 
-    my $str = $mantstr . 'e+' . $CALC->_str($expo -> {value});
+    my $str = $mantstr . 'e+' . $LIB->_str($expo -> {value});
     return $x->{sign} eq '-' ? "-$str" : $str;
 }
 
@@ -3569,7 +3569,7 @@ sub bestr {
     my $sign = $mant -> sign();
     $mant -> babs();
 
-    my $mantstr = $CALC->_str($mant -> {value});
+    my $mantstr = $LIB->_str($mant -> {value});
     my $mantlen = CORE::length($mantstr);
 
     my $dotidx = 1;
@@ -3585,7 +3585,7 @@ sub bestr {
         substr($mantstr, $dotidx, 0) = ".";
     }
 
-    my $str = $mantstr . 'e+' . $CALC->_str($expo -> {value});
+    my $str = $mantstr . 'e+' . $LIB->_str($expo -> {value});
     return $sign eq "-" ? "-$str" : $str;
 }
 
@@ -3599,7 +3599,7 @@ sub bdstr {
         return 'inf';                                  # +inf
     }
 
-    my $str = $CALC->_str($x->{value});
+    my $str = $LIB->_str($x->{value});
     return $x->{sign} eq '-' ? "-$str" : $str;
 }
 
@@ -3610,7 +3610,7 @@ sub to_hex {
 
     return $x->bstr() if $x->{sign} !~ /^[+-]$/; # inf, nan etc
 
-    my $hex = $CALC->_to_hex($x->{value});
+    my $hex = $LIB->_to_hex($x->{value});
     return $x->{sign} eq '-' ? "-$hex" : $hex;
 }
 
@@ -3621,7 +3621,7 @@ sub to_oct {
 
     return $x->bstr() if $x->{sign} !~ /^[+-]$/; # inf, nan etc
 
-    my $oct = $CALC->_to_oct($x->{value});
+    my $oct = $LIB->_to_oct($x->{value});
     return $x->{sign} eq '-' ? "-$oct" : $oct;
 }
 
@@ -3632,7 +3632,7 @@ sub to_bin {
 
     return $x->bstr() if $x->{sign} !~ /^[+-]$/; # inf, nan etc
 
-    my $bin = $CALC->_to_bin($x->{value});
+    my $bin = $LIB->_to_bin($x->{value});
     return $x->{sign} eq '-' ? "-$bin" : $bin;
 }
 
@@ -3644,10 +3644,10 @@ sub to_bytes {
     croak("to_bytes() requires a finite, non-negative integer")
         if $x -> is_neg() || ! $x -> is_int();
 
-    croak("to_bytes() requires a newer version of the $CALC library.")
-        unless $CALC->can('_to_bytes');
+    croak("to_bytes() requires a newer version of the $LIB library.")
+        unless $LIB->can('_to_bytes');
 
-    return $CALC->_to_bytes($x->{value});
+    return $LIB->_to_bytes($x->{value});
 }
 
 sub as_hex {
@@ -3657,7 +3657,7 @@ sub as_hex {
 
     return $x->bstr() if $x->{sign} !~ /^[+-]$/; # inf, nan etc
 
-    my $hex = $CALC->_as_hex($x->{value});
+    my $hex = $LIB->_as_hex($x->{value});
     return $x->{sign} eq '-' ? "-$hex" : $hex;
 }
 
@@ -3668,7 +3668,7 @@ sub as_oct {
 
     return $x->bstr() if $x->{sign} !~ /^[+-]$/; # inf, nan etc
 
-    my $oct = $CALC->_as_oct($x->{value});
+    my $oct = $LIB->_as_oct($x->{value});
     return $x->{sign} eq '-' ? "-$oct" : $oct;
 }
 
@@ -3679,7 +3679,7 @@ sub as_bin {
 
     return $x->bstr() if $x->{sign} !~ /^[+-]$/; # inf, nan etc
 
-    my $bin = $CALC->_as_bin($x->{value});
+    my $bin = $LIB->_as_bin($x->{value});
     return $x->{sign} eq '-' ? "-$bin" : $bin;
 }
 
@@ -3706,7 +3706,7 @@ sub numify {
         return $x -> is_negative() ? -$inf : $inf;
     }
 
-    my $num = 0 + $CALC->_num($x->{value});
+    my $num = 0 + $LIB->_num($x->{value});
     return $x->{sign} eq '-' ? -$num : $num;
 }
 
@@ -3875,7 +3875,7 @@ sub import {
             $i++;
         } elsif ($_[$i] =~ /^(lib|try|only)\z/) {
             # this causes a different low lib to take care...
-            $CALC = $_[$i+1] || '';
+            $LIB = $_[$i+1] || '';
             # lib => 1 (warn on fallback), try => 0 (no warn), only => 2 (die on fallback)
             $warn_or_die = 1 if $_[$i] eq 'lib';
             $warn_or_die = 2 if $_[$i] eq 'only';
@@ -3891,13 +3891,13 @@ sub import {
     }
 
     # try to load core math lib
-    my @c = split /\s*,\s*/, $CALC;
+    my @c = split /\s*,\s*/, $LIB;
     foreach (@c) {
         $_ =~ tr/a-zA-Z0-9://cd; # limit to sane characters
     }
     push @c, \'Calc'            # if all fail, try these
       if $warn_or_die < 2;      # but not for "only"
-    $CALC = '';                 # signal error
+    $LIB = '';                 # signal error
     foreach my $l (@c) {
         # fallback libraries are "marked" as \'string', extract string if nec.
         my $lib = $l;
@@ -3949,7 +3949,7 @@ sub import {
                 }
             }
             if ($ok == 0) {
-                $CALC = $lib;
+                $LIB = $lib;
                 if ($warn_or_die > 0 && ref($l)) {
                     my $msg = "Math::BigInt: couldn't load specified"
                             . " math lib(s), fallback to $lib";
@@ -3966,7 +3966,7 @@ sub import {
             }
         }
     }
-    if ($CALC eq '') {
+    if ($LIB eq '') {
         if ($warn_or_die == 2) {
             croak("Couldn't load specified math lib(s)" .
                         " and fallback disallowed");
@@ -3977,15 +3977,15 @@ sub import {
 
     # notify callbacks
     foreach my $class (keys %CALLBACKS) {
-        &{$CALLBACKS{$class}}($CALC);
+        &{$CALLBACKS{$class}}($LIB);
     }
 
-    # Fill $CAN with the results of $CALC->can(...) for emulating lower math lib
+    # Fill $CAN with the results of $LIB->can(...) for emulating lower math lib
     # functions
 
     %CAN = ();
     for my $method (qw/ signed_and signed_or signed_xor /) {
-        $CAN{$method} = $CALC->can("_$method") ? 1 : 0;
+        $CAN{$method} = $LIB->can("_$method") ? 1 : 0;
     }
 
     # import done
@@ -4147,7 +4147,7 @@ sub _trailing_zeros {
 
     return 0 if $x->{sign} !~ /^[+-]$/; # NaN, inf, -inf etc
 
-    $CALC->_zeros($x->{value}); # must handle odd values, 0 etc
+    $LIB->_zeros($x->{value}); # must handle odd values, 0 etc
 }
 
 sub _scan_for_nonzero {

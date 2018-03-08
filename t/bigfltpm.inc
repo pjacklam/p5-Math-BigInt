@@ -3,9 +3,9 @@
 use strict;
 use warnings;
 
-our ($CLASS, $CALC);
+our ($CLASS, $LIB);
 
-is($CLASS->config('lib'), $CALC, "$CLASS->config('lib')");
+is($CLASS->config('lib'), $LIB, "$CLASS->config('lib')");
 
 my ($x, $y, $z, @args, $try, $want, $got);
 my ($f, $setup);
@@ -167,7 +167,7 @@ while (<DATA>) {
             if (ref($got) eq $CLASS) {
                 # float numbers are normalized (for now), so mantissa shouldn't
                 # have trailing zeros print $got->_trailing_zeros(), "\n";
-                is($CALC->_zeros($got->{_m}), 0, $try);
+                is($LIB->_zeros($got->{_m}), 0, $try);
             }
         }
     }                           # end pattern or string

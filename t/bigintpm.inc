@@ -3,14 +3,14 @@
 use strict;
 use warnings;
 
-our ($CLASS, $CALC);
+our ($CLASS, $LIB);
 
 ##############################################################################
 # for testing inheritance of _swap
 
 package Math::Foo;
 
-use Math::BigInt lib => $main::CALC;
+use Math::BigInt lib => $main::LIB;
 our @ISA = qw/Math::BigInt/;
 
 use overload
@@ -33,7 +33,7 @@ sub _swap {
 ##############################################################################
 package main;
 
-is($CLASS->config('lib'), $CALC, "$CLASS->config('lib')");
+is($CLASS->config('lib'), $LIB, "$CLASS->config('lib')");
 
 my ($x, $y, $z, @args, $try, $got, $want);
 my ($f, $round_mode, $expected_class);
@@ -700,13 +700,13 @@ SKIP: {
 
 SKIP: {
     # skip GMP, Pari et al.
-    skip("skipping tests not intended for the backend $CALC", 50)
-      unless $CALC =~ /^Math::BigInt::(Bare|Fast)?Calc$/;
+    skip("skipping tests not intended for the backend $LIB", 50)
+      unless $LIB =~ /^Math::BigInt::(Bare|Fast)?Calc$/;
 
     ###########################################################################
     # check proper length of internal arrays
 
-    my $bl = $CALC->_base_len();
+    my $bl = $LIB->_base_len();
     my $BASE = '9' x $bl;
     my $MAX = $BASE;
     $BASE++;
@@ -784,7 +784,7 @@ SKIP: {
 
     # construct a number with a zero-hole of BASE_LEN_SMALL
     {
-        my @bl = $CALC->_base_len();
+        my @bl = $LIB->_base_len();
         my $bl = $bl[5];
 
         $x = '1' x $bl . '0' x $bl . '1' x $bl . '0' x $bl;
@@ -946,7 +946,7 @@ sub is_valid {
             if $e eq '0' && $x->{sign} !~ /^(\+|-|\+inf|-inf|NaN)$/;
 
         $e = "-0 is invalid!" if $e ne '0' && $x->{sign} eq '-' && $x == 0;
-        $e = $CALC->_check($x->{value}) if $e eq '0';
+        $e = $LIB->_check($x->{value}) if $e eq '0';
     }
 
     # test done, see if error did crop up

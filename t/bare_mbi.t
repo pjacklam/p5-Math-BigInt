@@ -11,8 +11,8 @@ use Math::BigInt lib => 'BareCalc';
 
 print "# ", Math::BigInt->config('lib'), "\n";
 
-our ($CLASS, $CALC);
+our ($CLASS, $LIB);
 $CLASS = "Math::BigInt";
-$CALC  = "Math::BigInt::BareCalc";      # backend
+$LIB   = "Math::BigInt::BareCalc";      # backend
 
 require './t/bigintpm.inc';               # perform same tests as bigintpm.t

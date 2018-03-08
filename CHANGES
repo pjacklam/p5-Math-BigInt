@@ -1,5 +1,7 @@
 2018-03-17 v1.999812 pjacklam
 
+ * Use $LIB as the variable name for backend math library.
+
  * Import "carp" and "croak" from the Carp module.
 
  * Math::BigInt isa Exporter, so Math::BigInt should require Exporter.

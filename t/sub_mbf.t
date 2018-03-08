@@ -10,9 +10,9 @@ use lib 't';
 
 use Math::BigFloat::Subclass;
 
-our ($CLASS, $CALC);
+our ($CLASS, $LIB);
 $CLASS = "Math::BigFloat::Subclass";
-$CALC  = Math::BigFloat->config('lib');         # backend library
+$LIB   = Math::BigFloat->config('lib');         # backend library
 
 require './t/bigfltpm.inc';	# perform same tests as bigfltpm
 

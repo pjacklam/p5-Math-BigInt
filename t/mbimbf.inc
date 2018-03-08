@@ -1248,7 +1248,7 @@ foreach my $class ($mbi, $mbf) {
 
 my ($got, $f, $a, $p, $xp, $yp, $xa, $ya, $try, $want, @args);
 
-my $CALC = Math::BigInt->config('lib');
+my $LIB = Math::BigInt->config('lib');
 
 while (<DATA>) {
     s/#.*$//;                   # remove comments
@@ -1338,7 +1338,7 @@ sub is_valid {
         if $e eq '0' && $x->{sign} !~ /^(\+|-|\+inf|-inf|NaN)$/;
 
     $e = "-0 is invalid!" if $e ne '0' && $x->{sign} eq '-' && $x == 0;
-    $e = $CALC->_check($x->{value}) if $e eq '0';
+    $e = $LIB->_check($x->{value}) if $e eq '0';
 
     # test done, see if error did crop up
     if ($e eq '0') {

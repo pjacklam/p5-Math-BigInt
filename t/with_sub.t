@@ -11,9 +11,9 @@ use Test::More tests => 2818            # tests in require'd file
 use Math::BigFloat with => 'Math::BigInt::Subclass',
                    lib  => 'Calc';
 
-our ($CLASS, $CALC);
+our ($CLASS, $LIB);
 $CLASS = "Math::BigFloat";
-$CALC  = "Math::BigInt::Calc";          # backend
+$LIB   = "Math::BigInt::Calc";          # backend
 
 # the "with" argument should be ignored
 is(Math::BigFloat->config()->{with}, 'Math::BigInt::Calc',

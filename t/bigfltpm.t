@@ -9,12 +9,12 @@ use Test::More tests => 2818            # tests in require'd file
 use Math::BigInt only => 'Calc';
 use Math::BigFloat;
 
-our ($CLASS, $CALC);
+our ($CLASS, $LIB);
 $CLASS = "Math::BigFloat";
-$CALC  = Math::BigInt -> config('lib');         # backend library
+$LIB   = Math::BigInt -> config('lib');         # backend library
 
 is($CLASS->config()->{class}, $CLASS, "$CLASS->config()->{class}");
-is($CLASS->config()->{with},  $CALC,  "$CLASS->config()->{with}");
+is($CLASS->config()->{with},  $LIB,   "$CLASS->config()->{with}");
 
 # bug #17447: Can't call method Math::BigFloat->bsub, not a valid method
 my $c = Math::BigFloat->new('123.3');
@@ -68,7 +68,7 @@ is($x, -12, "blcm() does not modify invocand");
 
 SKIP: {
     skip("skipping test which is not for this backend", 1)
-      unless $CALC eq 'Math::BigInt::Calc';
+      unless $LIB eq 'Math::BigInt::Calc';
     is(ref($e->{_e}->[0]), '', '$e->{_e}->[0] is a scalar');
 }
 

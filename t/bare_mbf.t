@@ -9,8 +9,8 @@ use lib 't';
 
 use Math::BigFloat lib => 'BareCalc';
 
-our ($CLASS, $CALC);
+our ($CLASS, $LIB);
 $CLASS = "Math::BigFloat";
-$CALC  = "Math::BigInt::BareCalc";      # backend
+$LIB   = "Math::BigInt::BareCalc";      # backend
 
 require './t/bigfltpm.inc';	        # all tests here for sharing

@@ -8,9 +8,9 @@ use Test::More tests => 4026            # tests in require'd file
 
 use Math::BigInt only => 'Calc';
 
-our ($CLASS, $CALC);
+our ($CLASS, $LIB);
 $CLASS = "Math::BigInt";
-$CALC  = Math::BigInt -> config('lib');         # backend library
+$LIB   = Math::BigInt -> config('lib');         # backend library
 
 my $x;
 

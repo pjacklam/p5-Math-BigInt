@@ -10,10 +10,10 @@ use Math::BigFloat downgrade => 'Math::BigInt',
                    upgrade   => 'Math::BigInt';
 
 
-our ($CLASS, $EXPECTED_CLASS, $CALC);
+our ($CLASS, $EXPECTED_CLASS, $LIB);
 $CLASS          = "Math::BigInt";
 $EXPECTED_CLASS = "Math::BigFloat";
-$CALC           = "Math::BigInt::Calc";         # backend
+$LIB            = "Math::BigInt::Calc";         # backend
 
 # simplistic test for now
 is(Math::BigFloat->downgrade(), 'Math::BigInt', 'Math::BigFloat->downgrade()');
