@@ -1,5 +1,7 @@
 1.999812 2018-03-17 pjacklam
 
+ * Convert t/03podcov.t -> t/release-pod-coverage.t.
+
  * Convert t/02pod.t -> t/release-pod.t.
 
  * Reformat CHANGES to match the specification in CPAN::Changes::Spec and
