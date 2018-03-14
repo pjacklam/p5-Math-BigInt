@@ -1,5 +1,7 @@
 1.999812 2018-03-17 pjacklam
 
+ * Update the documentation of configuration parameters.
+
  * Convert t/03podcov.t -> t/release-pod-coverage.t.
 
  * Convert t/02pod.t -> t/release-pod.t.

@@ -3857,7 +3857,6 @@ sub objectify {
 
 sub import {
     my $class = shift;
-
     $IMPORT++;                  # remember we did import()
     my @a;
     my $l = scalar @_;
@@ -4630,41 +4629,36 @@ This is used for instance by L<Math::BigInt::Constant>.
     Math::BigInt->config("trap_nan" => 1);      # set
     $accu = Math::BigInt->config("accuracy");   # get
 
-Set or get configuration parameter values. The following parameters are
-supported:
+Set or get class variables. Read-only parameters are marked as RO. Read-write
+parameters are marked as RW. The following parameters are supported.
 
-    Parameter     Description
-                  Example
+    Parameter       RO/RW   Description
+                            Example
     ============================================================
-    lib           Name of the low-level math library
-                  Math::BigInt::Calc
-    lib_version   Version of low-level math library (see 'lib')
-                  0.30
-    class         The class name of config() you just called
-                  Math::BigInt
-    upgrade       To which class math operations might be
-                  upgraded Math::BigFloat
-    downgrade     To which class math operations might be
-                  downgraded undef
-    precision     Global precision
-                  undef
-    accuracy      Global accuracy
-                  undef
-    round_mode    Global round mode
-                  even
-    version       version number of the class you used
-                  1.61
-    div_scale     Fallback accuracy for div
-                  40
-    trap_nan      If true, traps creation of NaN via croak()
-                  1
-    trap_inf      If true, traps creation of +inf/-inf via croak()
-                  1
-
-The following values can be set:
-
-        accuracy precision round_mode div_scale
-        upgrade downgrade trap_inf trap_nan
+    lib             RO      Name of the math backend library
+                            Math::BigInt::Calc
+    lib_version     RO      Version of the math backend library
+                            0.30
+    class           RO      The class of config you just called
+                            Math::BigRat
+    version         RO      version number of the class you used
+                            0.10
+    upgrade         RW      To which class numbers are upgraded
+                            undef
+    downgrade       RW      To which class numbers are downgraded
+                            undef
+    precision       RW      Global precision
+                            undef
+    accuracy        RW      Global accuracy
+                            undef
+    round_mode      RW      Global round mode
+                            even
+    div_scale       RW      Fallback accuracy for division etc.
+                            40
+    trap_nan        RW      Trap NaNs
+                            undef
+    trap_inf        RW      Trap +inf/-inf
+                            undef
 
 =back
 
