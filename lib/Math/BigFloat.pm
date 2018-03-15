@@ -2066,7 +2066,7 @@ sub bmodpow {
     # takes a very large number to a very large exponent in a given very
     # large modulus, quickly, thanks to binary exponentiation. Supports
     # negative exponents.
-    my ($class, $num, $exp, $mod, @r) = objectify(3, @_);
+    my ($class, $num, $exp, $mod) = objectify(3, @_);
 
     return $num if $num->modify('bmodpow');
 
@@ -2586,7 +2586,6 @@ sub bsin {
     # need to disable $upgrade in BigInt, to avoid deep recursion
     local $Math::BigInt::upgrade = undef;
 
-    my $last = 0;
     my $over = $x * $x;         # X ^ 2
     my $x2 = $over->copy();     # X ^ 2; difference between terms
     $over->bmul($x);            # X ^ 3 as starting value
@@ -2676,7 +2675,6 @@ sub bcos {
     # need to disable $upgrade in BigInt, to avoid deep recursion
     local $Math::BigInt::upgrade = undef;
 
-    my $last = 0;
     my $over = $x * $x;         # X ^ 2
     my $x2 = $over->copy();     # X ^ 2; difference between terms
     my $sign = 1;               # start with -=
@@ -2793,7 +2791,6 @@ sub batan {
 
     # This series is only valid if -1 < x < 1, so for other x we need to
     # calculate PI/2 - atan(1/x):
-    my $one = $LIB->_new(1);
     my $pi = undef;
     if ($self->bacmp($self->copy()->bone) >= 0) {
         # calculate PI/2
@@ -2807,7 +2804,7 @@ sub batan {
     }
 
     my $fmul = 1;
-    foreach my $k (0 .. int($scale / 20)) {
+    foreach (0 .. int($scale / 20)) {
         $fmul *= 2;
         $self->bdiv($self->copy()->bmul($self)->binc->bsqrt($scale + 4)->binc, $scale + 4);
     }
@@ -2824,7 +2821,6 @@ sub batan {
     # Need to disable $upgrade in BigInt, to avoid deep recursion.
     local $Math::BigInt::upgrade = undef;
 
-    my $last = 0;
     my $over = $self * $self;   # X ^ 2
     my $self2 = $over->copy();  # X ^ 2; difference between terms
     $over->bmul($self);         # X ^ 3 as starting value
@@ -4318,7 +4314,7 @@ sub _log {
     # ln (x)  = 2 |   --- + - * --- + - * --- + ... |  x > 1/2
     #             |_   x    2   x^2   3   x^3      _|
 
-    my ($limit, $v, $u, $below, $factor, $two, $next, $over, $f);
+    my ($limit, $v, $u, $below, $factor, $next, $over, $f);
 
     $v = $x->copy(); $v->binc(); # v = x+1
     $x->bdec(); $u = $x->copy(); # u = x-1; x = x-1

@@ -691,7 +691,7 @@ sub _div_use_mul {
 
     my $y = $c->_copy($yorg);         # always make copy to preserve
 
-    my ($car, $bar, $prd, $dd, $xi, $yi, @q, $v2, $v1, @d, $tmp, $q, $u2, $u1, $u0);
+    my ($car, $bar, $prd, $dd, $xi, $yi, @q, $v2, $v1, $tmp, $q, $u2, $u1, $u0);
 
     $car = $bar = $prd = 0;
     if (($dd = int($BASE / ($y->[-1] + 1))) != 1) {
@@ -856,7 +856,7 @@ sub _div_use_div_64 {
 
     my $y = $c->_copy($yorg);         # always make copy to preserve
 
-    my ($car, $bar, $prd, $dd, $xi, $yi, @q, $v2, $v1, @d, $tmp, $q, $u2, $u1, $u0);
+    my ($car, $bar, $prd, $dd, $xi, $yi, @q, $v2, $v1, $tmp, $q, $u2, $u1, $u0);
 
     $car = $bar = $prd = 0;
     if (($dd = int($BASE / ($y->[-1] + 1))) != 1) {
@@ -2043,7 +2043,6 @@ sub _root {
 
     elsif ($acmp > 0) {
         $upper = $y;
-        my $zero = $c -> _zero();
         while ($acmp > 0) {
             if ($c -> _acmp($upper, $delta) <= 0) {
                 $lower = $c -> _zero();

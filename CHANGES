@@ -1,4 +1,6 @@
-1.999812 2018-03-17 pjacklam
+1.999812 Not Released
+
+ * Remove unused variables.
 
  * Add test file t/release-portability.t.
 

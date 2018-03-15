@@ -1258,7 +1258,6 @@ sub bacmp {
 sub beq {
     my $self    = shift;
     my $selfref = ref $self;
-    my $class   = $selfref || $self;
 
     croak 'beq() is an instance method, not a class method' unless $selfref;
     croak 'Wrong number of arguments for beq()' unless @_ == 1;
@@ -1270,7 +1269,6 @@ sub beq {
 sub bne {
     my $self    = shift;
     my $selfref = ref $self;
-    my $class   = $selfref || $self;
 
     croak 'bne() is an instance method, not a class method' unless $selfref;
     croak 'Wrong number of arguments for bne()' unless @_ == 1;
@@ -1282,7 +1280,6 @@ sub bne {
 sub blt {
     my $self    = shift;
     my $selfref = ref $self;
-    my $class   = $selfref || $self;
 
     croak 'blt() is an instance method, not a class method' unless $selfref;
     croak 'Wrong number of arguments for blt()' unless @_ == 1;
@@ -1294,7 +1291,6 @@ sub blt {
 sub ble {
     my $self    = shift;
     my $selfref = ref $self;
-    my $class   = $selfref || $self;
 
     croak 'ble() is an instance method, not a class method' unless $selfref;
     croak 'Wrong number of arguments for ble()' unless @_ == 1;
@@ -1306,7 +1302,6 @@ sub ble {
 sub bgt {
     my $self    = shift;
     my $selfref = ref $self;
-    my $class   = $selfref || $self;
 
     croak 'bgt() is an instance method, not a class method' unless $selfref;
     croak 'Wrong number of arguments for bgt()' unless @_ == 1;
@@ -1318,7 +1313,6 @@ sub bgt {
 sub bge {
     my $self    = shift;
     my $selfref = ref $self;
-    my $class   = $selfref || $self;
 
     croak 'bge() is an instance method, not a class method'
         unless $selfref;
@@ -2107,7 +2101,6 @@ sub btmod {
     $r[3] = $y;                 # no push!
 
     my $xsign = $x -> {sign};
-    my $ysign = $y -> {sign};
 
     $x -> {value} = $LIB -> _mod($x -> {value}, $y -> {value});
 
@@ -3021,7 +3014,7 @@ sub bnot {
     # (num_str or BINT) return BINT
     # represent ~x as twos-complement number
     # we don't need $class, so undef instead of ref($_[0]) make it slightly faster
-    my ($class, $x, $a, $p, $r) = ref($_[0]) ? (undef, @_) : objectify(1, @_);
+    my ($class, $x) = ref($_[0]) ? (undef, @_) : objectify(1, @_);
 
     return $x if $x->modify('bnot');
     $x->binc()->bneg();         # binc already does round
