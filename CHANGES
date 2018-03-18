@@ -1,5 +1,7 @@
 1.999812 Not Released
 
+ * Cleaner log/exp-related code in Math::BigFloat.
+
  * Remove unused variables.
 
  * Add test file t/release-portability.t.

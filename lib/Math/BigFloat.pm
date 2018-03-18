@@ -2295,32 +2295,33 @@ sub blog {
     # first. This is very fast, and in case the real result was found, we can
     # stop right here.
     if (defined $base && $base->is_int() && $x->is_int()) {
-        my $i = $LIB->_copy($x->{_m});
-        $i = $LIB->_lsft($i, $x->{_e}, 10) unless $LIB->_is_zero($x->{_e});
-        my $int = Math::BigInt->bzero();
-        $int->{value} = $i;
-        $int->blog($base->as_number());
-        # if ($exact)
-        if ($base->as_number()->bpow($int) == $x) {
-            # found result, return it
-            $x->{_m} = $int->{value};
-            $x->{_e} = $LIB->_zero();
-            $x->{_es} = '+';
-            $x->bnorm();
+        my $xint = Math::BigInt -> new($x    -> bdstr());
+        my $bint = Math::BigInt -> new($base -> bdstr());
+        $xint->blog($bint);
+
+        # if we found the exact result, we're done
+        if ($bint -> bpow($xint) == $x) {
+            my $xflt = Math::BigFloat -> new($xint -> bdstr());
+            $x->{sign} = $xflt->{sign};
+            $x->{_m}   = $xflt->{_m};
+            $x->{_es}  = $xflt->{_es};
+            $x->{_e}   = $xflt->{_e};
             $done = 1;
         }
     }
 
     if ($done == 0) {
-        # base is undef, so base should be e (Euler's number), so first calculate the
-        # log to base e (using reduction by 10 (and probably 2)):
-        $class->_log_10($x, $scale);
+        # First calculate the log to base e (using reduction by 10 and possibly
+        # also by 2):
+        $x->_log_10($scale);
 
         # and if a different base was requested, convert it
         if (defined $base) {
-            $base = Math::BigFloat->new($base) unless $base->isa('Math::BigFloat');
-            # not ln, but some other base (don't modify $base)
-            $x->bdiv($base->copy()->blog(undef, $scale), $scale);
+            $base = Math::BigFloat->new($base)
+              unless $base->isa('Math::BigFloat');
+            # log_b(x) = ln(x) / ln(b), so compute ln(b)
+            my $base_log_e = $base->copy()->_log_10($scale);
+            $x->bdiv($base_log_e, $scale);
         }
     }
 
@@ -2368,7 +2369,8 @@ sub bexp {
         $params[2] = $r;                  # round mode by caller or undef
         $fallback = 1;                    # to clear a/p afterwards
     } else {
-        # the 4 below is empirical, and there might be cases where it's not enough...
+        # the 4 below is empirical, and there might be cases where it's not
+        # enough ...
         $scale = abs($params[0] || $params[1]) + 4; # take whatever is defined
     }
 
@@ -2438,12 +2440,13 @@ sub bexp {
     # -- + -- + -- + -- + -- + --- + --- + ---- = -----
     # 1     1    2    6   24   120   720   5040   5040
 
-    # Note that we cannot simple reduce 13700/5040 to 685/252, but must keep A and B!
+    # Note that we cannot simply reduce 13700/5040 to 685/252, but must keep
+    # the numerator and the denominator!
 
     if ($scale <= 75) {
         # set $x directly from a cached string form
-        $x->{_m} = $LIB->_new(
-                              "27182818284590452353602874713526624977572470936999595749669676277240766303535476");
+        $x->{_m} = $LIB->_new("2718281828459045235360287471352662497757" .
+                              "2470936999595749669676277240766303535476");
         $x->{sign} = '+';
         $x->{_es} = '-';
         $x->{_e} = $LIB->_new(79);
@@ -2451,7 +2454,8 @@ sub bexp {
         # compute A and B so that e = A / B.
 
         # After some terms we end up with this, so we use it as a starting point:
-        my $A = $LIB->_new("90933395208605785401971970164779391644753259799242");
+        my $A = $LIB->_new("9093339520860578540197197" .
+                           "0164779391644753259799242");
         my $F = $LIB->_new(42);
         my $step = 42;
 
@@ -4292,7 +4296,8 @@ my $r = $d;
 sub _log {
     # internal log function to calculate ln() based on Taylor series.
     # Modifies $x in place.
-    my ($class, $x, $scale) = @_;
+    my ($x, $scale) = @_;
+    my $class = ref $x;
 
     # in case of $x == 1, result is 0
     return $x->bzero() if $x->is_one();
@@ -4328,6 +4333,7 @@ sub _log {
 
     my $steps = 0;
     $limit = $class->new("1E-". ($scale-1));
+
     while (3 < 5) {
         # we calculate the next term, and add it to the last
         # when the next term is below our limit, it won't affect the outcome
@@ -4373,7 +4379,8 @@ sub _log {
 sub _log_10 {
     # Internal log function based on reducing input to the range of 0.1 .. 9.99
     # and then "correcting" the result to the proper one. Modifies $x in place.
-    my ($class, $x, $scale) = @_;
+    my ($x, $scale) = @_;
+    my $class = ref $x;
 
     # Taking blog() from numbers greater than 10 takes a *very long* time, so we
     # break the computation down into parts based on the observation that:
@@ -4389,13 +4396,15 @@ sub _log_10 {
 
     # To get $x even closer to 1, we also divide by 2 and then use log(2) to
     # correct for this. For instance if $x is 2.4, we use the formula:
-    #  blog(2.4 * 2) == blog (1.2) + blog(2)
+    #  blog(2.4 * 2) == blog(1.2) + blog(2)
     # and thus calculate only blog(1.2) and blog(2), which is faster in total
     # than calculating blog(2.4).
 
     # In addition, the values for blog(2) and blog(10) are cached.
 
-    # Calculate nr of digits before dot:
+    # Calculate nr of digits before dot. x = 123, dbd = 3; x = 1.23, dbd = 1;
+    # x = 0.0123, dbd = -1; x = 0.000123, dbd = -3, etc.
+
     my $dbd = $LIB->_num($x->{_e});
     $dbd = -$dbd if $x->{_es} eq '-';
     $dbd += $LIB->_len($x->{_m});
@@ -4407,7 +4416,10 @@ sub _log_10 {
 
     # disable the shortcut for 10, since we need log(10) and this would recurse
     # infinitely deep
-    if ($x->{_es} eq '+' && $LIB->_is_one($x->{_e}) && $LIB->_is_one($x->{_m})) {
+    if ($x->{_es} eq '+' &&                     # $x == 10
+        ($LIB->_is_one($x->{_e}) &&
+         $LIB->_is_one($x->{_m})))
+    {
         $dbd = 0;               # disable shortcut
         # we can use the cached value in these cases
         if ($scale <= $LOG_10_A) {
@@ -4418,7 +4430,9 @@ sub _log_10 {
         # if we can't use the shortcut, we continue normally
     } else {
         # disable the shortcut for 2, since we maybe have it cached
-        if (($LIB->_is_zero($x->{_e}) && $LIB->_is_two($x->{_m}))) {
+        if (($LIB->_is_zero($x->{_e}) &&        # $x == 2
+             $LIB->_is_two($x->{_m})))
+        {
             $dbd = 0;           # disable shortcut
             # we can use the cached value in these cases
             if ($scale <= $LOG_2_A) {
@@ -4431,8 +4445,11 @@ sub _log_10 {
     }
 
     # if $x = 0.1, we know the result must be 0-log(10)
-    if ($calc != 0 && $x->{_es} eq '-' && $LIB->_is_one($x->{_e}) &&
-        $LIB->_is_one($x->{_m})) {
+    if ($calc != 0 &&
+        ($x->{_es} eq '-' &&                    # $x == 0.1
+         ($LIB->_is_one($x->{_e}) &&
+          $LIB->_is_one($x->{_m}))))
+    {
         $dbd = 0;               # disable shortcut
         # we can use the cached value in these cases
         if ($scale <= $LOG_10_A) {
@@ -4442,7 +4459,7 @@ sub _log_10 {
         }
     }
 
-    return if $calc == 0;       # already have the result
+    return $x if $calc == 0;    # already have the result
 
     # default: these correction factors are undef and thus not used
     my $l_10;                   # value of ln(10) to A of $scale
@@ -4483,7 +4500,7 @@ sub _log_10 {
             } else {
                 # else: slower, compute and cache result
                 $l_2 = $two->copy();
-                $class->_log($l_2, $scale); # scale+4, actually
+                $l_2->_log($scale); # scale+4, actually
                 $LOG_2 = $l_2->copy(); # cache the result for later
                 # the copy() is for mul below
                 $LOG_2_A = $scale;
@@ -4491,7 +4508,7 @@ sub _log_10 {
 
             # now calculate log(1.25):
             $l_10 = $class->new('1.25');
-            $class->_log($l_10, $scale); # scale+4, actually
+            $l_10->_log($scale); # scale+4, actually
 
             # log(1.25) + log(2) + log(2) + log(2):
             $l_10->badd($l_2);
@@ -4542,7 +4559,7 @@ sub _log_10 {
             # also disable downgrade for this code path
             local $Math::BigFloat::downgrade = undef;
             $l_2 = $two->copy();
-            $class->_log($l_2, $scale); # scale+4, actually
+            $l_2->_log($scale); # scale+4, actually
             $LOG_2 = $l_2->copy(); # cache the result for later
             # the copy() is for mul below
             $LOG_2_A = $scale;
@@ -4552,7 +4569,7 @@ sub _log_10 {
         undef $l_2;
     }
 
-    $class->_log($x, $scale);       # need to do the "normal" way
+    $x->_log($scale);       # need to do the "normal" way
     $x->badd($l_10) if defined $l_10; # correct it by ln(10)
     $x->badd($l_2) if defined $l_2;   # and maybe by ln(2)
 
