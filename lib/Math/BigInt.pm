@@ -332,15 +332,10 @@ sub accuracy {
     my $class = ref($x) || $x || __PACKAGE__;
 
     no strict 'refs';
-    # need to set new value?
     if (@_ > 0) {
         my $a = shift;
-        # convert objects to scalars to avoid deep recursion. If object doesn't
-        # have numify(), then hopefully it will have overloading for int() and
-        # boolean test without wandering into a deep recursion path...
-        $a = $a->numify() if ref($a) && $a->can('numify');
-
         if (defined $a) {
+            $a = $a->numify() if ref($a) && $a->can('numify');
             # also croak on non-numerical
             if (!$a || $a <= 0) {
                 croak('Argument to accuracy must be greater than zero');
@@ -349,25 +344,28 @@ sub accuracy {
                 croak('Argument to accuracy must be an integer');
             }
         }
+
         if (ref($x)) {
-            # $object->accuracy() or fallback to global
+            # Set instance variable.
             $x->bround($a) if $a; # not for undef, 0
             $x->{_a} = $a;        # set/overwrite, even if not rounded
             delete $x->{_p};      # clear P
+            # Why return class variable here? Fixme!
             $a = ${"${class}::accuracy"} unless defined $a; # proper return value
         } else {
+            # Set class variable.
             ${"${class}::accuracy"} = $a; # set global A
             ${"${class}::precision"} = undef; # clear global P
         }
+
         return $a;              # shortcut
     }
 
-    my $a;
-    # $object->accuracy() or fallback to global
-    $a = $x->{_a} if ref($x);
-    # but don't return global undef, when $x's accuracy is 0!
-    $a = ${"${class}::accuracy"} if !defined $a;
-    $a;
+    # Return instance variable.
+    return $x->{_a} if ref($x) && (defined $x->{_a} || defined $x->{_p});
+
+    # Return class variable.
+    return ${"${class}::accuracy"};
 }
 
 sub precision {
@@ -382,32 +380,34 @@ sub precision {
     no strict 'refs';
     if (@_ > 0) {
         my $p = shift;
-        # convert objects to scalars to avoid deep recursion. If object doesn't
-        # have numify(), then hopefully it will have overloading for int() and
-        # boolean test without wandering into a deep recursion path...
-        $p = $p->numify() if ref($p) && $p->can('numify');
-        if ((defined $p) && (int($p) != $p)) {
-            croak('Argument to precision must be an integer');
+        if (defined $p) {
+            $p = $p->numify() if ref($p) && $p->can('numify');
+            if ($p != int $p) {
+                croak('Argument to precision must be an integer');
+            }
         }
+
         if (ref($x)) {
-            # $object->precision() or fallback to global
+            # Set instance variable.
             $x->bfround($p) if $p; # not for undef, 0
             $x->{_p} = $p;         # set/overwrite, even if not rounded
             delete $x->{_a};       # clear A
+            # Why return class variable here? Fixme!
             $p = ${"${class}::precision"} unless defined $p; # proper return value
         } else {
+            # Set class variable.
             ${"${class}::precision"} = $p; # set global P
             ${"${class}::accuracy"} = undef; # clear global A
         }
+
         return $p;              # shortcut
     }
 
-    my $p;
-    # $object->precision() or fallback to global
-    $p = $x->{_p} if ref($x);
-    # but don't return global undef, when $x's precision is 0!
-    $p = ${"${class}::precision"} if !defined $p;
-    $p;
+    # Return instance variable.
+    return $x->{_p} if ref($x) && (defined $x->{_a} || defined $x->{_p});
+
+    # Return class variable.
+    return ${"${class}::precision"};
 }
 
 sub config {
@@ -3055,9 +3055,11 @@ sub round {
         }
     }
 
-    # if still none defined, use globals (#2)
-    $a = ${"$class\::accuracy"}  unless defined $a;
-    $p = ${"$class\::precision"} unless defined $p;
+    # if still none defined, use globals
+    unless (defined $a || defined $p) {
+        $a = ${"$class\::accuracy"};
+        $p = ${"$class\::precision"};
+    }
 
     # A == 0 is useless, so undef it to signal no rounding
     $a = undef if defined $a && $a == 0;

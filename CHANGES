@@ -1,5 +1,8 @@
 1.999812 Not Released
 
+ * Fix case when both accuracy and precision are set, resulting in a NaN. This
+   closes CPAN RT #124790.
+
  * Cleaner log/exp-related code in Math::BigFloat.
 
  * Remove unused variables.
