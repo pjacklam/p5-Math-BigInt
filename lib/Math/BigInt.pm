@@ -548,7 +548,7 @@ sub new {
 
     my ($wanted, $a, $p, $r) = @_;
 
-    # Always return a new object, so it called as an instance method, copy the
+    # Always return a new object, so if called as an instance method, copy the
     # invocand, and if called as a class method, initialize a new object.
 
     $self = $selfref ? $self -> copy()
@@ -4352,7 +4352,7 @@ Math::BigInt - Arbitrary size integer/float math package
   $x->bcos();             # cosine
   $x->batan();            # inverse tangent
   $x->batan2($y);         # two-argument inverse tangent
-  $x->bsqrt();            # calculate square-root
+  $x->bsqrt();            # calculate square root
   $x->broot($y);          # $y'th root of $x (e.g. $y == 3 => cubic root)
   $x->bfac();             # factorial of $x (1*2*3*4*..$x)
 
@@ -5209,7 +5209,7 @@ This method was added in v1.87 of Math::BigInt (June 2007).
 
 =item bsqrt()
 
-    $x->bsqrt();                # calculate square-root
+    $x->bsqrt();                # calculate square root
 
 C<bsqrt()> returns the square root truncated to an integer.
 
@@ -5556,8 +5556,8 @@ corresponds to the output from C<sparts()>.
 
 Returns a string representing the number using normalized notation, the most
 common variant of scientific notation. For finite non-zero numbers, the
-absolute value of the significand is less than or equal to 1 and less than 10.
-The output corresponds to the output from C<nparts()>.
+absolute value of the significand is greater than or equal to 1 and less than
+10. The output corresponds to the output from C<nparts()>.
 
       123 is returned as "1.23e+2"
      1230 is returned as "1.23e+3"
@@ -5568,8 +5568,8 @@ The output corresponds to the output from C<nparts()>.
 =item bestr()
 
 Returns a string representing the number using engineering notation. For finite
-non-zero numbers, the absolute value of the significand is less than or equal
-to 1 and less than 1000, and the exponent is a multiple of 3. The output
+non-zero numbers, the absolute value of the significand is greater than or
+equal to 1 and less than 1000, and the exponent is a multiple of 3. The output
 corresponds to the output from C<eparts()>.
 
       123 is returned as "123e+0"

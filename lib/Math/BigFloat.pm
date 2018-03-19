@@ -4832,7 +4832,7 @@ Math::BigFloat - Arbitrary size floating point math package
   $x->bcos();             # cosine
   $x->batan();            # inverse tangent
   $x->batan2($y);         # two-argument inverse tangent
-  $x->bsqrt();            # calculate square-root
+  $x->bsqrt();            # calculate square root
   $x->broot($y);          # $y'th root of $x (e.g. $y == 3 => cubic root)
   $x->bfac();             # factorial of $x (1*2*3*4*..$x)
 

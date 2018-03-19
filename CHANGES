@@ -1,5 +1,7 @@
 1.999812 Not Released
 
+ * Fix typos.
+
  * Fix case when both accuracy and precision are set, resulting in a NaN. This
    closes CPAN RT #124790.
 
