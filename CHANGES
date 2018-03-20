@@ -1,5 +1,13 @@
 1.999812 Not Released
 
+ * Correct more of the problems with rounding in the constructors. If rounding
+   arguments are given as arguments to the constructor, the constructor should
+   assign those values to the instance. If no rounding arguments are given, and
+   the constructor is called as a class method, the class rounding variables
+   should be assigned to the instance. Added test file
+   t/author-constructors-a-p-r.t to replace t/author-constructors-a-p.t, but
+   lots of tests are failing and (for now) commented out.
+
  * Fix typos.
 
  * Fix case when both accuracy and precision are set, resulting in a NaN. This

@@ -877,6 +877,7 @@ sub from_bin {
     # input is invalid.
 
     return $self->bnan();
+
 }
 
 # Create a Math::BigInt from a byte string.
@@ -927,16 +928,19 @@ sub bzero {
     $self->{sign} = '+';
     $self->{value} = $LIB->_zero();
 
-    if (@_ > 0) {
-        if (@_ > 3) {
-            # call like: $x->bzero($a, $p, $r, $y, ...);
-            ($self, $self->{_a}, $self->{_p}) = $self->_find_round_parameters(@_);
-        } else {
-            # call like: $x->bzero($a, $p, $r);
-            $self->{_a} = $_[0]
-              if !defined $self->{_a} || (defined $_[0] && $_[0] > $self->{_a});
-            $self->{_p} = $_[1]
-              if !defined $self->{_p} || (defined $_[1] && $_[1] > $self->{_p});
+    # If rounding parameters are given as arguments, use them. If no rounding
+    # parameters are given, and if called as a class method initialize the new
+    # instance with the class variables.
+
+    if (@_) {
+        croak "can't specify both accuracy and precision"
+          if @_ >= 2 && defined $_[0] && defined $_[1];
+        $self->{_a} = $_[0];
+        $self->{_p} = $_[1];
+    } else {
+        unless($selfref) {
+            $self->{_a} = $class -> accuracy();
+            $self->{_p} = $class -> precision();
         }
     }
 
@@ -962,24 +966,30 @@ sub bone {
 
     return if $selfref && $self->modify('bone');
 
-    my $sign = shift;
-    $sign = defined $sign && $sign =~ /^\s*-/ ? "-" : "+";
+    my $sign = '+';             # default
+    if (@_) {
+        $sign = shift;
+        $sign = $sign =~ /^\s*-/ ? "-" : "+";
+    }
 
     $self = bless {}, $class unless $selfref;
 
     $self->{sign}  = $sign;
     $self->{value} = $LIB->_one();
 
-    if (@_ > 0) {
-        if (@_ > 3) {
-            # call like: $x->bone($sign, $a, $p, $r, $y, ...);
-            ($self, $self->{_a}, $self->{_p}) = $self->_find_round_parameters(@_);
-        } else {
-            # call like: $x->bone($sign, $a, $p, $r);
-            $self->{_a} = $_[0]
-              if !defined $self->{_a} || (defined $_[0] && $_[0] > $self->{_a});
-            $self->{_p} = $_[1]
-              if !defined $self->{_p} || (defined $_[1] && $_[1] > $self->{_p});
+    # If rounding parameters are given as arguments, use them. If no rounding
+    # parameters are given, and if called as a class method initialize the new
+    # instance with the class variables.
+
+    if (@_) {
+        croak "can't specify both accuracy and precision"
+          if @_ >= 2 && defined $_[0] && defined $_[1];
+        $self->{_a} = $_[0];
+        $self->{_p} = $_[1];
+    } else {
+        unless($selfref) {
+            $self->{_a} = $class -> accuracy();
+            $self->{_p} = $class -> precision();
         }
     }
 
@@ -1021,6 +1031,22 @@ sub binf {
 
     $self -> {sign}  = $sign . 'inf';
     $self -> {value} = $LIB -> _zero();
+
+    # If rounding parameters are given as arguments, use them. If no rounding
+    # parameters are given, and if called as a class method initialize the new
+    # instance with the class variables.
+
+    if (@_) {
+        croak "can't specify both accuracy and precision"
+          if @_ >= 2 && defined $_[0] && defined $_[1];
+        $self->{_a} = $_[0];
+        $self->{_p} = $_[1];
+    } else {
+        unless($selfref) {
+            $self->{_a} = $class -> accuracy();
+            $self->{_p} = $class -> precision();
+        }
+    }
 
     return $self;
 }
