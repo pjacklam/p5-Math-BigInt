@@ -1,5 +1,7 @@
 1.999812 Not Released
 
+ * Remove statements used for debugging.
+
  * Correct more of the problems with rounding in the constructors. If rounding
    arguments are given as arguments to the constructor, the constructor should
    assign those values to the instance. If no rounding arguments are given, and

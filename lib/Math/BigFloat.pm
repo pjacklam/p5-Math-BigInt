@@ -318,8 +318,6 @@ sub AUTOLOAD {
     sub _method_hand_up { exists $hand_ups{$_[0]||''}; }
 }
 
-sub DEBUG () { 0; }
-
 sub isa {
     my ($self, $class) = @_;
     return if $class =~ /^Math::BigInt/; # we aren't one of these
@@ -4405,12 +4403,7 @@ sub _log {
         $over *= $u;
         $below *= $v;
         $factor->badd($f);
-        if (DEBUG) {
-            $steps++;
-            print "step $steps = $x\n" if $steps % 10 == 0;
-        }
     }
-    print "took $steps steps\n" if DEBUG;
     $x->bmul($f);               # $x *= 2
 }
 
