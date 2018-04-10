@@ -5747,59 +5747,66 @@ dividing numbers.
 When rounding a number, different 'styles' or 'kinds' of rounding are possible.
 (Note that random rounding, as in Math::Round, is not implemented.)
 
+=head3 Directed rounding
+
+These round modes always round in the same direction.
+
 =over
 
 =item 'trunc'
 
-truncation invariably removes all digits following the rounding place,
-replacing them with zeros. Thus, 987.65 rounded to tens (P = 1) becomes 980,
-and rounded to the fourth sigdig becomes 987.6 (A = 4). 123.456 rounded to the
-second place after the decimal point (P = -2) becomes 123.46.
+Round towards zero. Remove all digits following the rounding place, i.e.,
+replace them with zeros. Thus, 987.65 rounded to tens (P=1) becomes 980, and
+rounded to the fourth significant digit becomes 987.6 (A=4). 123.456 rounded to
+the second place after the decimal point (P=-2) becomes 123.46. This
+corresponds to the IEEE 754 rounding mode 'roundTowardZero'.
 
-All other implemented styles of rounding attempt to round to the "nearest
-digit." If the digit D immediately to the right of the rounding place (skipping
-the decimal point) is greater than 5, the number is incremented at the rounding
-place (possibly causing a cascade of incrementation): e.g. when rounding to
-units, 0.9 rounds to 1, and -19.9 rounds to -20. If D < 5, the number is
-similarly truncated at the rounding place: e.g. when rounding to units, 0.4
-rounds to 0, and -19.4 rounds to -19.
+=back
 
-However the results of other styles of rounding differ if the digit immediately
-to the right of the rounding place (skipping the decimal point) is 5 and if
-there are no digits, or no digits other than 0, after that 5. In such cases:
+=head3 Rounding to nearest
+
+These rounding modes round to the nearest digit. They differ in how they
+determine which way to round in the ambiguous case when there is a tie.
+
+=over
 
 =item 'even'
 
-rounds the digit at the rounding place to 0, 2, 4, 6, or 8 if it is not
-already. E.g., when rounding to the first sigdig, 0.45 becomes 0.4, -0.55
-becomes -0.6, but 0.4501 becomes 0.5.
+Round towards the nearest even digit, e.g., when rounding to nearest integer,
+-5.5 becomes -6, 4.5 becomes 4, but 4.501 becomes 5. This corresponds to the
+IEEE 754 rounding mode 'roundTiesToEven'.
 
 =item 'odd'
 
-rounds the digit at the rounding place to 1, 3, 5, 7, or 9 if it is not
-already. E.g., when rounding to the first sigdig, 0.45 becomes 0.5, -0.55
-becomes -0.5, but 0.5501 becomes 0.6.
+Round towards the nearest odd digit, e.g., when rounding to nearest integer,
+4.5 becomes 5, -5.5 becomes -5, but 5.501 becomes 6. This corresponds to the
+IEEE 754 rounding mode 'roundTiesToOdd'.
 
 =item '+inf'
 
-round to plus infinity, i.e. always round up. E.g., when rounding to the first
-sigdig, 0.45 becomes 0.5, -0.55 becomes -0.5, and 0.4501 also becomes 0.5.
+Round towards plus infinity, i.e., always round up. E.g., when rounding to the
+nearest integer, 4.5 becomes 5, -5.5 becomes -5, and 4.501 also becomes 5. This
+corresponds to the IEEE 754 rounding mode 'roundTiesToPositive'.
 
 =item '-inf'
 
-round to minus infinity, i.e. always round down. E.g., when rounding to the
-first sigdig, 0.45 becomes 0.4, -0.55 becomes -0.6, but 0.4501 becomes 0.5.
+Round towards minus infinity, i.e., always round down. E.g., when rounding to
+the nearest integer, 4.5 becomes 4, -5.5 becomes -6, but 4.501 becomes 5. This
+corresponds to the IEEE 754 rounding mode 'roundTiesToNegative'.
 
 =item 'zero'
 
-round to zero, i.e. positive numbers down, negative ones up. E.g., when
-rounding to the first sigdig, 0.45 becomes 0.4, -0.55 becomes -0.5, but 0.4501
-becomes 0.5.
+Round towards zero, i.e., round positive numbers down and negative numbers up.
+E.g., when rounding to the nearest integer, 4.5 becomes 4, -5.5 becomes -5, but
+4.501 becomes 5. This corresponds to the IEEE 754 rounding mode
+'roundTiesToZero'.
 
 =item 'common'
 
-round up if the digit immediately to the right of the rounding place is 5 or
-greater, otherwise round down. E.g., 0.15 becomes 0.2 and 0.149 becomes 0.1.
+Round away from zero, i.e., round to the number with the largest absolute
+value. E.g., when rounding to the nearest integer, -1.5 becomes -2, 1.5 becomes
+2 and 1.49 becomes 1. This corresponds to the IEEE 754 rounding mode
+'roundTiesToAway'.
 
 =back
 
