@@ -1,5 +1,9 @@
 1.999812 Not Released
 
+ * Fix rounding and accuracy in bpi(). Extra digits in intermediate computation
+   were not used, causing the last digits to be inaccurate. In addition, the
+   rounding was incorrect in some cases.
+
  * Remove statements used for debugging.
 
  * Correct more of the problems with rounding in the constructors. If rounding

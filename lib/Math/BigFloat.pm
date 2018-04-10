@@ -1072,13 +1072,12 @@ EOF
 
         my $digits = substr($all_digits, 0, $nchrs);
 
-        # Find out whether we should round up or down. Since pi is a
-        # transcendental number, we only have to look at one digit after the
-        # last digit we want.
+        # Find out whether we should round up or down. Rounding is easy, since
+        # pi is trancendental. With directed rounding, it doesn't matter what
+        # the following digits are. With rounding to nearest, we only have to
+        # look at one extra digit.
 
-        if ($rmode eq '+inf') {
-            $round_up = 1;
-        } elsif ($rmode eq 'trunc' || $rmode eq 'zero' || $rmode eq '-inf') {
+        if ($rmode eq 'trunc') {
             $round_up = 0;
         } else {
             my $next_digit = substr($all_digits, $nchrs, 1);
@@ -1112,7 +1111,7 @@ EOF
         # Math::BigFloat, so use Brent-Salamin (aka AGM or Gauss-Legendre).
 
         # Use a few more digits in the intermediate computations.
-        my $nextra = 8;
+        $n += 8;
 
         $HALF = $class -> new($HALF) unless ref($HALF);
         my ($an, $bn, $tn, $pn) = ($class -> bone, $HALF -> copy() -> bsqrt($n),
