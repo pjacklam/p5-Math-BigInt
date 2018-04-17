@@ -1,12 +1,26 @@
-1.999812 Not Released
+1.999812 2018-04-17
+
+ * Fix CPAN RT #120351 regarding bpow(). Add test.
+
+ * Fix CPAN RT #120717 regarding tests now that '.' is not in @INC by default.
+
+ * Fix CPAN RT #122756 regarding testing for 64 bit integer support.
+
+ * Fix case when both accuracy and precision are set, resulting in a NaN. This
+   closes CPAN RT #124790.
+
+ * Fix typo in one of the change log entries for version 1.999811.
 
  * Clearify documentation of rounding modes.
+
+ * Update the documentation of configuration parameters.
 
  * Fix rounding and accuracy in bpi(). Extra digits in intermediate computation
    were not used, causing the last digits to be inaccurate. In addition, the
    rounding was incorrect in some cases.
 
- * Remove statements used for debugging.
+ * Use config() as a method, rather than a function. Also use config("xyz")
+   rather than config()->{xyz}.
 
  * Correct more of the problems with rounding in the constructors. If rounding
    arguments are given as arguments to the constructor, the constructor should
@@ -16,10 +30,9 @@
    t/author-constructors-a-p-r.t to replace t/author-constructors-a-p.t, but
    lots of tests are failing and (for now) commented out.
 
- * Fix typos.
+ * Remove statements used for debugging.
 
- * Fix case when both accuracy and precision are set, resulting in a NaN. This
-   closes CPAN RT #124790.
+ * Fix typos.
 
  * Cleaner log/exp-related code in Math::BigFloat.
 
@@ -29,11 +42,8 @@
 
  * Add test file t/release-whitespaces.t.
 
- * Update the documentation of configuration parameters.
-
- * Convert t/03podcov.t -> t/release-pod-coverage.t.
-
- * Convert t/02pod.t -> t/release-pod.t.
+ * Convert test file t/02pod.t to t/release-pod.t and t/03podcov.t to
+   t/release-pod-coverage.t.
 
  * Reformat CHANGES to match the specification in CPAN::Changes::Spec and
    CPAN::Meta::Spec.
@@ -41,9 +51,6 @@
  * Expand tabs to spaces and clean up whitepace.
 
  * Include tests that were previously commented out.
-
- * Use config() as a method, rather than a function. Also use config("xyz")
-   rather than config()->{xyz}.
 
  * Use $LIB as the variable name for backend math library.
 
@@ -53,16 +60,8 @@
    Math::BigFloat has Math::BigInt in @ISA, so it doesn't need to require
    Exporter.
 
- * Fix CPAN RT #120351 regarding bpow(). Add test.
-
  * Don't load Test::More when it isn't really needed. This speeds up processing
    of author test files when they are skipped.
-
- * Fix CPAN RT #120717 regarding tests now that '.' is not in @INC by default.
-
- * Fix CPAN RT #122756 regarding testing for 64 bit integer support.
-
- * Fix typo in one of the change log entries for version 1.999811.
 
 1.999811 2017-03-15 pjacklam
 

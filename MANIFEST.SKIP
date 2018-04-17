@@ -65,4 +65,4 @@
 #!end included /usr/share/perl5/5.26/ExtUtils/MANIFEST.SKIP
 
 # Avoid distribution-specific stuff.
-/Math-BigInt-[0-9]
+^Math-BigInt-[0-9]
