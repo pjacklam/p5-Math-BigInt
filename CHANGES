@@ -1,3 +1,9 @@
+1.999813 2018-04-18
+
+ * Fix CPAN RT #125108. Remove test files try.pl, t/author-bpi-big-mbf.t, and
+   t/release-unused-vars.t, which were included in the 1.999812 distribution by
+   accident.
+
 1.999812 2018-04-17
 
  * Fix CPAN RT #120351 regarding bpow(). Add test.
