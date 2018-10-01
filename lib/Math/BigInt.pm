@@ -5738,19 +5738,19 @@ corresponds to the output from C<dparts()>.
 
     $x->to_hex();
 
-Returns a hexadecimal string representation of the number.
+Returns a hexadecimal string representation of the number. See also from_hex().
 
 =item to_bin()
 
     $x->to_bin();
 
-Returns a binary string representation of the number.
+Returns a binary string representation of the number. See also from_bin().
 
 =item to_oct()
 
     $x->to_oct();
 
-Returns an octal string representation of the number.
+Returns an octal string representation of the number. See also from_oct().
 
 =item to_bytes()
 
@@ -5758,7 +5758,7 @@ Returns an octal string representation of the number.
     $s = $x->to_bytes();                    # $s = "cafe"
 
 Returns a byte string representation of the number using big endian byte
-order. The invocand must be a non-negative, finite integer.
+order. The invocand must be a non-negative, finite integer. See also from_bytes().
 
 =item to_base()
 
