@@ -1187,9 +1187,8 @@ sub _to_base {
     my $str   = '';
     my $tmp   = $class -> _copy($x);
     my $rem;
-    my $chunk = $class -> _new($base);
     until ($class -> _is_zero($tmp)) {
-        ($tmp, $rem) = $class -> _div($tmp, $chunk);
+        ($tmp, $rem) = $class -> _div($tmp, $base);
         my $num = $class -> _num($rem);
         croak "no character to represent '$num' in collation sequence",
           " (collation sequence is too short)" if $num > $#collseq;
