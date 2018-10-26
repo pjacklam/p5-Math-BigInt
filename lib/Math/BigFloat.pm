@@ -5137,7 +5137,7 @@ This method was added in v1.87 of Math::BigInt (June 2007).
 In scalar context, divides $x by $y and returns the result to the given or
 default accuracy/precision. In list context, does floored division
 (F-division), returning an integer $q and a remainder $r so that $x = $q * $y +
-$r. The remainer (modulo) is equal to what is returned by C<$x->bmod($y)>.
+$r. The remainer (modulo) is equal to what is returned by C<< $x->bmod($y) >>.
 
 =item bmod()
 
