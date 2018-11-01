@@ -1428,11 +1428,16 @@ sub _to_base {
     if (@_) {
         $collseq = shift();
     } else {
-        if ($class -> _acmp($base, $class -> _new("62")) <= 0) {
-            $collseq = '0123456789' . 'ABCDEFGHIJKLMNOPQRSTUVWXYZ'
-                                    . 'abcdefghijklmnopqrstuvwxyz';
+        if ($class -> _acmp($base, $class -> _new("94")) <= 0) {
+            $collseq = '0123456789'                     #  48 ..  57
+                     . 'ABCDEFGHIJKLMNOPQRSTUVWXYZ'     #  65 ..  90
+                     . 'abcdefghijklmnopqrstuvwxyz'     #  97 .. 122
+                     . '!"#$%&\'()*+,-./'               #  33 ..  47
+                     . ':;<=>?@'                        #  58 ..  64
+                     . '[\\]^_`'                        #  91 ..  96
+                     . '{|}~';                          # 123 .. 126
         } else {
-            croak "When base > 62, a collation sequence must be given";
+            croak "When base > 94, a collation sequence must be given";
         }
     }
 
@@ -1573,11 +1578,16 @@ sub _from_base {
         if ($class -> _acmp($base, $class -> _new("36")) <= 0) {
             $str = uc $str;
             $collseq = '0123456789' . 'ABCDEFGHIJKLMNOPQRSTUVWXYZ';
-        } elsif ($class -> _acmp($base, $class -> _new("62")) <= 0) {
-            $collseq = '0123456789' . 'ABCDEFGHIJKLMNOPQRSTUVWXYZ'
-                                    . 'abcdefghijklmnopqrstuvwxyz';
+        } elsif ($class -> _acmp($base, $class -> _new("94")) <= 0) {
+            $collseq = '0123456789'                     #  48 ..  57
+                     . 'ABCDEFGHIJKLMNOPQRSTUVWXYZ'     #  65 ..  90
+                     . 'abcdefghijklmnopqrstuvwxyz'     #  97 .. 122
+                     . '!"#$%&\'()*+,-./'               #  33 ..  47
+                     . ':;<=>?@'                        #  58 ..  64
+                     . '[\\]^_`'                        #  91 ..  96
+                     . '{|}~';                          # 123 .. 126
         } else {
-            croak "When base > 62, a collation sequence must be given";
+            croak "When base > 94, a collation sequence must be given";
         }
         $collseq = substr $collseq, 0, $class -> _num($base);
     }
@@ -1986,10 +1996,20 @@ COLLSEQ. Each character in STR represents a numerical value identical to the
 character's position in COLLSEQ. All characters in STR must be present in
 COLLSEQ.
 
-If BASE is less than or equal to 62, and a collation sequence is not specified,
-a default collation sequence consisting of the 62 characters 0..9, A..Z, and
-a..z is used. If the default collation sequence is used, and the BASE is less
-than or equal to 36, the letter case in STR is ignored.
+If BASE is less than or equal to 94, and a collation sequence is not specified,
+the following default collation sequence is used. It contains of all the 94
+printable ASCII characters except space/blank:
+
+    0123456789                  # ASCII  48 to  57
+    ABCDEFGHIJKLMNOPQRSTUVWXYZ  # ASCII  65 to  90
+    abcdefghijklmnopqrstuvwxyz  # ASCII  97 to 122
+    !"#$%&'()*+,-./             # ASCII  33 to  47
+    :;<=>?@                     # ASCII  58 to  64
+    [\]^_`                      # ASCII  91 to  96
+    {|}~                        # ASCII 123 to 126
+
+If the default collation sequence is used, and the BASE is less than or equal
+to 36, the letter case in STR is ignored.
 
 For instance, with base 3 and collation sequence "-/|", the character "-"
 represents 0, "/" represents 1, and "|" represents 2. So if STR is "/|-", the
@@ -2005,10 +2025,12 @@ conversion. All examples return 250.
 
 Some more examples, all returning 250:
 
-    $x = $class -> _from_base("100021", 3, "012")
-    $x = $class -> _from_base("3322", 4, "0123")
-    $x = $class -> _from_base("2000", 5, "01234")
+    $x = $class -> _from_base("100021", 3)
+    $x = $class -> _from_base("3322", 4)
+    $x = $class -> _from_base("2000", 5)
     $x = $class -> _from_base("caaa", 5, "abcde")
+    $x = $class -> _from_base("42", 62)
+    $x = $class -> _from_base("2!", 94)
 
 =back
 
