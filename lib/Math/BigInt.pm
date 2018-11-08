@@ -1234,6 +1234,24 @@ sub is_negative {
     $x->{sign} =~ /^-/ ? 1 : 0; # -inf is negative, but NaN is not
 }
 
+sub is_non_negative {
+    # Return true if argument is non-negative (>= 0).
+    my ($class, $x) = ref($_[0]) ? (undef,$_[0]) : objectify(1,@_);
+
+    return 1 if $x->{sign} =~ /^\+/;
+    return 1 if $x -> is_zero();
+    return 0;
+}
+
+sub is_non_positive {
+    # Return true if argument is non-positive (<= 0).
+    my ($class, $x) = ref($_[0]) ? (undef,$_[0]) : objectify(1,@_);
+
+    return 1 if $x->{sign} =~ /^\-/;
+    return 1 if $x -> is_zero();
+    return 0;
+}
+
 sub is_odd {
     # return true when arg (BINT or num_str) is odd, false for even
     my ($class, $x) = ref($_[0]) ? (undef, $_[0]) : objectify(1, @_);

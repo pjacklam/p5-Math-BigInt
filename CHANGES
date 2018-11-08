@@ -1,5 +1,7 @@
 1.999817 Not Released
 
+ * Add new methods is_non_negative() and is_non_positive().
+
  * Extend the default collation sequence used by to_base() and from_base() to
    all the 94 printable ASCII characters except blank/space.
 

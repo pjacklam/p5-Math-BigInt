@@ -68,7 +68,7 @@ while (<DATA>) {
     $try = qq|\$x = $CLASS->new("$args[0]");|;
     if ($f eq "bnorm") {
         $try = qq|\$x = $CLASS->bnorm("$args[0]");|;
-    } elsif ($f =~ /^is_(zero|one|odd|even|negative|positive|nan|int)$/) {
+    } elsif ($f =~ /^is_(zero|one|odd|even|(non_)?(negative|positive)|nan|int)$/) {
         $try .= " \$x->$f() || 0;";
     } elsif ($f eq "is_inf") {
         $try .= qq| \$x->is_inf("$args[1]");|;
@@ -1076,6 +1076,22 @@ invalid:0
 +inf:1
 -inf:0
 invalid:0
+
+&is_non_negative
+0:1
+-1:0
+1:1
++inf:1
+-inf:0
+NaN:0
+
+&is_non_positive
+0:1
+-1:1
+1:0
++inf:0
+-inf:1
+NaN:0
 
 &is_int
 -inf:0
