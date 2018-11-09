@@ -386,6 +386,20 @@ sub _digit {
     substr($class ->_str($x), -($n+1), 1);
 }
 
+sub _digitsum {
+    my ($class, $x) = @_;
+
+    my $len = $class -> _len($x);
+    my $sum = $class -> _zero();
+    for (my $i = 0 ; $i < $len ; ++$i) {
+        my $digit = $class -> _digit($x, $i);
+        $digit = $class -> _new($digit);
+        $sum = $class -> _add($sum, $digit);
+    }
+
+    return $sum;
+}
+
 sub _zeros {
     my ($class, $x) = @_;
     my $str = $class -> _str($x);

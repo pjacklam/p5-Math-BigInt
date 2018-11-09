@@ -3374,6 +3374,31 @@ sub digit {
     $LIB->_digit($x->{value}, $n || 0);
 }
 
+sub bdigitsum {
+    # like digitsum(), but assigns the result to the invocand
+    my $x = shift;
+
+    return $x           if $x -> is_nan();
+    return $x -> babs() if $x -> is_inf();
+
+    $x -> {value} = $LIB -> _digitsum($x -> {value});
+    $x -> {sign}  = '+';
+    return $x;
+}
+
+sub digitsum {
+    # compute sum of decimal digits and return it
+    my $x = shift;
+    my $class = ref $x;
+
+    return $class -> bnan() if $x -> is_nan();
+    return $class -> binf() if $x -> is_inf();
+
+    my $y = $class -> bzero();
+    $y -> {value} = $LIB -> _digitsum($x -> {value});
+    return $y;
+}
+
 sub length {
     my ($class, $x) = ref($_[0]) ? (undef, $_[0]) : objectify(1, @_);
 
