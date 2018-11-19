@@ -1393,49 +1393,64 @@ sub _rsft {
 sub _lsft {
     my ($c, $x, $n, $b) = @_;
 
-    return $x if $c->_is_zero($x);
+    return $x if $c->_is_zero($x) || $c->_is_zero($n);
 
-    # Handle the special case when the base is a power of 10. Don't check
-    # whether log($b)/log(10) is an integer, because log(1000)/log(10) is not
-    # exactly 3.
+    # For backwards compatibility, allow the base $b to be a scalar.
 
-    my $log10 = sprintf "%.0f", log($b) / log(10);
-    if ($b == 10 ** $log10) {
-        $b = 10;
-        $n = $c->_mul($n, $c->_new($log10));
+    $b = $c->_new($b) unless ref $b;
 
-        # shortcut (faster) for shifting by 10) since we are in base 10eX
-        # multiples of $BASE_LEN:
-        my $src = @$x;                      # source
-        my $len = $c->_num($n);             # shift-len as normal int
-        my $rem = $len % $BASE_LEN;         # remainder to shift
-        my $dst = $src + int($len / $BASE_LEN); # destination
-        my $vd;                                 # further speedup
-        $x->[$src] = 0;                         # avoid first ||0 for speed
-        my $z = '0' x $BASE_LEN;
-        while ($src >= 0) {
-            $vd = $x->[$src];
-            $vd = $z . $vd;
-            $vd = substr($vd, -$BASE_LEN + $rem, $BASE_LEN - $rem);
-            $vd .= $src > 0 ? substr($z . $x->[$src - 1], -$BASE_LEN, $rem)
-              : '0' x $rem;
-            $vd = substr($vd, -$BASE_LEN, $BASE_LEN) if length($vd) > $BASE_LEN;
-            $x->[$dst] = int($vd);
-            $dst--;
-            $src--;
+    # If the base is a power of 10, use shifting, since the internal
+    # representation is in base 10eX.
+
+    my $bstr = $c->_str($b);
+    if ($bstr =~ /^1(0+)\z/) {
+
+        # Adjust $n so that we're shifting in base 10. Do this by multiplying
+        # $n by the base 10 logarithm of $b: $b ** $n = 10 ** (log10($b) * $n).
+
+        my $log10b = length($1);
+        $n = $c->_mul($c->_new($log10b), $n);
+        $n = $c->_num($n);              # shift-len as normal int
+
+        # $q is the number of places to shift the elements within the array,
+        # and $r is the number of places to shift the values within the
+        # elements.
+
+        my $r = $n % $BASE_LEN;
+        my $q = ($n - $r) / $BASE_LEN;
+
+        # If we must shift the values within the elements ...
+
+        if ($r) {
+            my $i = @$x;                # index
+            $x->[$i] = 0;               # initialize most significant element
+            my $z = '0' x $BASE_LEN;
+            my $vd;
+            while ($i >= 0) {
+                $vd = $x->[$i];
+                $vd = $z . $vd;
+                $vd = substr($vd, $r - $BASE_LEN, $BASE_LEN - $r);
+                $vd .= $i > 0 ? substr($z . $x->[$i - 1], -$BASE_LEN, $r)
+                              : '0' x $r;
+                $vd = substr($vd, -$BASE_LEN, $BASE_LEN) if length($vd) > $BASE_LEN;
+                $x->[$i] = int($vd);    # e.g., "0...048" -> 48 etc.
+                $i--;
+            }
+
+            pop @$x if $x->[-1] == 0;   # if most significant element is zero
         }
-        # set lowest parts to 0
-        while ($dst >= 0) {
-            $x->[$dst--] = 0;
+
+        # If we must shift the elements within the array ...
+
+        if ($q) {
+            unshift @$x, (0) x $q;
         }
-        # fix spurious last zero element
-        splice @$x, -1 if $x->[-1] == 0;
-        return $x;
+
     } else {
-        $b = $c->_new($b);
-        #print $c->_str($b);
-        return $c->_mul($x, $c->_pow($b, $n));
+        $x = $c->_mul($x, $c->_pow($b, $n));
     }
+
+    return $x;
 }
 
 sub _pow {

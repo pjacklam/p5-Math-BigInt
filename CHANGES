@@ -1,5 +1,10 @@
 1.999817 Not Released
 
+ * Make blsft() in Math::BigInt allow bases up until the largest unsigned
+   integer.
+
+ * Make _lsft() in Math::BigInt::Calc handle an arbitrarily large base.
+
  * Add new methods bdigitsum() and digitsum() to Math::BigInt. Add new method
    _digitsum() to Math::BigInt::Lib.
 
