@@ -2419,21 +2419,14 @@ sub bpow {
 
     $r[3] = $y;                 # no push!
 
-    # cases 0 ** Y, X ** 0, X ** 1, 1 ** Y are handled by Calc or Emu
+    # 0 ** -y => ( 1 / (0 ** y)) => 1 / 0 => +inf
+    return $x->binf() if $y->is_negative() && $x->is_zero();
 
-    my $new_sign = '+';
-    $new_sign = $y->is_odd() ? '-' : '+' if ($x->{sign} ne '+');
-
-    # 0 ** -7 => ( 1 / (0 ** 7)) => 1 / 0 => +inf
-    return $x->binf()
-      if $y->{sign} eq '-' && $x->{sign} eq '+' && $LIB->_is_zero($x->{value});
     # 1 ** -y => 1 / (1 ** |y|)
-    # so do test for negative $y after above's clause
-    return $x->bnan() if $y->{sign} eq '-' && !$LIB->_is_one($x->{value});
+    return $x->bzero() if $y->is_negative() && !$LIB->_is_one($x->{value});
 
     $x->{value} = $LIB->_pow($x->{value}, $y->{value});
-    $x->{sign} = $new_sign;
-    $x->{sign} = '+' if $LIB->_is_zero($y->{value});
+    $x->{sign}  = $x->is_negative() && $y->is_odd() ? '-' : '+';
     $x->round(@r);
 }
 
