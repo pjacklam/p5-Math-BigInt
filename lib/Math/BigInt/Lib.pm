@@ -2430,11 +2430,11 @@ L<http://annocpan.org/dist/Math-BigInt>
 
 =item * CPAN Ratings
 
-L<http://cpanratings.perl.org/dist/Math-BigInt>
+L<https://cpanratings.perl.org/dist/Math-BigInt>
 
-=item * Search CPAN
+=item * MetaCPAN
 
-L<http://search.cpan.org/dist/Math-BigInt/>
+L<https://metacpan.org/release/Math-BigInt>
 
 =item * CPAN Testers Matrix
 

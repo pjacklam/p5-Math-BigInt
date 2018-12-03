@@ -1,5 +1,7 @@
 1.999817 Not Released
 
+ * Update links in SUPPORT section in POD.
+
  * Fix bpow(). It returned NaN when it should truncate to zero.
 
  * Make blsft() in Math::BigInt allow bases up until the largest unsigned
