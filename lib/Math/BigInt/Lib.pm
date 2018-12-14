@@ -2337,6 +2337,10 @@ from the left (most significant digit). If $obj represents the number 123, then
     CLASS->_digit($obj,  2)     # returns 1
     CLASS->_digit($obj, -1)     # returns 1
 
+=item CLASS-E<gt>_digitsum(OBJ)
+
+Returns the sum of the base 10 digits.
+
 =item CLASS-E<gt>_check(OBJ)
 
 Returns true if the object is invalid and false otherwise. Preferably, the true

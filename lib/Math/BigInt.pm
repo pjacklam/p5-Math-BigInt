@@ -5038,6 +5038,18 @@ neither positive nor negative.
 Returns true if the invocand is negative and false otherwise. A C<NaN> is
 neither positive nor negative.
 
+=item is_non_positive()
+
+    $x->is_non_positive();      # true if <= 0
+
+Returns true if the invocand is negative or zero.
+
+=item is_non_negative()
+
+    $x->is_non_negative();      # true if >= 0
+
+Returns true if the invocand is positive or zero.
+
 =item is_odd()
 
     $x->is_odd();               # true if odd, false for even
@@ -5640,6 +5652,18 @@ If you want $x to have a certain sign, use one of the following methods:
     $x->digit($n);       # return the nth digit, counting from right
 
 If C<$n> is negative, returns the digit counting from left.
+
+=item digitsum()
+
+    $x->digitsum();
+
+Computes the sum of the base 10 digits and returns it.
+
+=item bdigitsum()
+
+    $x->bdigitsum();
+
+Computes the sum of the base 10 digits and assigns the result to the invocand.
 
 =item length()
 
