@@ -1,5 +1,7 @@
 1.999817 Not Released
 
+ * Add buparrow() and uparrow() for Knuth's up-arrow notation.
+
  * Add information about the github repository.
 
  * Update links in SUPPORT section in POD.

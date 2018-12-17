@@ -1,3 +1,5 @@
+# -*- coding: utf-8-unix -*-
+
 package Math::BigInt;
 
 #
@@ -17,6 +19,7 @@ package Math::BigInt;
 use 5.006001;
 use strict;
 use warnings;
+use utf8;
 
 use Carp qw< carp croak >;
 
@@ -110,6 +113,7 @@ use overload
 
   '<=>'   =>      sub { my $cmp = $_[0] -> bcmp($_[1]);
                         defined($cmp) && $_[2] ? -$cmp : $cmp; },
+
 
   'cmp'   =>      sub { $_[2] ? "$_[1]" cmp $_[0] -> bstr()
                               : $_[0] -> bstr() cmp "$_[1]"; },
@@ -2613,6 +2617,72 @@ sub bnok {
     $n->round(@r);
 }
 
+sub buparrow {
+    my $a = shift;
+    my $y = $a -> uparrow(@_);
+    $a -> {value} = $y -> {value};
+    return $a;
+}
+
+sub uparrow {
+    # Knuth's up-arrow notation buparrow(a, n, b)
+    #
+    # The following is a simple, recursive implementation of the up-arrow
+    # notation, just to show the idea. Such implementations cause "Deep
+    # recursion on subroutine ..." warnings, so we use a faster, non-recursive
+    # algorithm below with @_ as a stack.
+    #
+    #   sub buparrow {
+    #       my ($a, $n, $b) = @_;
+    #       return $a ** $b if $n == 1;
+    #       return $a * $b  if $n == 0;
+    #       return 1        if $b == 0;
+    #       return buparrow($a, $n - 1, buparrow($a, $n, $b - 1));
+    #   }
+
+    my ($a, $b, $n) = @_;
+    my $class = ref $a;
+    croak("a must be non-negative") if $a < 0;
+    croak("n must be non-negative") if $n < 0;
+    croak("b must be non-negative") if $b < 0;
+
+    while (@_ >= 3) {
+
+        # return $a ** $b if $n == 1;
+
+        if ($_[-2] == 1) {
+            my ($a, $n, $b) = splice @_, -3;
+            push @_, $a ** $b;
+            next;
+        }
+
+        # return $a * $b if $n == 0;
+
+        if ($_[-2] == 0) {
+            my ($a, $n, $b) = splice @_, -3;
+            push @_, $a * $b;
+            next;
+        }
+
+        # return 1 if $b == 0;
+
+        if ($_[-1] == 0) {
+            splice @_, -3;
+            push @_, $class -> bone();
+            next;
+        }
+
+        # return buparrow($a, $n - 1, buparrow($a, $n, $b - 1));
+
+        my ($a, $n, $b) = splice @_, -3;
+        push @_, ($a, $n - 1,
+                      $a, $n, $b - 1);
+
+    }
+
+    pop @_;
+}
+
 sub bsin {
     # Calculate sinus(x) to N digits. Unless upgrading is in effect, returns the
     # result truncated to an integer.
@@ -4359,6 +4429,8 @@ __END__
 
 =pod
 
+=encoding utf8
+
 =head1 NAME
 
 Math::BigInt - Arbitrary size integer/float math package
@@ -5354,6 +5426,61 @@ pseudo-code:
 
 The behaviour is identical to the behaviour of the Maple and Mathematica
 function for negative integers n, k.
+
+=item buparrow()
+
+=item uparrow()
+
+    $a -> buparrow($n, $b);         # modifies $a
+    $x = $a -> uparrow($n, $b);     # does not modify $a
+
+This method implements Knuth's up-arrow notation, where $n is the number of
+arrows between the two operands $a and $b. Both $a, $n, and $b must be
+non-negative integers.
+
+    $a -> buparrow(1, $b)   # = $a ↑ $b
+    $a -> buparrow(2, $b)   # = $a ↑↑ $b
+    $a -> buparrow(3, $b)   # = $a ↑↑↑ $b
+    $a -> buparrow(4, $b)   # = $a ↑↑↑↑ $b
+    ...                     ...
+    $a -> buparrow($n, $b)  # = $a ↑(n) $b
+
+If $a = 2, then
+
+    $a -> buparrow(0, 4)    # = 2 * 4 = 8
+
+    $a -> buparrow(1, 4)    # = 2 ↑ 4
+                            # = 2 * (2 * (2 * 2))
+                            # = 2 ** 4 = 16
+
+    $a -> buparrow(2, 4)    # = 2 ↑↑ 4
+                            # = 2 ↑ (2 ↑ (2 ↑ 2))
+                            #  = 2 ** (2 ** (2 ** 2)) = 65536
+
+    $a -> buparrow(3, 4)    # = 2 ↑↑↑ 4
+                            # = 2 ↑↑ (2 ↑↑ (2 ↑↑ 2))
+                            # = 2 ** (2 ** (2 ** (2 ** ...))
+                            #      (65535 exponentiations)
+
+The resulting values grow very rapidly as the operands increase. Here are the
+resulting values when $b and $n are 2 and 3, respectively, and $a incrases
+
+    Math::BigInt->new(1)->buparrow(2, 3)  # = 1
+    Math::BigInt->new(2)->buparrow(2, 3)  # = 16
+    Math::BigInt->new(3)->buparrow(2, 3)  # = 7625597484987
+    Math::BigInt->new(4)->buparrow(2, 3)  # = 1.34078079299...e+154
+    Math::BigInt->new(5)->buparrow(2, 3)  # = 1.91101259794...e+2184
+    Math::BigInt->new(6)->buparrow(2, 3)  # = 2.65911977215...e+36305
+    Math::BigInt->new(7)->buparrow(2, 3)  # = 3.75982352678...e+695974
+    Math::BigInt->new(8)->buparrow(2, 3)  # = 6.01452075365...e+15151335
+    Math::BigInt->new(9)->buparrow(2, 3)  # = 4.28124773175...e+369693099
+
+A few special cases
+
+    Math::BigInt->new(0)->buparrow($n, $b)  # = 0 for all $n and $b
+    Math::BigInt->new(1)->buparrow($n, $b)  # = 1 for all $n and $b
+    Math::BigInt->new(2)->buparrow($n, 2)   # = 4 for all $n
+    Math::BigInt->new($a)->buparrow($n, 0)  # = 1 for all $a and $n
 
 =item bsin()
 
