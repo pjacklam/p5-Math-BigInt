@@ -19,7 +19,6 @@ package Math::BigInt;
 use 5.006001;
 use strict;
 use warnings;
-use utf8;
 
 use Carp qw< carp croak >;
 
@@ -4429,8 +4428,6 @@ __END__
 
 =pod
 
-=encoding utf8
-
 =head1 NAME
 
 Math::BigInt - Arbitrary size integer/float math package
@@ -4546,6 +4543,7 @@ Math::BigInt - Arbitrary size integer/float math package
   $x->blog($base);        # logarithm of $x to base $base (e.g., base 2)
   $x->bexp();             # calculate e ** $x where e is Euler's number
   $x->bnok($y);           # x over y (binomial coefficient n over k)
+  $x->buparrow($n, $y);   # Knuth's up-arrow notation
   $x->bsin();             # sine
   $x->bcos();             # cosine
   $x->batan();            # inverse tangent
@@ -5434,53 +5432,12 @@ function for negative integers n, k.
     $a -> buparrow($n, $b);         # modifies $a
     $x = $a -> uparrow($n, $b);     # does not modify $a
 
-This method implements Knuth's up-arrow notation, where $n is the number of
-arrows between the two operands $a and $b. Both $a, $n, and $b must be
-non-negative integers.
+This method implements Knuth's up-arrow notation, where $n is a non-negative
+integer representing the number of up-arrows. $n = 0 gives multiplication, $n =
+1 gives exponentiation, $n = 2 gives tetration, $n = 3 gives hexation etc. The
+following illustrates the relation between the first values of $n.
 
-    $a -> buparrow(1, $b)   # = $a ↑ $b
-    $a -> buparrow(2, $b)   # = $a ↑↑ $b
-    $a -> buparrow(3, $b)   # = $a ↑↑↑ $b
-    $a -> buparrow(4, $b)   # = $a ↑↑↑↑ $b
-    ...                     ...
-    $a -> buparrow($n, $b)  # = $a ↑(n) $b
-
-If $a = 2, then
-
-    $a -> buparrow(0, 4)    # = 2 * 4 = 8
-
-    $a -> buparrow(1, 4)    # = 2 ↑ 4
-                            # = 2 * (2 * (2 * 2))
-                            # = 2 ** 4 = 16
-
-    $a -> buparrow(2, 4)    # = 2 ↑↑ 4
-                            # = 2 ↑ (2 ↑ (2 ↑ 2))
-                            #  = 2 ** (2 ** (2 ** 2)) = 65536
-
-    $a -> buparrow(3, 4)    # = 2 ↑↑↑ 4
-                            # = 2 ↑↑ (2 ↑↑ (2 ↑↑ 2))
-                            # = 2 ** (2 ** (2 ** (2 ** ...))
-                            #      (65535 exponentiations)
-
-The resulting values grow very rapidly as the operands increase. Here are the
-resulting values when $b and $n are 2 and 3, respectively, and $a incrases
-
-    Math::BigInt->new(1)->buparrow(2, 3)  # = 1
-    Math::BigInt->new(2)->buparrow(2, 3)  # = 16
-    Math::BigInt->new(3)->buparrow(2, 3)  # = 7625597484987
-    Math::BigInt->new(4)->buparrow(2, 3)  # = 1.34078079299...e+154
-    Math::BigInt->new(5)->buparrow(2, 3)  # = 1.91101259794...e+2184
-    Math::BigInt->new(6)->buparrow(2, 3)  # = 2.65911977215...e+36305
-    Math::BigInt->new(7)->buparrow(2, 3)  # = 3.75982352678...e+695974
-    Math::BigInt->new(8)->buparrow(2, 3)  # = 6.01452075365...e+15151335
-    Math::BigInt->new(9)->buparrow(2, 3)  # = 4.28124773175...e+369693099
-
-A few special cases
-
-    Math::BigInt->new(0)->buparrow($n, $b)  # = 0 for all $n and $b
-    Math::BigInt->new(1)->buparrow($n, $b)  # = 1 for all $n and $b
-    Math::BigInt->new(2)->buparrow($n, 2)   # = 4 for all $n
-    Math::BigInt->new($a)->buparrow($n, 0)  # = 1 for all $a and $n
+See L<https://en.wikipedia.org/wiki/Knuth%27s_up-arrow_notation>.
 
 =item bsin()
 
