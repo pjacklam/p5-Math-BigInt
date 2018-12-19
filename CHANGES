@@ -1,5 +1,7 @@
 1.999817 Not Released
 
+ * Add backermann() and ackermann() for the Ackermann function.
+
  * Add buparrow() and uparrow() for Knuth's up-arrow notation.
 
  * Add information about the github repository.

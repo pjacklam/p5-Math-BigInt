@@ -2682,6 +2682,60 @@ sub uparrow {
     pop @_;
 }
 
+sub backermann {
+    my $m = shift;
+    my $y = $m -> ackermann(@_);
+    $m -> {value} = $y -> {value};
+    return $m;
+}
+
+sub ackermann {
+    # Ackermann's function ackermann(m, n)
+    #
+    # The following is a simple, recursive implementation of the ackermann
+    # function, just to show the idea. Such implementations cause "Deep
+    # recursion on subroutine ..." warnings, so we use a faster, non-recursive
+    # algorithm below with @_ as a stack.
+    #
+    # sub ackermann {
+    #     my ($m, $n) = @_;
+    #     return $n + 1                                  if $m == 0;
+    #     return ackermann($m - 1, 1)                    if $m > 0 && $n == 0;
+    #     return ackermann($m - 1, ackermann($m, $n - 1) if $m > 0 && $n > 0;
+    # }
+
+    my ($m, $n) = @_;
+    my $class = ref $m;
+    croak("m must be non-negative") if $m < 0;
+    croak("n must be non-negative") if $n < 0;
+
+    my $two      = $class -> new("2");
+    my $three    = $class -> new("3");
+    my $thirteen = $class -> new("13");
+
+    $n = pop;
+    $n = $class -> new($n) unless ref($n);
+    while (@_) {
+        my $m = pop;
+        if ($m > $three) {
+            push @_, (--$m) x $n;
+            while (--$m >= $three) {
+                push @_, $m;
+            }
+            $n = $thirteen;
+        } elsif ($m == $three) {
+            $n = $class -> bone() -> blsft($n + $three) -> bsub($three);
+        } elsif ($m == $two) {
+            $n -> bmul($two) -> badd($three);
+        } elsif ($m >= 0) {
+            $n -> badd($m) -> binc();
+        } else {
+            die "negative m!";
+        }
+    }
+    $n;
+}
+
 sub bsin {
     # Calculate sinus(x) to N digits. Unless upgrading is in effect, returns the
     # result truncated to an integer.
@@ -4544,6 +4598,7 @@ Math::BigInt - Arbitrary size integer/float math package
   $x->bexp();             # calculate e ** $x where e is Euler's number
   $x->bnok($y);           # x over y (binomial coefficient n over k)
   $x->buparrow($n, $y);   # Knuth's up-arrow notation
+  $x->backermann($y);     # the Ackermann function
   $x->bsin();             # sine
   $x->bcos();             # cosine
   $x->batan();            # inverse tangent
@@ -5438,6 +5493,24 @@ integer representing the number of up-arrows. $n = 0 gives multiplication, $n =
 following illustrates the relation between the first values of $n.
 
 See L<https://en.wikipedia.org/wiki/Knuth%27s_up-arrow_notation>.
+
+=item backermann()
+
+=item ackermann()
+
+    $m -> backermann($n);           # modifies $a
+    $x = $m -> ackermann($n);       # does not modify $a
+
+This method implements the Ackermann function:
+
+             / n + 1              if m = 0
+   A(m, n) = | A(m-1, 1)          if m > 0 and n = 0
+             \ A(m-1, A(m, n-1))  if m > 0 and n > 0
+
+Its value grows rapidly, even for small inputs. For example, A(4, 2) is an
+integer of 19729 decimal digits.
+
+See https://en.wikipedia.org/wiki/Ackermann_function
 
 =item bsin()
 
