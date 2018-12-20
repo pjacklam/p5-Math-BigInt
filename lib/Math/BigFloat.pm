@@ -781,6 +781,165 @@ sub from_bin {
     return $self->bnan();
 }
 
+sub from_ieee754 {
+    my $self    = shift;
+    my $selfref = ref $self;
+    my $class   = $selfref || $self;
+
+    # Don't modify constant (read-only) objects.
+
+    return if $selfref && $self->modify('from_ieee754');
+
+    my $in     = shift;     # input string (or raw bytes)
+    my $format = shift;     # format ("binary32", "decimal64" etc.)
+    my $enc;                # significand encoding (applies only to decimal)
+    my $k;                  # storage width in bits
+    my $b;                  # base
+
+    if ($format =~ /^binary(\d+)\z/) {
+        $k = $1;
+        $b = 2;
+    } elsif ($format =~ /^decimal(\d+)(dpd|bcd)?\z/) {
+        $k = $1;
+        $b = 10;
+        $enc = $2 || 'dpd';     # default is dencely-packed decimals (DPD)
+    } elsif ($format eq 'half') {
+        $k = 16;
+        $b = 2;
+    } elsif ($format eq 'single') {
+        $k = 32;
+        $b = 2;
+    } elsif ($format eq 'double') {
+        $k = 64;
+        $b = 2;
+    } elsif ($format eq 'quadruple') {
+        $k = 128;
+        $b = 2;
+    } elsif ($format eq 'octuple') {
+        $k = 256;
+        $b = 2;
+    } elsif ($format eq 'sexdecuple') {
+        $k = 512;
+        $b = 2;
+    }
+
+    if ($b == 2) {
+
+        # Get the parameters for this format.
+
+        my $p;                      # precision (in bits)
+        my $t;                      # number of bits in significand
+        my $w;                      # number of bits in exponent
+
+        if ($k == 16) {             # binary16 (half-precision)
+            $p = 11;
+            $t = 10;
+            $w =  5;
+        } elsif ($k == 32) {        # binary32 (single-precision)
+            $p = 24;
+            $t = 23;
+            $w =  8;
+        } elsif ($k == 64) {        # binary64 (double-precision)
+            $p = 53;
+            $t = 52;
+            $w = 11;
+        } else {                    # binaryN (quadruple-precision and above)
+            if ($k < 128 || $k != 32 * sprintf('%.0f', $k / 32)) {
+                croak "Number of bits must be 16, 32, 64, or >= 128 and",
+                  " a multiple of 32";
+            }
+            $p = $k - sprintf('%.0f', 4 * log($k) / log(2)) + 13;
+            $t = $p - 1;
+            $w = $k - $t - 1;
+        }
+
+        # The maximum exponent, minimum exponent, and exponent bias.
+
+        my $emax = Math::BigInt -> new(2) -> bpow($w - 1) -> bdec();
+        my $emin = 1 - $emax;
+        my $bias = $emax;
+
+        # Undefined input.
+
+        unless (defined $in) {
+            carp("Input is undefined");
+            return $self -> bzero();
+        }
+
+        # Make sure input string is a string of zeros and ones.
+
+        my $len = CORE::length $in;
+        if (8 * $len == $k) {                   # bytes
+            $in = unpack "B*", $in;
+        } elsif (4 * $len == $k) {              # hexadecimal
+            if ($in =~ /([^\da-f])/i) {
+                croak "Illegal hexadecimal digit '$1'";
+            }
+            $in = unpack "B*", pack "H*", $in;
+        } elsif ($len == $k) {                  # bits
+            if ($in =~ /([^01])/) {
+                croak "Illegal binary digit '$1'";
+            }
+        } else {
+            croak "Unknown input -- $in";
+        }
+
+        # Split bit string into sign, exponent, and mantissa/significand.
+
+        my $sign = substr($in, 0, 1) eq '1' ? '-' : '+';
+        my $expo = $class -> from_bin(substr($in, 1, $w));
+        my $mant = $class -> from_bin(substr($in, $w + 1));
+
+        my $x;
+
+        $expo -> bsub($bias);                   # subtract bias
+
+        if ($expo < $emin) {                    # zero and subnormals
+            if ($mant == 0) {                   # zero
+                $x = $class -> bzero();
+            } else {                            # subnormals
+                # compute (1/$b)**(N) rather than ($b)**(-N)
+                $x = $class -> new("0.5");      # 1/$b
+                $x -> bpow($bias + $t - 1) -> bmul($mant);
+                $x -> bneg() if $sign eq '-';
+            }
+        }
+
+        elsif ($expo > $emax) {                 # inf and nan
+            if ($mant == 0) {                   # inf
+                $x = $class -> binf($sign);
+            } else {                            # nan
+                $x = $class -> bnan();
+            }
+        }
+
+        else {                                  # normals
+            $mant = $class -> new(2) -> bpow($t) -> badd($mant);
+            if ($expo < $t) {
+                # compute (1/$b)**(N) rather than ($b)**(-N)
+                $x = $class -> new("0.5");      # 1/$b
+                $x -> bpow($t - $expo) -> bmul($mant);
+            } else {
+                $x = $class -> new(2);
+                $x -> bpow($expo - $t) -> bmul($mant);
+            }
+            $x -> bneg() if $sign eq '-';
+        }
+
+        if ($selfref) {
+            $self -> {sign} = $x -> {sign};
+            $self -> {_m}   = $x -> {_m};
+            $self -> {_es}  = $x -> {_es};
+            $self -> {_e}   = $x -> {_e};
+        } else {
+            $self = $x;
+        }
+        return $self;
+    }
+
+    croak("The format '$format' is not yet supported.");
+}
+
 sub bzero {
     # create/assign '+0'
 
@@ -4160,6 +4319,178 @@ sub to_bin {
     return $x->{sign} eq '-' ? "-$str" : $str;
 }
 
+sub to_ieee754 {
+    my $x = shift;
+    my $format = shift;
+    my $class = ref $x;
+
+    my $enc;            # significand encoding (applies only to decimal)
+    my $k;              # storage width in bits
+    my $b;              # base
+
+    if ($format =~ /^binary(\d+)\z/) {
+        $k = $1;
+        $b = 2;
+    } elsif ($format =~ /^decimal(\d+)(dpd|bcd)?\z/) {
+        $k = $1;
+        $b = 10;
+        $enc = $2 || 'dpd';     # default is dencely-packed decimals (DPD)
+    } elsif ($format eq 'half') {
+        $k = 16;
+        $b = 2;
+    } elsif ($format eq 'single') {
+        $k = 32;
+        $b = 2;
+    } elsif ($format eq 'double') {
+        $k = 64;
+        $b = 2;
+    } elsif ($format eq 'quadruple') {
+        $k = 128;
+        $b = 2;
+    } elsif ($format eq 'octuple') {
+        $k = 256;
+        $b = 2;
+    } elsif ($format eq 'sexdecuple') {
+        $k = 512;
+        $b = 2;
+    }
+
+    if ($b == 2) {
+
+        # Get the parameters for this format.
+
+        my $p;                      # precision (in bits)
+        my $t;                      # number of bits in significand
+        my $w;                      # number of bits in exponent
+
+        if ($k == 16) {             # binary16 (half-precision)
+            $p = 11;
+            $t = 10;
+            $w =  5;
+        } elsif ($k == 32) {        # binary32 (single-precision)
+            $p = 24;
+            $t = 23;
+            $w =  8;
+        } elsif ($k == 64) {        # binary64 (double-precision)
+            $p = 53;
+            $t = 52;
+            $w = 11;
+        } else {                    # binaryN (quadruple-precition and above)
+            if ($k < 128 || $k != 32 * sprintf('%.0f', $k / 32)) {
+                croak "Number of bits must be 16, 32, 64, or >= 128 and",
+                  " a multiple of 32";
+            }
+            $p = $k - sprintf('%.0f', 4 * log($k) / log(2)) + 13;
+            $t = $p - 1;
+            $w = $k - $t - 1;
+        }
+
+        # The maximum exponent, minimum exponent, and exponent bias.
+
+        my $emax = $class -> new(2) -> bpow($w - 1) -> bdec();
+        my $emin = 1 - $emax;
+        my $bias = $emax;
+
+        # Get numerical sign, exponent, and mantissa/significand for bit
+        # string.
+
+        my $sign = 0;
+        my $expo;
+        my $mant;
+
+        if ($x -> is_nan()) {                   # nan
+            $sign = 1;
+            $expo = $emax -> copy() -> binc();
+            $mant = $class -> new(2) -> bpow($t - 1);
+        } elsif ($x -> is_inf()) {              # inf
+            $sign = 1 if $x -> is_neg();
+            $expo = $emax -> copy() -> binc();
+            $mant = $class -> bzero();
+        } elsif ($x -> is_zero()) {             # zero
+            $expo = $emin -> copy() -> bdec();
+            $mant = $class -> bzero();
+        } else {                                # normal and subnormal
+
+            $sign = 1 if $x -> is_neg();
+
+            # Get the mantissa and exponent in base $b.
+
+            my $binv = $class -> new("0.5");
+            my $b    = $class -> new(2);
+            my $one  = $class -> bone();
+
+            $expo = $class -> bzero();
+            $mant = $x -> copy() -> babs();
+
+            # We need to find the base 2 exponent. First make an estimate of
+            # the base 2 exponent, before adjusting it below. We could skip
+            # this estimation and go straight to the while-loops below, but the
+            # loops are slow, especially when the final exponent is far from
+            # zero and even more so if the number of digits is large. This
+            # initial estimation speeds up the computation dramatically.
+            #
+            #   log2($m * 10**$e) = log10($m + 10**$e) * log(10)/log(2)
+            #                     = (log10($m) + $e) * log(10)/log(2)
+            #                     = (log($m)/log(10) + $e) * log(10)/log(2)
+
+            my ($m, $e) = $x -> nparts();
+            my $ms = $m -> numify();
+            my $es = $e -> numify();
+            $expo = (log(abs($ms))/log(10) + $es) * log(10)/log(2);
+            $expo = int($expo);
+            if ($expo > $emax) {
+                $expo = $emax;
+            } elsif ($expo < $emin) {
+                $expo = $emin;
+            }
+            $expo = $class -> new($expo);
+            $mant -> bmul($binv -> copy() -> bpow($expo));
+
+            # Final adjustment.
+
+            while ($mant >= $b && $expo <= $emax) {
+                $mant -> bmul($binv);
+                $expo -> binc();
+            }
+
+            while ($mant < $one && $expo >= $emin) {
+                $mant -> bmul($b);
+                $expo -> bdec();
+            }
+
+            # Encode as infinity, normal number or subnormal number?
+
+            if ($expo > $emax) {                # overflow => infinity
+                $expo = $emax -> copy() -> binc();
+                $mant = $class -> bzero();
+            } elsif ($expo < $emin) {           # subnormal number
+                my $const = $class -> new(2) -> bpow($t - 1);
+                $mant -> bmul($const);
+                $mant -> bfround(0);
+            } else {                            # normal number
+                $mant -> bdec();                # remove implicit leading bit
+                my $const = $class -> new(2) -> bpow($t);
+                $mant -> bmul($const) -> bfround(0);
+            }
+        }
+
+        $expo -> badd($bias);                   # add bias
+
+        my $signbit = "$sign";
+
+        my $mantbits = $mant -> to_bin();
+        $mantbits = ("0" x ($t - CORE::length($mantbits))) . $mantbits;
+
+        my $expobits = $expo -> to_bin();
+        $expobits = ("0" x ($w - CORE::length($expobits))) . $expobits;
+
+        my $bin = $signbit . $expobits . $mantbits;
+        return pack "B*", $bin;
+    }
+
+    croak("The format '$format' is not yet supported.");
+}
+
 sub as_hex {
     # return number as hexadecimal string (only for integers defined)
 
@@ -4795,6 +5126,7 @@ Math::BigFloat - Arbitrary size floating point math package
   $x = Math::BigFloat->from_oct('0377');        # ditto
   $x = Math::BigFloat->from_bin('0b1.1001p-4'); # from binary
   $x = Math::BigFloat->from_bin('0101');        # ditto
+  $x = Math::BigFloat->from_ieee754($b, "binary64");  # from IEEE-754 bytes
   $x = Math::BigFloat->bzero();                 # create a +0
   $x = Math::BigFloat->bone();                  # create a +1
   $x = Math::BigFloat->bone('-');               # create a -1
@@ -4926,6 +5258,7 @@ Math::BigFloat - Arbitrary size floating point math package
   $x->as_hex();       # as signed hexadecimal string with prefixed 0x
   $x->as_bin();       # as signed binary string with prefixed 0b
   $x->as_oct();       # as signed octal string with prefixed 0
+  $x->to_ieee754($format); # to bytes encoded according to IEEE 754-2008
 
   # Other conversion methods
 
@@ -5106,6 +5439,17 @@ using decimal digits.
 
 If called as an instance method, the value is assigned to the invocand.
 
+=item from_ieee754()
+
+Interpret the input as a value encoded as described in IEEE754-2008.  The input
+can be given as a byte string, hex string or binary string. The input is
+assumed to be in big-endian byte-order.
+
+        # both $dbl and $mbf are 3.141592...
+        $bytes = "\x40\x09\x21\xfb\x54\x44\x2d\x18";
+        $dbl = unpack "d>", $bytes;
+        $mbf = Math::BigFloat -> from_ieee754($bytes, "binary64");
+
 =item bpi()
 
     print Math::BigFloat->bpi(100), "\n";
@@ -5224,6 +5568,29 @@ object that has the same class as $x, a subclass thereof, or a string that
 C<ref($x)-E<gt>new()> can parse to create an object.
 
 In Math::BigFloat, C<as_float()> has the same effect as C<copy()>.
+
+=item to_ieee754()
+
+Encodes the invocand as a byte string in the given format as specified in IEEE
+754-2008. Note that the encoded value is the nearest possible representation of
+the value. This value might not be exactly the same as the value in the
+invocand.
+
+    # $x = 3.1415926535897932385
+    $x = Math::BigFloat -> bpi(30);
+
+    $b = $x -> to_ieee754("binary64");  # encode as 8 bytes
+    $h = unpack "H*", $b;               # "400921fb54442d18"
+
+    # 3.141592653589793115997963...
+    $y = Math::BigFloat -> from_ieee754($h, "binary64");
+
+All binary formats in IEEE 754-2008 are accepted. For convenience, som aliases
+are recognized: "half" for "binary16", "single" for "binary32", "double" for
+"binary64", "quadruple" for "binary128", "octuple" for "binary256", and
+"sexdecuple" for "binary512".
+
+See also L<https://en.wikipedia.org/wiki/IEEE_754>.
 
 =back
 

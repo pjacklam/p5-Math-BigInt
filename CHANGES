@@ -1,5 +1,7 @@
 1.999817 Not Released
 
+ * Add to_ieee745() and from_ieee754().
+
  * Add backermann() and ackermann() for the Ackermann function.
 
  * Add buparrow() and uparrow() for Knuth's up-arrow notation.
