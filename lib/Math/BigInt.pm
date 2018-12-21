@@ -2788,9 +2788,9 @@ sub batan {
     return $upgrade->new($x)->batan(@r) if defined $upgrade;
 
     # calculate the result and truncate it to integer
-    my $t = Math::BigFloat->new($x)->batan(@r);
+    my $tmp = Math::BigFloat->new($x)->batan(@r);
 
-    $x->{value} = $LIB->_new($x->as_int()->bstr());
+    $x->{value} = $LIB->_new($tmp->as_int()->bstr());
     $x->round(@r);
 }
 
