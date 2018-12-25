@@ -2375,7 +2375,7 @@ sub bmodpow {
     $num->{value} = $value;
     $num->{sign}  = $sign;
 
-    return $num;
+    return $num -> round(@r);
 }
 
 sub bpow {
@@ -2497,7 +2497,7 @@ sub blog {
         return $x;
     }
 
-    my ($rc, $exact) = $LIB->_log_int($x->{value}, $base->{value});
+    my ($rc) = $LIB->_log_int($x->{value}, $base->{value});
     return $x->bnan() unless defined $rc; # not possible to take log?
     $x->{value} = $rc;
     $x->round(@r);

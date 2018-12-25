@@ -4701,7 +4701,6 @@ sub _log {
     $over->bmul($u);
     $factor = $class->new(3); $f = $class->new(2);
 
-    my $steps = 0;
     $limit = $class->new("1E-". ($scale-1));
 
     while (3 < 5) {
@@ -5048,7 +5047,6 @@ sub _pow {
     $over = $u->copy();
 
     $limit = $class->new("1E-". ($scale-1));
-    #my $steps = 0;
     while (3 < 5) {
         # we calculate the next term, and add it to the last
         # when the next term is below our limit, it won't affect the outcome
@@ -5062,8 +5060,6 @@ sub _pow {
         $factor->binc();
 
         last if $x->{sign} !~ /^[-+]$/;
-
-        #$steps++;
     }
 
     if ($do_invert) {

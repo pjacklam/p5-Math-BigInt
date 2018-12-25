@@ -1456,7 +1456,6 @@ sub _to_base {
     }
 
     my @collseq = split '', $collseq;
-    my %collseq = map { $_ => $collseq[$_] } 0 .. $#collseq;
 
     my $str   = '';
     my $tmp   = $class -> _copy($x);
