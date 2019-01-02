@@ -3182,7 +3182,7 @@ sub bsqrt {
 
     return $x if $x->modify('bsqrt');
 
-    return $x->bnan() if $x->{sign} !~ /^[+]/; # NaN, -inf or < 0
+    return $x->bnan() if $x->{sign} !~ /^\+/;  # NaN, -inf or < 0
     return $x if $x->{sign} eq '+inf';         # sqrt(inf) == inf
     return $x->round($a, $p, $r) if $x->is_zero() || $x->is_one();
 
@@ -3942,7 +3942,7 @@ sub mantissa {
 
     if ($x->{sign} !~ /^[+-]$/) {
         my $s = $x->{sign};
-        $s =~ s/^[+]//;
+        $s =~ s/^\+//;
         return Math::BigInt->new($s, undef, undef); # -inf, +inf => +inf
     }
     my $m = Math::BigInt->new($LIB->_str($x->{_m}), undef, undef);
@@ -3969,9 +3969,9 @@ sub parts {
 
     if ($x->{sign} !~ /^[+-]$/) {
         my $s = $x->{sign};
-        $s =~ s/^[+]//;
+        $s =~ s/^\+//;
         my $se = $s;
-        $se =~ s/^[-]//;
+        $se =~ s/^-//;
         return ($class->new($s), $class->new($se)); # +inf => inf and -inf, +inf => inf
     }
     my $m = Math::BigInt->bzero();
