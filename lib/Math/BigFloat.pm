@@ -3957,7 +3957,7 @@ sub exponent {
 
     if ($x->{sign} !~ /^[+-]$/) {
         my $s = $x->{sign};
-$s =~ s/^[+-]//;
+        $s =~ s/^[+-]//;
         return Math::BigInt->new($s, undef, undef); # -inf, +inf => +inf
     }
     Math::BigInt->new($x->{_es} . $LIB->_str($x->{_e}), undef, undef);
@@ -3969,9 +3969,9 @@ sub parts {
 
     if ($x->{sign} !~ /^[+-]$/) {
         my $s = $x->{sign};
-$s =~ s/^[+]//;
-my $se = $s;
-$se =~ s/^[-]//;
+        $s =~ s/^[+]//;
+        my $se = $s;
+        $se =~ s/^[-]//;
         return ($class->new($s), $class->new($se)); # +inf => inf and -inf, +inf => inf
     }
     my $m = Math::BigInt->bzero();
@@ -4140,9 +4140,9 @@ sub bstr {
     }
 
     my $es = '0';
-my $len = 1;
-my $cad = 0;
-my $dot = '.';
+    my $len = 1;
+    my $cad = 0;
+    my $dot = '.';
 
     # $x is zero?
     my $not_zero = !($x->{sign} eq '+' && $LIB->_is_zero($x->{_m}));
@@ -4166,8 +4166,8 @@ my $dot = '.';
         } elsif ($e > 0) {
             # expand with zeros
             $es .= '0' x $e;
-$len += $e;
-$cad = 0;
+            $len += $e;
+            $cad = 0;
         }
     }                           # if not zero
 
@@ -4573,7 +4573,7 @@ sub import {
     my $class = shift;
     my $l = scalar @_;
     my $lib = '';
-my @a;
+    my @a;
     my $lib_kind = 'try';
     $IMPORT=1;
     for (my $i = 0; $i < $l ; $i++) {
@@ -4645,7 +4645,7 @@ sub _len_to_steps {
 
     # D = 50 => N => 42, so L = 40 and R = 50
     my $l = 40;
-my $r = $d;
+    my $r = $d;
 
     # Otherwise this does not work under -Mbignum and we do not yet have "no bignum;" :(
     $l = $l->numify if ref($l);
