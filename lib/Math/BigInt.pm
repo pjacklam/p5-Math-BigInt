@@ -235,7 +235,6 @@ my $LIB = 'Math::BigInt::Calc';        # module to do the low level math
                                         # default is Calc.pm
 my $IMPORT = 0;                         # was import() called yet?
                                         # used to make require work
-my %WARN;                               # warn only once for low-level libs
 my %CALLBACKS;                          # callbacks to notify on lib loads
 my $EMU_LIB = 'Math/BigInt/CalcEmu.pm'; # emulate low-level math
 
@@ -4171,48 +4170,14 @@ sub import {
             eval "use $lib qw/@c/;";
         }
         if ($@ eq '') {
-            my $ok = 1;
-            # loaded it ok, see if the api_version() is high enough
-            if ($lib->can('api_version') && $lib->api_version() >= 1.0) {
-                $ok = 0;
-                # api_version matches, check if it really provides anything we need
-                for my $method (qw/
-                                      one two ten
-                                      str num
-                                      add mul div sub dec inc
-                                      acmp len digit is_one is_zero is_even is_odd
-                                      is_two is_ten
-                                      zeros new copy check
-                                      from_hex from_oct from_bin as_hex as_bin as_oct
-                                      rsft lsft xor and or
-                                      mod sqrt root fac pow modinv modpow log_int gcd
-                                  /) {
-                    if (!$lib->can("_$method")) {
-                        if (($WARN{$lib} || 0) < 2) {
-                            carp("$lib is missing method '_$method'");
-                            $WARN{$lib} = 1; # still warn about the lib
-                        }
-                        $ok++;
-                        last;
-                    }
-                }
+            $LIB = $lib;
+            if ($warn_or_die > 0 && ref($l)) {
+                my $msg = "Math::BigInt: couldn't load specified"
+                        . " math lib(s), fallback to $lib";
+                carp($msg)  if $warn_or_die == 1;
+                croak($msg) if $warn_or_die == 2;
             }
-            if ($ok == 0) {
-                $LIB = $lib;
-                if ($warn_or_die > 0 && ref($l)) {
-                    my $msg = "Math::BigInt: couldn't load specified"
-                            . " math lib(s), fallback to $lib";
-                    carp($msg)  if $warn_or_die == 1;
-                    croak($msg) if $warn_or_die == 2;
-                }
-                last;           # found a usable one, break
-            } else {
-                if (($WARN{$lib} || 0) < 2) {
-                    my $ver = eval "\$$lib\::VERSION" || 'unknown';
-                    carp("Cannot load outdated $lib v$ver, please upgrade");
-                    $WARN{$lib} = 2; # never warn again
-                }
-            }
+            last;               # found a usable one, break
         }
     }
     if ($LIB eq '') {
