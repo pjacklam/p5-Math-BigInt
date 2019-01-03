@@ -3510,7 +3510,7 @@ sub bdigitsum {
     my $x = shift;
 
     return $x           if $x -> is_nan();
-    return $x -> babs() if $x -> is_inf();
+    return $x -> bnan() if $x -> is_inf();
 
     $x -> {value} = $LIB -> _digitsum($x -> {value});
     $x -> {sign}  = '+';
@@ -3523,7 +3523,7 @@ sub digitsum {
     my $class = ref $x;
 
     return $class -> bnan() if $x -> is_nan();
-    return $class -> binf() if $x -> is_inf();
+    return $class -> bnan() if $x -> is_inf();
 
     my $y = $class -> bzero();
     $y -> {value} = $LIB -> _digitsum($x -> {value});
