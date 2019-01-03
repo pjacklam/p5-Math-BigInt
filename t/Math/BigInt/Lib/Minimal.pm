@@ -17,11 +17,6 @@ my $BASE_LEN = 9;
 my $BASE     = 0 + ("1" . ("0" x $BASE_LEN));
 my $MAX_VAL  = $BASE - 1;
 
-# Do we need api_version() at all, now that we have a virtual parent class that
-# will provide any missing methods? Fixme!
-
-sub api_version () { 2; }
-
 sub _new {
     my ($class, $str) = @_;
     croak "Invalid input string '$str'" unless $str =~ /^([1-9]\d*|0)\z/;

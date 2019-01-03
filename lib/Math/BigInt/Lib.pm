@@ -251,13 +251,6 @@ use overload
 
   ;
 
-# Do we need api_version() at all, now that we have a virtual parent class that
-# will provide any missing methods? Fixme!
-
-sub api_version () {
-    croak "@{[(caller 0)[3]]} method not implemented";
-}
-
 sub _new {
     croak "@{[(caller 0)[3]]} method not implemented";
 }
@@ -1943,11 +1936,8 @@ comparison routines.
 
 =item CLASS-E<gt>api_version()
 
-Return API version as a Perl scalar, 1 for Math::BigInt v1.70, 2 for
-Math::BigInt v1.83.
-
-This method is no longer used. Methods that are not implemented by a subclass
-will be inherited from this class.
+This method is no longer used and can be omitted. Methods that are not
+implemented by a subclass will be inherited from this class.
 
 =back
 

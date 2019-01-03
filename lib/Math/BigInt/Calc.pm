@@ -35,9 +35,6 @@ our @ISA = ('Math::BigInt::Lib');
 ##############################################################################
 # global constants, flags and accessory
 
-# announce that we are compatible with MBI v1.83 and up
-sub api_version () { 2; }
-
 # constants for easier life
 my ($BASE, $BASE_LEN, $RBASE, $MAX_VAL);
 my ($AND_BITS, $XOR_BITS, $OR_BITS);
