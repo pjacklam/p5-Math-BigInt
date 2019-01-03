@@ -236,7 +236,6 @@ my $LIB = 'Math::BigInt::Calc';        # module to do the low level math
 my $IMPORT = 0;                         # was import() called yet?
                                         # used to make require work
 my %CALLBACKS;                          # callbacks to notify on lib loads
-my $EMU_LIB = 'Math/BigInt/CalcEmu.pm'; # emulate low-level math
 
 ##############################################################################
 # the old code had $rnd_mode, so we need to support it, too
