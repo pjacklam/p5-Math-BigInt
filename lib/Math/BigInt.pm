@@ -4107,10 +4107,9 @@ sub objectify {
 sub import {
     my $class = shift;
     $IMPORT++;                  # remember we did import()
-    my @a;
-    my $l = scalar @_;
+    my @a;                      # unrecognized arguments
     my $warn_or_die = 0;        # 0 - no warn, 1 - warn, 2 - die
-    for (my $i = 0; $i < $l ; $i++) {
+    for (my $i = 0; $i <= $#_ ; $i++) {
         if ($_[$i] eq ':constant') {
             # this causes overlord er load to step in
             overload::constant
@@ -4123,7 +4122,9 @@ sub import {
         } elsif ($_[$i] =~ /^(lib|try|only)\z/) {
             # this causes a different low lib to take care...
             $LIB = $_[$i+1] || '';
-            # lib => 1 (warn on fallback), try => 0 (no warn), only => 2 (die on fallback)
+            # try  => 0 (no warn)
+            # lib  => 1 (warn on fallback)
+            # only => 2 (die on fallback)
             $warn_or_die = 1 if $_[$i] eq 'lib';
             $warn_or_die = 2 if $_[$i] eq 'only';
             $i++;
@@ -4140,35 +4141,26 @@ sub import {
     # try to load core math lib
     my @c = split /\s*,\s*/, $LIB;
     foreach (@c) {
-        $_ =~ tr/a-zA-Z0-9://cd; # limit to sane characters
+        tr/a-zA-Z0-9://cd;      # limit to sane characters
     }
     push @c, \'Calc'            # if all fail, try these
       if $warn_or_die < 2;      # but not for "only"
-    $LIB = '';                 # signal error
+    $LIB = '';                  # signal error
     foreach my $l (@c) {
         # fallback libraries are "marked" as \'string', extract string if nec.
         my $lib = $l;
         $lib = $$l if ref($l);
 
-        next if ($lib || '') eq '';
+        next unless defined($lib) && CORE::length($lib);
         $lib = 'Math::BigInt::'.$lib if $lib !~ /^Math::BigInt/i;
         $lib =~ s/\.pm$//;
-        if ($] < 5.006) {
-            # Perl < 5.6.0 dies with "out of memory!" when eval("") and ':constant' is
-            # used in the same script, or eval("") inside import().
-            my @parts = split /::/, $lib; # Math::BigInt => Math BigInt
-            my $file = pop @parts;
-            $file .= '.pm';     # BigInt => BigInt.pm
-            require File::Spec;
-            $file = File::Spec->catfile (@parts, $file);
-            eval {
-                require "$file";
-                $lib->import(@c);
-            }
-        } else {
-            eval "use $lib qw/@c/;";
-        }
+        my @parts = split /::/, $lib;   # Math::BigInt => Math BigInt
+        $parts[-1] .= '.pm';            # BigInt => BigInt.pm
+        require File::Spec;
+        my $file = File::Spec->catfile(@parts);
+        eval { require $file; };
         if ($@ eq '') {
+            $lib->import();
             $LIB = $lib;
             if ($warn_or_die > 0 && ref($l)) {
                 my $msg = "Math::BigInt: couldn't load specified"
