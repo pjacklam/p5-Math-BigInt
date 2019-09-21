@@ -47,9 +47,7 @@ sub _base_len {
 
     my ($class, $b, $int) = @_;
     if (defined $b) {
-        # avoid redefinitions
-        undef &_mul;
-        undef &_div;
+        no warnings "redefine";
 
         if ($] >= 5.008 && $int && $b > 7) {
             $BASE_LEN = $b;
