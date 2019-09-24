@@ -25,6 +25,8 @@
  * Extend the default collation sequence used by to_base() and from_base() to
    all the 94 printable ASCII characters except blank/space.
 
+ * Slightly more robust t/01load.t.
+
 1.999816 2018-10-26
 
  * bnok() for Math::BigInt and Math::BigFloat now support the full Kronenburg
