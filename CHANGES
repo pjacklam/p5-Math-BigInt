@@ -1,5 +1,14 @@
 1.999817 Not Released
 
+ * Avoid non-integers in intermediate computations in Math::BigInt::Calc. This
+   causes errors due to rounding issues, e.g., 47265625999999999 / 1000000000
+   is 47265626 with double precision.
+
+ * Remove api_version() and the corresponding test file. There is no need to
+   check which methods are supported by a backend library now that each backend
+   library is a subclass of Math::BigInt::Lib. Methods not provided in the
+   backend library are provided by the parent class.
+
  * Add to_ieee745() and from_ieee754().
 
  * Add backermann() and ackermann() for the Ackermann function.
@@ -26,6 +35,10 @@
    all the 94 printable ASCII characters except blank/space.
 
  * Slightly more robust t/01load.t.
+
+ * Remove unused variables.
+
+ * Miscellaneous code cleanup.
 
 1.999816 2018-10-26
 
