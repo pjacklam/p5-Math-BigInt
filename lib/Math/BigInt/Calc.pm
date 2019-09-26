@@ -881,7 +881,7 @@ sub _div_use_div_64 {
         my $d = bless [], $c;
         if ($dd != 1) {
             my $car = 0;
-            my ($prd, $rem);
+            my $prd;
             for my $xi (reverse @$x) {
                 $prd = $car * $BASE + $xi;
                 $car = $prd - ($tmp = $prd / $dd) * $dd;
