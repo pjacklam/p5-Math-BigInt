@@ -34,6 +34,8 @@
  * Extend the default collation sequence used by to_base() and from_base() to
    all the 94 printable ASCII characters except blank/space.
 
+ * Make new() in Math::BigFloat handle octal floating point numbers.
+
  * Slightly more robust t/01load.t.
 
  * Remove unused variables.
