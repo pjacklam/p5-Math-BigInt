@@ -28,8 +28,6 @@ require Exporter;
 our @ISA = qw(Exporter);
 our @EXPORT_OK = qw(objectify bgcd blcm);
 
-my $class = "Math::BigInt";
-
 # Inside overload, the first arg is always an object. If the original code had
 # it reversed (like $x = 2 * $y), then the third parameter is true.
 # In some cases (like add, $x = $x + 2 is the same as $x = 2 + $x) this makes
@@ -112,7 +110,6 @@ use overload
 
   '<=>'   =>      sub { my $cmp = $_[0] -> bcmp($_[1]);
                         defined($cmp) && $_[2] ? -$cmp : $cmp; },
-
 
   'cmp'   =>      sub { $_[2] ? "$_[1]" cmp $_[0] -> bstr()
                               : $_[0] -> bstr() cmp "$_[1]"; },
@@ -1136,7 +1133,7 @@ sub bpi {
     if (@_ == 1) {
         # called like Math::BigInt::bpi(10);
         $n = $self;
-        $self = $class;
+        $self = __PACKAGE__;
     }
     $self = ref($self) if ref($self);
 
@@ -3293,7 +3290,7 @@ sub bround {
     # do not return $x->bnorm(), but $x
 
     my $x = shift;
-    $x = $class->new($x) unless ref $x;
+    $x = __PACKAGE__->new($x) unless ref $x;
     my ($scale, $mode) = $x->_scale_a(@_);
     return $x if !defined $scale || $x->modify('bround'); # no-op
 
@@ -3411,7 +3408,7 @@ sub fround {
     # Exists to make life easier for switch between MBF and MBI (should we
     # autoload fxxx() like MBF does for bxxx()?)
     my $x = shift;
-    $x = $class->new($x) unless ref $x;
+    $x = __PACKAGE__->new($x) unless ref $x;
     $x->bround(@_);
 }
 
@@ -3824,7 +3821,7 @@ sub bdstr {
 sub to_hex {
     # return as hex string, with prefixed 0x
     my $x = shift;
-    $x = $class->new($x) if !ref($x);
+    $x = __PACKAGE__->new($x) if !ref($x);
 
     return $x->bstr() if $x->{sign} !~ /^[+-]$/; # inf, nan etc
 
@@ -3835,7 +3832,7 @@ sub to_hex {
 sub to_oct {
     # return as octal string, with prefixed 0
     my $x = shift;
-    $x = $class->new($x) if !ref($x);
+    $x = __PACKAGE__->new($x) if !ref($x);
 
     return $x->bstr() if $x->{sign} !~ /^[+-]$/; # inf, nan etc
 
@@ -3846,7 +3843,7 @@ sub to_oct {
 sub to_bin {
     # return as binary string, with prefixed 0b
     my $x = shift;
-    $x = $class->new($x) if !ref($x);
+    $x = __PACKAGE__->new($x) if !ref($x);
 
     return $x->bstr() if $x->{sign} !~ /^[+-]$/; # inf, nan etc
 
@@ -3857,7 +3854,7 @@ sub to_bin {
 sub to_bytes {
     # return a byte string
     my $x = shift;
-    $x = $class->new($x) if !ref($x);
+    $x = __PACKAGE__->new($x) if !ref($x);
 
     croak("to_bytes() requires a finite, non-negative integer")
         if $x -> is_neg() || ! $x -> is_int();
@@ -3871,13 +3868,13 @@ sub to_bytes {
 sub to_base {
     # return a base anything string
     my $x = shift;
-    $x = $class->new($x) if !ref($x);
+    $x = __PACKAGE__->new($x) if !ref($x);
 
     croak("the value to convert must be a finite, non-negative integer")
       if $x -> is_neg() || !$x -> is_int();
 
     my $base = shift;
-    $base = $class->new($base) unless ref($base);
+    $base = __PACKAGE__->new($base) unless ref($base);
 
     croak("the base must be a finite integer >= 2")
       if $base < 2 || ! $base -> is_int();
@@ -3901,7 +3898,7 @@ sub to_base {
 sub as_hex {
     # return as hex string, with prefixed 0x
     my $x = shift;
-    $x = $class->new($x) if !ref($x);
+    $x = __PACKAGE__->new($x) if !ref($x);
 
     return $x->bstr() if $x->{sign} !~ /^[+-]$/; # inf, nan etc
 
@@ -3912,7 +3909,7 @@ sub as_hex {
 sub as_oct {
     # return as octal string, with prefixed 0
     my $x = shift;
-    $x = $class->new($x) if !ref($x);
+    $x = __PACKAGE__->new($x) if !ref($x);
 
     return $x->bstr() if $x->{sign} !~ /^[+-]$/; # inf, nan etc
 
@@ -3923,7 +3920,7 @@ sub as_oct {
 sub as_bin {
     # return as binary string, with prefixed 0b
     my $x = shift;
-    $x = $class->new($x) if !ref($x);
+    $x = __PACKAGE__->new($x) if !ref($x);
 
     return $x->bstr() if $x->{sign} !~ /^[+-]$/; # inf, nan etc
 
@@ -3940,7 +3937,7 @@ sub as_bin {
 sub numify {
     # Make a Perl scalar number from a Math::BigInt object.
     my $x = shift;
-    $x = $class->new($x) unless ref $x;
+    $x = __PACKAGE__->new($x) unless ref $x;
 
     if ($x -> is_nan()) {
         require Math::Complex;
@@ -3989,7 +3986,7 @@ sub objectify {
     # Check the context.
 
     unless (wantarray) {
-        croak("${class}::objectify() needs list context");
+        croak(__PACKAGE__ . "::objectify() needs list context");
     }
 
     # Get the number of arguments to objectify.
@@ -4340,7 +4337,7 @@ sub _split {
 sub _trailing_zeros {
     # return the amount of trailing zeros in $x (as scalar)
     my $x = shift;
-    $x = $class->new($x) unless ref $x;
+    $x = __PACKAGE__->new($x) unless ref $x;
 
     return 0 if $x->{sign} !~ /^[+-]$/; # NaN, inf, -inf etc
 

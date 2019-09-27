@@ -28,8 +28,6 @@ our @EXPORT_OK  = qw/bpi/;
 our ($AUTOLOAD, $accuracy, $precision, $div_scale, $round_mode, $rnd_mode,
      $upgrade, $downgrade, $_trap_nan, $_trap_inf);
 
-my $class = "Math::BigFloat";
-
 use overload
 
   # overload key: with_assign
@@ -273,7 +271,7 @@ sub AUTOLOAD {
     my $name = $AUTOLOAD;
 
     $name =~ s/(.*):://;        # split package
-    my $c = $1 || $class;
+    my $c = $1 || __PACKAGE__;
     no strict 'refs';
     $c->import() if $IMPORT == 0;
     if (!_method_alias($name)) {
