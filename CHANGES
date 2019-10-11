@@ -1,4 +1,4 @@
-1.999817 Not Released
+1.999817 2019-10-11
 
  * Avoid non-integers in intermediate computations in Math::BigInt::Calc. This
    causes errors due to rounding issues, e.g., 47265625999999999 / 1000000000
