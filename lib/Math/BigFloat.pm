@@ -4616,7 +4616,7 @@ sub numify {
     }
 
     # Create a string and let Perl's atoi()/atof() handle the rest.
-    return 0 + $x -> bsstr();
+    return 0 + $x -> bnstr();
 }
 
 ###############################################################################
