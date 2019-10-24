@@ -945,6 +945,46 @@ sub from_base {
     return $self
 }
 
+sub from_base_num {
+    my $self    = shift;
+    my $selfref = ref $self;
+    my $class   = $selfref || $self;
+
+    # Don't modify constant (read-only) objects.
+
+    return if $selfref && $self->modify('from_base_num');
+
+    # Make sure we have an array of non-negative, finite, numerical objects.
+
+    my $nums = shift;
+    $nums = [ @$nums ];         # create new reference
+
+    for my $i (0 .. $#$nums) {
+        # Make sure we have an object.
+        $nums -> [$i] = $class -> new($nums -> [$i])
+          unless ref($nums -> [$i]) && $nums -> [$i] -> isa($class);
+        # Make sure we have a finite, non-negative integer.
+        croak "the elements must be finite non-negative integers"
+          if $nums -> [$i] -> is_neg() || ! $nums -> [$i] -> is_int();
+    }
+
+    my $base = shift;
+    $base = $class -> new($base) unless ref($base) && $base -> isa($class);
+
+    # If called as a class method, initialize a new object.
+
+    $self = $class -> bzero() unless $selfref;
+
+    croak("from_base_num() requires a newer version of the $LIB library.")
+      unless $LIB->can('_from_base_num');
+
+    $self -> {sign}  = '+';
+    $self -> {value} = $LIB -> _from_base_num([ map { $_ -> {value} } @$nums ],
+                                           $base -> {value});
+
+    return $self;
+}
+
 sub bzero {
     # create/assign '+0'
 
@@ -3895,6 +3935,37 @@ sub to_base {
     return $LIB->_to_base($x->{value}, $base -> {value}, @_ ? shift() : ());
 }
 
+sub to_base_num {
+    my $x = shift;
+    my $class = ref $x;
+
+    # return a base anything string
+    croak("the value to convert must be a finite non-negative integer")
+      if $x -> is_neg() || !$x -> is_int();
+
+    my $base = shift;
+    $base = $class -> new($base) unless ref $base;
+
+    croak("the base must be a finite integer >= 2")
+      if $base < 2 || ! $base -> is_int();
+
+    croak("to_base() requires a newer version of the $LIB library.")
+      unless $LIB->can('_to_base');
+
+    # Get a reference to an array of library thingies, and replace each element
+    # with a Math::BigInt object using that thingy.
+
+    my $vals = $LIB -> _to_base_num($x->{value}, $base -> {value});
+
+    for my $i (0 .. $#$vals) {
+        my $x = $class -> bzero();
+        $x -> {value} = $vals -> [$i];
+        $vals -> [$i] = $x;
+    }
+
+    return $vals;
+}
+
 sub as_hex {
     # return as hex string, with prefixed 0x
     my $x = shift;
@@ -4483,6 +4554,7 @@ Math::BigInt - Arbitrary size integer/float math package
   $x = Math::BigInt->from_oct('377');       # from octal
   $x = Math::BigInt->from_bin('1101');      # from binary
   $x = Math::BigInt->from_base('why', 36);  # from any base
+  $x = Math::BigInt->from_base_num([1, 0], 2);  # from any base
   $x = Math::BigInt->bzero();               # create a +0
   $x = Math::BigInt->bone();                # create a +1
   $x = Math::BigInt->bone('-');             # create a -1
@@ -4619,6 +4691,7 @@ Math::BigInt - Arbitrary size integer/float math package
   $x->to_oct();       # as signed octal string
   $x->to_bytes();     # as byte string
   $x->to_base($b);    # as string in any base
+  $x->to_base_num($b);   # as array of integers in any base
 
   $x->as_hex();       # as signed hexadecimal string with prefixed 0x
   $x->as_bin();       # as signed binary string with prefixed 0b
@@ -4968,6 +5041,16 @@ are equivalent
 
     $x = Math::BigInt->from_base("100", 2, "01");   # $x is 4
     $x = Math::BigInt->from_base("|--", 2, "-|");   # $x is 4
+
+=item from_base_num()
+
+Returns a new Math::BigInt object given an array of values and a base. This
+method is equivalent to C<from_base()>, but works on numbers in an array rather
+than characters in a string. Unlike C<from_base()>, all input values may be
+arbitrarily large.
+
+    $x = Math::BigInt->from_base_num([1, 1, 0, 1], 2)     # $x is 13
+    $x = Math::BigInt->from_base_num([3, 125, 39], 128)   # $x is 65191
 
 =item bzero()
 
@@ -5953,6 +6036,19 @@ Here are some more examples
     $x = Math::BigInt->new("4")->to_base(2, "-|");  # returns "|--"
 
 See from_base() for information and examples.
+
+=item to_base_num()
+
+Converts the given number to the given base. This method is equivalent to
+C<_to_base()>, but returns numbers in an array rather than characters in a
+string. In the output, the first element is the most significant. Unlike
+C<_to_base()>, all input values may be arbitrarily large.
+
+    $x = Math::BigInt->new(13);
+    $x->to_base_num(2);                         # returns [1, 1, 0, 1]
+
+    $x = Math::BigInt->new(65191);
+    $x->to_base_num(128);                       # returns [3, 125, 39]
 
 =item as_hex()
 

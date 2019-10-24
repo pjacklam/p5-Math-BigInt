@@ -1465,6 +1465,36 @@ sub _to_base {
     return $str;
 }
 
+sub _to_base_num {
+    # Convert the number to an array of integers in any base.
+    my ($class, $x, $base) = @_;
+
+    # Make sure the base is an object and >= 2.
+    $base = $class -> _new($base) unless ref($base);
+    my $two = $class -> _two();
+    croak "base must be >= 2" unless $class -> _acmp($base, $two) >= 0;
+
+    my $out   = [];
+    my $xcopy = $class -> _copy($x);
+    my $rem;
+
+    # Do all except the last (most significant) element.
+    until ($class -> _acmp($xcopy, $base) < 0) {
+        ($xcopy, $rem) = $class -> _div($xcopy, $base);
+        unshift @$out, $rem;
+    }
+
+    # Do the last (most significant element).
+    unless ($class -> _is_zero($xcopy)) {
+        unshift @$out, $xcopy;
+    }
+
+    # $out is empty if $x is zero.
+    unshift @$out, $class -> _zero() unless @$out;
+
+    return $out;
+}
+
 sub _from_hex {
     # Convert a string of hexadecimal digits to a number.
 
@@ -1617,6 +1647,32 @@ sub _from_base {
         $x = $class -> _mul($x, $base);
         my $num = $class -> _new($collseq{$chr});
         $x = $class -> _add($x, $num);
+    }
+
+    return $x;
+}
+
+sub _from_base_num {
+    # Convert an array in the given base to a number.
+    my ($class, $in, $base) = @_;
+
+    # Make sure the base is an object and >= 2.
+    $base = $class -> _new($base) unless ref($base);
+    my $two = $class -> _two();
+    croak "base must be >= 2" unless $class -> _acmp($base, $two) >= 0;
+
+    # @$in = map { ref($_) ? $_ : $class -> _new($_) } @$in;
+
+    my $ele = $in -> [0];
+
+    $ele = $class -> _new($ele) unless ref($ele);
+    my $x = $class -> _copy($ele);
+
+    for my $i (1 .. $#$in) {
+        $x = $class -> _mul($x, $base);
+        $ele = $in -> [$i];
+        $ele = $class -> _new($ele) unless ref($ele);
+        $x = $class -> _add($x, $ele);
     }
 
     return $x;
@@ -2035,6 +2091,16 @@ Some more examples, all returning 250:
     $x = $class -> _from_base("42", 62)
     $x = $class -> _from_base("2!", 94)
 
+=item CLASS-E<gt>_from_base_num(ARRAY, BASE)
+
+Returns an object given an array of values and a base. This method is
+equivalent to C<_from_base()>, but works on numbers in an array rather than
+characters in a string. Unlike C<_from_base()>, all input values may be
+arbitrarily large.
+
+    $x = $class -> _from_base_num([1, 1, 0, 1], 2)    # $x is 13
+    $x = $class -> _from_base_num([3, 125, 39], 128)  # $x is 65191
+
 =back
 
 =head3 Mathematical functions
@@ -2267,6 +2333,16 @@ COLLSEQ.
     $str = $class -> _to_base($val, 2, "-|")  # $str is "|-----"
 
 See _from_base() for more information.
+
+=item CLASS-E<gt>_to_base_num(OBJ, BASE)
+
+Converts the given number to the given base. This method is equivalent to
+C<_to_base()>, but returns numbers in an array rather than characters in a
+string. In the output, the first element is the most significant. Unlike
+C<_to_base()>, all input values may be arbitrarily large.
+
+    $x = $class -> _to_base_num(13, 2)        # $x is [1, 1, 0, 1]
+    $x = $class -> _to_base_num(65191, 128)   # $x is [3, 125, 39]
 
 =item CLASS-E<gt>_as_bin(OBJ)
 
