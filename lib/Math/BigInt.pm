@@ -5629,12 +5629,12 @@ to and including C<$x>.
 
 =item bdfac()
 
-    $x->bdfac();                # double factorial of $x (1*2*3*4*..*$x)
+    $x->bdfac();                # double factorial of $x
 
-Returns the double factorial of C<$x>. If C<$x> is an even integer, returns the
-product of all positive, even integers up to and including C<$x>, i.e.,
-2*4*6*...*$x. If C<$x> is an odd integer, returns the product of all positive,
-odd integers, i.e., 1*3*5*...*$x.
+Returns the double factorial of C<$x>, i.e., $x*($x-2)*($x-4)*... If C<$x> is
+an even integer, the double factorial is the product of all positive, even
+integers up to and including C<$x>, i.e., 2*4*6*...*$x. If C<$x> is an odd
+integer, it is the product of all positive, odd integers, i.e., 1*3*5*...*$x.
 
 =item bfib()
 

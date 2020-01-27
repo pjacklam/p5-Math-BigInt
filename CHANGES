@@ -1,3 +1,7 @@
+1.999819 Not Released
+
+ * Fix error in documentation of bdfac(), the double factorial.
+
 1.999818 2019-10-20
 
  * Fix CPAN RT #130736 regarding numify() on a Math::BigFloat with a large
