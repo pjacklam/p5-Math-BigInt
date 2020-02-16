@@ -4042,7 +4042,7 @@ sub sparts {
 
     # Finite number.
 
-    my $mant = $class -> bzero();
+    my $mant = $self -> copy() -> bzero();
     $mant -> {sign} = $self -> {sign};
     $mant -> {_m}   = $LIB->_copy($self -> {_m});
     return $mant unless wantarray;
