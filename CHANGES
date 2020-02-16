@@ -740,6 +740,45 @@ Fixes:
    (Dana Jacobsen) for the patch. This was not intended to be added before the
    next release, but was included in this release by accident.
 
+1.9997_11 2015-12-10 pjacklam
+
+This release introduces no changes in the library code, i.e., the .pm files in
+the 'lib' directory, but there are a lot of changes in the test files. Since
+there are so many changes, I let this be a development release.
+
+ * Add 'use strict;' and 'use warnings;' to all test files.
+
+ * Reformat code in the test files according to the "perlstyle" manual page.
+   This makes the code a lot easier to read -- for me, anyway.
+
+ * Decrement required version of Perl from v5.6.2 to v5.6.1. All tests pass
+   when running the test suite with Perl 5.6.1 on Cygwin.
+
+ * Replace "use vars ..." with "our ..." in test files.
+
+ * Replace "BEGIN { unshift @INC, 't'; }" with "use lib 't';" in test files.
+
+ * Use "our $x; $x = ...;" rather than "our $x = ...;" since the latter causes
+   Perl 5.6.1 to complain about variables only used once.
+
+ * Add comment to all tests. Now the tests no longer says just "ok 123", but
+   rather "ok 123 - $x->blog(2)" etc. This makes it easier to identify failed
+   tests, especially in the smoke testing reports.
+
+ * Fix various flawed tests, e.g., ok($x, 2) was used testing whether $x was 2.
+
+ * Use the skip() feature of Test::More for skipping tests.
+
+ * Use more descriptive variable names in test files.
+
+ * Remove unused variables in test files.
+
+ * Move variable declarations to limit their scope in test files.
+
+ * Remove trailing whitespace in test files.
+
+ * Wrap (most) lines to fit 80 columns in test files.
+
 1.999710 2015-11-12 pjacklam
 
  * New method Math::BigFloat -> from_hex() which supports hexadecimal floating
@@ -986,45 +1025,6 @@ Fixes:
   * Increment test counts as needed for the new tests in the t/*.inc files.
  inc/Module/Install*
   * Upgrade bundled Module::Install from version 1.01 to version 1.08.
-
-1.9997_11 2012-12-10 pjacklam
-
-This release introduces no changes in the library code, i.e., the .pm files in
-the 'lib' directory, but there are a lot of changes in the test files. Since
-there are so many changes, I let this be a development release.
-
- * Add 'use strict;' and 'use warnings;' to all test files.
-
- * Reformat code in the test files according to the "perlstyle" manual page.
-   This makes the code a lot easier to read -- for me, anyway.
-
- * Decrement required version of Perl from v5.6.2 to v5.6.1. All tests pass
-   when running the test suite with Perl 5.6.1 on Cygwin.
-
- * Replace "use vars ..." with "our ..." in test files.
-
- * Replace "BEGIN { unshift @INC, 't'; }" with "use lib 't';" in test files.
-
- * Use "our $x; $x = ...;" rather than "our $x = ...;" since the latter causes
-   Perl 5.6.1 to complain about variables only used once.
-
- * Add comment to all tests. Now the tests no longer says just "ok 123", but
-   rather "ok 123 - $x->blog(2)" etc. This makes it easier to identify failed
-   tests, especially in the smoke testing reports.
-
- * Fix various flawed tests, e.g., ok($x, 2) was used testing whether $x was 2.
-
- * Use the skip() feature of Test::More for skipping tests.
-
- * Use more descriptive variable names in test files.
-
- * Remove unused variables in test files.
-
- * Move variable declarations to limit their scope in test files.
-
- * Remove trailing whitespace in test files.
-
- * Wrap (most) lines to fit 80 columns in test files.
 
 1.997 2011-09-04 pjacklam
 
