@@ -2935,7 +2935,7 @@ sub bfac {
     my ($class, $x, @r) = ref($_[0]) ? (undef, @_) : objectify(1, @_);
 
     return $x if $x->modify('bfac') || $x->{sign} eq '+inf'; # inf => inf
-    return $x->bnan() if $x->{sign} ne '+'; # NaN, <0 etc => NaN
+    return $x->bnan() if $x->{sign} ne '+'; # NaN, <0 => NaN
 
     $x->{value} = $LIB->_fac($x->{value});
     $x->round(@r);
@@ -2946,12 +2946,51 @@ sub bdfac {
     my ($class, $x, @r) = ref($_[0]) ? (undef, @_) : objectify(1, @_);
 
     return $x if $x->modify('bdfac') || $x->{sign} eq '+inf'; # inf => inf
-    return $x->bnan() if $x->{sign} ne '+'; # NaN, <0 etc => NaN
+    return $x->bnan() if $x->is_nan() || $x <= -2;
+    return $x->bone() if $x <= 1;
 
     croak("bdfac() requires a newer version of the $LIB library.")
         unless $LIB->can('_dfac');
 
     $x->{value} = $LIB->_dfac($x->{value});
+    $x->round(@r);
+}
+
+sub btfac {
+    # compute triple factorial, modify $x in place
+    my ($class, $x, @r) = objectify(1, @_);
+
+    return $x if $x->modify('btfac') || $x->{sign} eq '+inf'; # inf => inf
+
+    return $x->bnan() if $x->is_nan();
+
+    my $k = $class -> new("3");
+    return $x->bnan() if $x <= -$k;
+
+    my $one = $class -> bone();
+    return $x->bone() if $x <= $one;
+
+    my $f = $x -> copy();
+    while ($f -> bsub($k) > $one) {
+        $x -> bmul($f);
+    }
+    $x->round(@r);
+}
+
+sub bmfac {
+    # compute multi-factorial
+    my ($class, $x, $k, @r) = objectify(2, @_);
+
+    return $x if $x->modify('bmfac') || $x->{sign} eq '+inf';
+    return $x->bnan() if $x->is_nan() || $k->is_nan() || $k < 1 || $x <= -$k;
+
+    my $one = $class -> bone();
+    return $x->bone() if $x <= $one;
+
+    my $f = $x -> copy();
+    while ($f -> bsub($k) > $one) {
+        $x -> bmul($f);
+    }
     $x->round(@r);
 }
 
@@ -4631,6 +4670,9 @@ Math::BigInt - Arbitrary size integer/float math package
   $x->bsqrt();            # calculate square root
   $x->broot($y);          # $y'th root of $x (e.g. $y == 3 => cubic root)
   $x->bfac();             # factorial of $x (1*2*3*4*..$x)
+  $x->bdfac();            # double factorial of $x ($x*($x-2)*($x-4)*...)
+  $x->btfac();            # triple factorial of $x ($x*($x-3)*($x-6)*...)
+  $x->bmfac($k);          # $k'th multi-factorial of $x ($x*($x-$k)*...)
 
   $x->blsft($n);          # left shift $n places in base 2
   $x->blsft($n,$b);       # left shift $n places in base $b
@@ -5622,19 +5664,35 @@ Calculates the N'th root of C<$x>.
 
 =item bfac()
 
-    $x->bfac();                 # factorial of $x (1*2*3*4*..*$x)
+    $x->bfac();             # factorial of $x
 
-Returns the factorial of C<$x>, i.e., the product of all positive integers up
-to and including C<$x>.
+Returns the factorial of C<$x>, i.e., $x*($x-1)*($x-2)*...*2*1, the product of
+all positive integers up to and including C<$x>. C<$x> must be > -1. The
+factorial of N is commonly written as N!, or N!1, when using the multifactorial
+notation.
 
 =item bdfac()
 
     $x->bdfac();                # double factorial of $x
 
-Returns the double factorial of C<$x>, i.e., $x*($x-2)*($x-4)*... If C<$x> is
-an even integer, the double factorial is the product of all positive, even
-integers up to and including C<$x>, i.e., 2*4*6*...*$x. If C<$x> is an odd
-integer, it is the product of all positive, odd integers, i.e., 1*3*5*...*$x.
+Returns the double factorial of C<$x>, i.e., $x*($x-2)*($x-4)*... C<$x> must be
+> -2. The double factorial of N is commonly written as N!!, or N!2, when using
+the multifactorial notation.
+
+=item btfac()
+
+    $x->btfac();            # triple factorial of $x
+
+Returns the triple factorial of C<$x>, i.e., $x*($x-3)*($x-6)*... C<$x> must be
+> -3. The triple factorial of N is commonly written as N!!!, or N!3, when using
+the multifactorial notation.
+
+=item bmfac()
+
+    $x->bmfac($k);          # $k'th multifactorial of $x
+
+Returns the multi-factorial of C<$x>, i.e., $x*($x-$k)*($x-2*$k)*... C<$x> must
+be > -$k. The multi-factorial of N is commonly written as N!K.
 
 =item bfib()
 

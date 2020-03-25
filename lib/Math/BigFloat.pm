@@ -3519,11 +3519,12 @@ sub bdfac {
     ($class, $x, @r) = objectify(1, @_) if !ref($x);
 
     # inf => inf
-    return $x if $x->modify('bfac') || $x->{sign} eq '+inf';
+    return $x if $x->modify('bdfac') || $x->{sign} eq '+inf';
 
-    return $x->bnan()
-      if (($x->{sign} ne '+') || # inf, NaN, <0 etc => NaN
-          ($x->{_es} ne '+'));   # digits after dot?
+    return $x->bnan() if ($x->is_nan() ||
+                          $x->{_es} ne '+');    # digits after dot?
+    return $x->bnan() if $x <= -2;
+    return $x->bone() if $x <= 1;
 
     croak("bdfac() requires a newer version of the $LIB library.")
         unless $LIB->can('_dfac');
@@ -3535,6 +3536,55 @@ sub bdfac {
     }
     $x->{_m} = $LIB->_dfac($x->{_m});       # calculate factorial
     $x->bnorm()->round(@r);     # norm again and round result
+}
+
+sub btfac {
+    # compute triple factorial
+
+    # set up parameters
+    my ($class, $x, @r) = (ref($_[0]), @_);
+    # objectify is costly, so avoid it
+    ($class, $x, @r) = objectify(1, @_) if !ref($x);
+
+    # inf => inf
+    return $x if $x->modify('btfac') || $x->{sign} eq '+inf';
+
+    return $x->bnan() if ($x->is_nan() ||
+                          $x->{_es} ne '+');    # digits after dot?
+
+    my $k = $class -> new("3");
+    return $x->bnan() if $x <= -$k;
+
+    my $one = $class -> bone();
+    return $x->bone() if $x <= $one;
+
+    my $f = $x -> copy();
+    while ($f -> bsub($k) > $one) {
+        $x -> bmul($f);
+    }
+    $x->round(@r);
+}
+
+sub bmfac {
+    my ($class, $x, $k, @r) = objectify(2, @_);
+
+    # inf => inf
+    return $x if $x->modify('bmfac') || $x->{sign} eq '+inf';
+
+    return $x->bnan() if ($x->is_nan() || $k->is_nan() ||
+                          $k < 1 || $x <= -$k ||
+                          $x->{_es} ne '+' || $k->{_es} ne '+');
+
+    return $x->bnan() if $x <= -$k;
+
+    my $one = $class -> bone();
+    return $x->bone() if $x <= $one;
+
+    my $f = $x -> copy();
+    while ($f -> bsub($k) > $one) {
+        $x -> bmul($f);
+    }
+    $x->round(@r);
 }
 
 sub blsft {
