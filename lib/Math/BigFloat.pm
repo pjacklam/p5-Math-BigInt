@@ -2794,7 +2794,7 @@ sub bsin {
 
     #         constant object       or error in _find_round_parameters?
     return $x if $x->modify('bsin') || $x->is_nan();
-
+    return $x->bnan()    if $x->is_inf();
     return $x->bzero(@r) if $x->is_zero();
 
     # no rounding at all, so must use fallback
@@ -2884,7 +2884,7 @@ sub bcos {
 
     #         constant object       or error in _find_round_parameters?
     return $x if $x->modify('bcos') || $x->is_nan();
-
+    return $x->bnan()   if $x->is_inf();
     return $x->bone(@r) if $x->is_zero();
 
     # no rounding at all, so must use fallback
