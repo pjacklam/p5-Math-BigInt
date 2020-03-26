@@ -1,6 +1,18 @@
 1.999819 Not Released
 
+ * Add method btfac() (triple factorial) and bmfac() (multi-factorial),
+   including tests and documentation.
+
+ * Add missing and correct erroneous documentation for bfac() (factorial)
+   and bdfac() (double factorial). Also correct handling of special cases
+   and add tests for these cases.
+
+ * Fix error in bsin() and bcos() causing them to hang indefinitely if the
+   invocand is +/-inf.
+
  * Fix error in documentation of bdfac(), the double factorial.
+
+ * Fix error in handling special cases in bfac() and bdfac().
 
 1.999818 2019-10-20
 
