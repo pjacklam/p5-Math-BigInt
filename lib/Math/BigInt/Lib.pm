@@ -1433,7 +1433,9 @@ sub _to_base {
 
     my $collseq;
     if (@_) {
-        $collseq = shift();
+        $collseq = shift;
+        croak "The collation sequence must be a non-empty string"
+          unless defined($collseq) && length($collseq);
     } else {
         if ($class -> _acmp($base, $class -> _new("94")) <= 0) {
             $collseq = '0123456789'                     #  48 ..  57
@@ -1461,7 +1463,7 @@ sub _to_base {
         my $chr = $collseq[$num];
         $str = $chr . $str;
     }
-    return "0" unless length $str;
+    return $collseq[0] unless length $str;
     return $str;
 }
 
