@@ -141,7 +141,7 @@ BEGIN {
             $num *= $num + 1;
         } while ("$num" =~ /9{$e1}0{$e1}/); # must be a certain pattern
         $e1--;                  # last test failed, so retract one step
-        if ($e1 > 7) {
+        if ($e1 >= 7) {
             $int = 1;
             $e = $e1;
         }
