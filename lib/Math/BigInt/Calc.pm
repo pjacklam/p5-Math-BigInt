@@ -1891,7 +1891,7 @@ sub _root {
     if ((@$x > 1 || $x -> [0] > 0) &&           # if x is non-zero ...
         $c -> _acmp($x, $n) <= 0)               # ... and x <= n
     {
-        my $one = $x -> _one();
+        my $one = $c -> _one();
         @$x = @$one;
         return $x;
     }
