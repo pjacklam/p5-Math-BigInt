@@ -2538,7 +2538,7 @@ the same terms as Perl itself.
 
 =head1 AUTHOR
 
-Peter John Acklam, E<lt>pjacklam@online.noE<gt>
+Peter John Acklam, E<lt>pjacklam@gmail.comE<gt>
 
 Code and documentation based on the Math::BigInt::Calc module by Tels
 E<lt>nospam-abuse@bloodgate.comE<gt>

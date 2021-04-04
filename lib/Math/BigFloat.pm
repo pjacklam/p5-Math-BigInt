@@ -6080,7 +6080,7 @@ Florian Ragwitz E<lt>flora@cpan.orgE<gt>, 2010.
 
 =item *
 
-Peter John Acklam E<lt>pjacklam@online.noE<gt>, 2011-.
+Peter John Acklam E<lt>pjacklam@gmail.comE<gt>, 2011-.
 
 =back
 
