@@ -22,7 +22,7 @@ use warnings;
 
 use Carp qw< carp croak >;
 
-our $VERSION = '1.999818';
+our $VERSION = '1.999819';
 
 require Exporter;
 our @ISA = qw(Exporter);
