@@ -1325,7 +1325,7 @@ sub _rsft {
     $b = $c->_new($b) unless ref $b;
 
     if ($c -> _acmp($b, $c -> _ten())) {
-        return scalar $c->_div($x, $c->_pow($b, $n));
+        return scalar $c->_div($x, $c->_pow($c->_copy($b), $n));
     }
 
     # shortcut (faster) for shifting by 10)
