@@ -1316,17 +1316,22 @@ sub _mod {
 # shifts
 
 sub _rsft {
-    my ($c, $x, $y, $n) = @_;
+    my ($c, $x, $n, $b) = @_;
 
-    if ($n != 10) {
-        $n = $c->_new($n);
-        return scalar $c->_div($x, $c->_pow($n, $y));
+    return $x if $c->_is_zero($x) || $c->_is_zero($n);
+
+    # For backwards compatibility, allow the base $b to be a scalar.
+
+    $b = $c->_new($b) unless ref $b;
+
+    if ($c -> _acmp($b, $c -> _ten())) {
+        return scalar $c->_div($x, $c->_pow($b, $n));
     }
 
     # shortcut (faster) for shifting by 10)
     # multiples of $BASE_LEN
     my $dst = 0;                # destination
-    my $src = $c->_num($y);     # as normal int
+    my $src = $c->_num($n);     # as normal int
     my $xlen = (@$x - 1) * $BASE_LEN + length(int($x->[-1]));
     if ($src >= $xlen or ($src == $xlen and !defined $x->[1])) {
         # 12345 67890 shifted right by more than 10 digits => 0
