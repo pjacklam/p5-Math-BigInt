@@ -88,7 +88,7 @@ use overload
                     $x = $_[0];
                     $y = ref($_[1]) ? $class -> _num($_[1]) : $_[1];
                 }
-                return $class -> _blsft($x, $y);
+                return $class -> _lsft($x, $y);
             },
 
   '>>'   => sub {
@@ -101,7 +101,7 @@ use overload
                     $x = $class -> _copy($_[0]);
                     $y = ref($_[1]) ? $_[1] : $class -> _new($_[1]);
                 }
-                return $class -> _brsft($x, $y);
+                return $class -> _rsft($x, $y);
             },
 
   # overload key: num_comparison
