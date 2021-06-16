@@ -1844,8 +1844,6 @@ sub _lucas {
         return @y;
     }
 
-    require Scalar::Util;
-
     # In scalar context use that lucas(n) = fib(n-1) + fib(n+1).
     #
     # Remember that _fib() behaves differently in scalar context and list
