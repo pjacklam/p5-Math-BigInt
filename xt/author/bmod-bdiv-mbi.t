@@ -24,7 +24,7 @@ sub isinf {
 
 sub isnan {
     my $x = shift;
-    return !($x <= 0 || $x > 0);
+    return $x != $x;
 }
 
 # Convert a Perl scalar to a Math::BigInt object. This function is used for

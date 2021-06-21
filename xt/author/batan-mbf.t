@@ -20,8 +20,7 @@ sub atan { atan2($_[0], 1) }
 
 # isnan X
 
-#sub isnan { !defined($_[0] <=> 0) }
-sub isnan { !($_[0] <= 0 || $_[0] > 0) }
+sub isnan { $_[0] != $_[0] }
 
 # linspace MIN, MAX, N
 #

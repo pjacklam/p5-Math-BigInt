@@ -16,8 +16,7 @@ my $class = 'Math::BigFloat';
 
 # isnan X
 
-#sub isnan { !($_[0] <= 0 || $_[0] > 0) }
-sub isnan { !defined($_[0] <=> 0) }
+sub isnan { $_[0] != $_[0] }
 
 # linspace MIN, MAX, N
 #
