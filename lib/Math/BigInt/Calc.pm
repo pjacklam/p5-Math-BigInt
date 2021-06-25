@@ -196,9 +196,6 @@ BEGIN {
     $AND_MASK = __PACKAGE__->_new(( 2 ** $AND_BITS ));
     $XOR_MASK = __PACKAGE__->_new(( 2 ** $XOR_BITS ));
     $OR_MASK  = __PACKAGE__->_new(( 2 ** $OR_BITS  ));
-
-    # We can compute the approximate length no faster than the real length:
-    *_alen = \&_len;
 }
 
 ###############################################################################
