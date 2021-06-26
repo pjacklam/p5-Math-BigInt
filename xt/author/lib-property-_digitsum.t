@@ -41,7 +41,8 @@ my @data;
 
 for (my $x = 0 ; $x <= 100 ; ++ $x) {
     my $str = sprintf "%u", $x;
-    my @digits = unpack "(a)*", $str;
+    my @digits = $] >= 5.008 ? unpack "(a)*", $str
+                             : split //, $str;
     my $sum = 0;
     $sum += $_ for @digits;
     push @data, [ $str, $sum ];
@@ -49,7 +50,8 @@ for (my $x = 0 ; $x <= 100 ; ++ $x) {
 
 for (my $n = 4 ; $n <= 50 ; ++ $n) {
     my $str = randstr($n, 10);
-    my @digits = unpack "(a)*", $str;
+    my @digits = $] >= 5.008 ? unpack "(a)*", $str
+                             : split //, $str;
     my $sum = 0;
     $sum += $_ for @digits;
     push @data, [ $str, $sum ];

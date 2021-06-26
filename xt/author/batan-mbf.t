@@ -9,7 +9,7 @@ use Math::Complex ();
 
 use Math::BigFloat;
 
-my $inf = Math::Complex::Inf(); # most portable way to get infinity
+my $inf = $Math::Complex::Inf;
 my $nan = $inf - $inf;
 
 my $class = 'Math::BigFloat';
@@ -64,7 +64,7 @@ my @x;
 @x = (reverse(map( { -$_ } @x)), 0, @x, $nan);
 
 my $accu       = 16;
-my $tol        = 1e-14;
+my $tol        = 1e-13;
 my $max_relerr = 0;
 
 for (my $i = 0; $i <= $#x ; ++$i) {

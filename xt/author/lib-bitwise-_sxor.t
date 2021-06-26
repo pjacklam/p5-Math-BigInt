@@ -8,8 +8,7 @@ use Test::More tests => 69001;
 ###############################################################################
 # Read and load configuration file and backend library.
 
-use Config::Tiny;
-use Scalar::Util qw< refaddr >;
+use Config::Tiny ();
 
 my $config_file = 'xt/author/lib.ini';
 my $config = Config::Tiny -> read('xt/author/lib.ini')
@@ -39,6 +38,12 @@ eval "require $LIB";
 die $@ if $@;
 
 ###############################################################################
+
+my $scalar_util_ok = eval { require Scalar::Util; };
+Scalar::Util -> import('refaddr') if $scalar_util_ok;
+
+diag "Skipping some tests since Scalar::Util is not installed."
+  unless $scalar_util_ok;
 
 can_ok($LIB, '_and');
 
@@ -82,8 +87,12 @@ for (my $i = 0 ; $i <= $#data ; ++ $i) {
     is($LIB->_str($got[0]), $out0,
        "'$test' first output arg has the right value");
 
-    isnt(refaddr($got[0]), refaddr($y),
-         "'$test' first output arg is not the third input arg");
+  SKIP: {
+        skip "Scalar::Util not available", 1 unless $scalar_util_ok;
+
+        isnt(refaddr($got[0]), refaddr($y),
+             "'$test' first output arg is not the third input arg");
+    }
 
     is(ref($x), $REF,
        "'$test' first input arg is still a $REF");

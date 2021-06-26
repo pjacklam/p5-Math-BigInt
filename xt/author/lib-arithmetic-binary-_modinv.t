@@ -92,7 +92,7 @@ for (my $i = 0 ; $i <= $#data ; ++ $i) {
 
         } else {
 
-            plan tests => $scalar_util_ok ? 7 : 6;
+            plan tests => 7;
 
             cmp_ok(scalar @got, "==", 2,
                    "'$test' gives two output args");
@@ -103,9 +103,12 @@ for (my $i = 0 ; $i <= $#data ; ++ $i) {
             is($LIB->_check($got[0]), 0,
                "'$test' first output arg is valid");
 
-            isnt(refaddr($got[0]), refaddr($m),
-                 "'$test' first output arg is not the second input arg")
-              if $scalar_util_ok;
+          SKIP: {
+                skip "Scalar::Util not available", 1 unless $scalar_util_ok;
+
+                isnt(refaddr($got[0]), refaddr($m),
+                     "'$test' first output arg is not the second input arg");
+            }
 
             is(ref($got[1]), "",
                "'$test' second output arg is a scalar");

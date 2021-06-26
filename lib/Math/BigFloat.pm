@@ -4655,13 +4655,13 @@ sub numify {
 
     if ($x -> is_nan()) {
         require Math::Complex;
-        my $inf = Math::Complex::Inf();
+        my $inf = $Math::Complex::Inf;
         return $inf - $inf;
     }
 
     if ($x -> is_inf()) {
         require Math::Complex;
-        my $inf = Math::Complex::Inf();
+        my $inf = $Math::Complex::Inf;
         return $x -> is_negative() ? -$inf : $inf;
     }
 

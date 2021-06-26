@@ -78,7 +78,7 @@ for (my $i = 0 ; $i <= $#data ; ++ $i) {
     is($@, "", "'$test' gives emtpy \$\@");
 
     subtest "_modpow() in list context: $test", sub {
-        plan tests => $scalar_util_ok ? 12 : 10;
+        plan tests => 12;
 
         cmp_ok(scalar @got, "==", 1,
                "'$test' gives one output arg");
@@ -92,13 +92,15 @@ for (my $i = 0 ; $i <= $#data ; ++ $i) {
         is($LIB->_str($got[0]), $out0,
            "'$test' output arg has the right value");
 
-        isnt(refaddr($got[0]), refaddr($y),
-             "'$test' output arg is not the second input arg")
-          if $scalar_util_ok;
+      SKIP: {
+            skip "Scalar::Util not available", 2 unless $scalar_util_ok;
 
-        isnt(refaddr($got[0]), refaddr($m),
-             "'$test' output arg is not the third input arg")
-          if $scalar_util_ok;
+            isnt(refaddr($got[0]), refaddr($y),
+                 "'$test' output arg is not the second input arg");
+
+            isnt(refaddr($got[0]), refaddr($m),
+                 "'$test' output arg is not the third input arg")
+        }
 
         is(ref($x), $REF,
            "'$test' first input arg is still a $REF");
@@ -138,7 +140,7 @@ for (my $i = 0 ; $i <= $#data ; ++ $i) {
     is($@, "", "'$test' gives emtpy \$\@");
 
     subtest "_modpow() in scalar context: $test", sub {
-        plan tests => $scalar_util_ok ? 11 : 9;
+        plan tests => 11;
 
         is(ref($got), $REF,
            "'$test' output arg is a $REF");
@@ -149,13 +151,15 @@ for (my $i = 0 ; $i <= $#data ; ++ $i) {
         is($LIB->_str($got), $out0,
            "'$test' output arg has the right value");
 
-        isnt(refaddr($got), refaddr($y),
-             "'$test' output arg is not the second input arg")
-          if $scalar_util_ok;
+      SKIP: {
+            skip "Scalar::Util not available", 2 unless $scalar_util_ok;
 
-        isnt(refaddr($got), refaddr($m),
-             "'$test' output arg is not the third input arg")
-          if $scalar_util_ok;
+            isnt(refaddr($got), refaddr($y),
+                 "'$test' output arg is not the second input arg");
+
+            isnt(refaddr($got), refaddr($m),
+                 "'$test' output arg is not the third input arg");
+        }
 
         is(ref($x), $REF,
            "'$test' first input arg is still a $REF");

@@ -7,11 +7,16 @@ use Test::More tests => 41301;
 
 use Math::BigInt;
 
-use Math::Complex;
-use Scalar::Util;
+use Math::Complex ();
 
-my $inf = Math::Complex::Inf();
+my $inf = $Math::Complex::Inf;
 my $nan = $inf - $inf;
+
+my $scalar_util_ok = eval { require Scalar::Util; };
+Scalar::Util -> import('refaddr') if $scalar_util_ok;
+
+diag "Skipping some tests since Scalar::Util is not installed."
+  unless $scalar_util_ok;
 
 # Return 1 if the input argument is +inf or -inf, and "" otherwise.
 
@@ -158,8 +163,9 @@ for my $num (-$inf, -20 .. 20, $inf, $nan) {
 
             # Get addresses for later tests.
 
-            my $mbi_num_addr = Scalar::Util::refaddr($mbi_num);
-            my $mbi_den_addr = Scalar::Util::refaddr($mbi_den);
+            my ($mbi_num_addr, $mbi_den_addr);
+            $mbi_num_addr = refaddr($mbi_num) if $scalar_util_ok;
+            $mbi_den_addr = refaddr($mbi_den) if $scalar_util_ok;
 
             # Compute actual output values.
 
@@ -186,17 +192,22 @@ for my $num (-$inf, -20 .. 20, $inf, $nan) {
 
             # Check addresses.
 
-            my $mbi_quo_addr = Scalar::Util::refaddr($mbi_quo);
-            my $mbi_rem_addr = Scalar::Util::refaddr($mbi_rem);
+            my ($mbi_quo_addr, $mbi_rem_addr);
+            $mbi_quo_addr = refaddr($mbi_quo) if $scalar_util_ok;
+            $mbi_rem_addr = refaddr($mbi_rem) if $scalar_util_ok;
 
             is($mbi_quo_addr, $mbi_num_addr,
                "the quotient object is the numerator object");
 
-            ok($mbi_rem_addr != $mbi_num_addr &&
-               $mbi_rem_addr != $mbi_den_addr &&
-               $mbi_rem_addr != $mbi_quo_addr,
-               "the remainder object is neither the numerator," .
-               " denominator, nor quotient object");
+          SKIP: {
+                skip "Scalar::Util not available", 1 unless $scalar_util_ok;
+
+                ok($mbi_rem_addr != $mbi_num_addr &&
+                   $mbi_rem_addr != $mbi_den_addr &&
+                   $mbi_rem_addr != $mbi_quo_addr,
+                   "the remainder object is neither the numerator," .
+                   " denominator, nor quotient object");
+            }
         }
 
         #######################################################################
@@ -214,8 +225,9 @@ for my $num (-$inf, -20 .. 20, $inf, $nan) {
 
             # Get addresses for later tests.
 
-            my $mbi_num_addr = Scalar::Util::refaddr($mbi_num);
-            my $mbi_den_addr = Scalar::Util::refaddr($mbi_den);
+            my ($mbi_num_addr, $mbi_den_addr);
+            $mbi_num_addr = refaddr($mbi_num) if $scalar_util_ok;
+            $mbi_den_addr = refaddr($mbi_den) if $scalar_util_ok;
 
             # Compute actual output values.
 
@@ -239,10 +251,15 @@ for my $num (-$inf, -20 .. 20, $inf, $nan) {
 
             # Check addresses.
 
-            my $mbi_quo_addr = Scalar::Util::refaddr($mbi_quo);
+            my $mbi_quo_addr;
+            $mbi_quo_addr = refaddr($mbi_quo) if $scalar_util_ok;
 
-            is($mbi_quo_addr, $mbi_num_addr,
-               "the quotient object is the numerator object");
+          SKIP: {
+                skip "Scalar::Util not available", 1 unless $scalar_util_ok;
+
+                is($mbi_quo_addr, $mbi_num_addr,
+                   "the quotient object is the numerator object");
+            }
         }
 
         #######################################################################
@@ -260,8 +277,9 @@ for my $num (-$inf, -20 .. 20, $inf, $nan) {
 
             # Get addresses for later tests.
 
-            my $mbi_num_addr = Scalar::Util::refaddr($mbi_num);
-            my $mbi_den_addr = Scalar::Util::refaddr($mbi_den);
+            my ($mbi_num_addr, $mbi_den_addr);
+            $mbi_num_addr = refaddr($mbi_num) if $scalar_util_ok;
+            $mbi_den_addr = refaddr($mbi_den) if $scalar_util_ok;
 
             # Compute actual output values.
 
@@ -285,12 +303,16 @@ for my $num (-$inf, -20 .. 20, $inf, $nan) {
 
             # Check addresses.
 
-            my $mbi_rem_addr = Scalar::Util::refaddr($mbi_rem);
+            my $mbi_rem_addr;
+            $mbi_rem_addr = refaddr($mbi_rem) if $scalar_util_ok;
 
-            is($mbi_rem_addr, $mbi_num_addr,
-               "the remainder object is the numerator object");
+          SKIP: {
+                skip "Scalar::Util not available", 1 unless $scalar_util_ok;
+
+                is($mbi_rem_addr, $mbi_num_addr,
+                   "the remainder object is the numerator object");
+            }
         }
-
     }
 }
 
@@ -317,7 +339,8 @@ for my $num (-$inf, -20 .. -1, 1 .. 20, $inf, $nan) {
 
         # Get addresses for later tests.
 
-        my $mbi_num_addr = Scalar::Util::refaddr($mbi_num);
+        my $mbi_num_addr;
+        $mbi_num_addr = refaddr($mbi_num) if $scalar_util_ok;
 
         # Compute actual output values.
 
@@ -340,16 +363,21 @@ for my $num (-$inf, -20 .. -1, 1 .. 20, $inf, $nan) {
 
         # Check addresses.
 
-        my $mbi_quo_addr = Scalar::Util::refaddr($mbi_quo);
-        my $mbi_rem_addr = Scalar::Util::refaddr($mbi_rem);
+        my ($mbi_quo_addr, $mbi_rem_addr);
+        $mbi_quo_addr = refaddr($mbi_quo) if $scalar_util_ok;
+        $mbi_rem_addr = refaddr($mbi_rem) if $scalar_util_ok;
 
-        is($mbi_quo_addr, $mbi_num_addr,
-           "the quotient object is the numerator object");
+      SKIP: {
+            skip "Scalar::Util not available", 2 unless $scalar_util_ok;
 
-        ok($mbi_rem_addr != $mbi_num_addr &&
-           $mbi_rem_addr != $mbi_quo_addr,
-           "the remainder object is neither the numerator," .
-           " denominator, nor quotient object");
+            is($mbi_quo_addr, $mbi_num_addr,
+               "the quotient object is the numerator object");
+
+            ok($mbi_rem_addr != $mbi_num_addr &&
+               $mbi_rem_addr != $mbi_quo_addr,
+               "the remainder object is neither the numerator," .
+               " denominator, nor quotient object");
+        }
     }
 
     #######################################################################
@@ -366,7 +394,8 @@ for my $num (-$inf, -20 .. -1, 1 .. 20, $inf, $nan) {
 
         # Get addresses for later tests.
 
-        my $mbi_num_addr = Scalar::Util::refaddr($mbi_num);
+        my $mbi_num_addr;
+        $mbi_num_addr = refaddr($mbi_num) if $scalar_util_ok;
 
         # Compute actual output values.
 
@@ -386,10 +415,15 @@ for my $num (-$inf, -20 .. -1, 1 .. 20, $inf, $nan) {
 
         # Check addresses.
 
-        my $mbi_quo_addr = Scalar::Util::refaddr($mbi_quo);
+        my $mbi_quo_addr;
+        $mbi_quo_addr = refaddr($mbi_quo) if $scalar_util_ok;
 
-        is($mbi_quo_addr, $mbi_num_addr,
-           "the quotient object is the numerator object");
+      SKIP: {
+            skip "Scalar::Util not available", 1 unless $scalar_util_ok;
+
+            is($mbi_quo_addr, $mbi_num_addr,
+               "the quotient object is the numerator object");
+        }
     }
 
     #######################################################################
@@ -406,7 +440,8 @@ for my $num (-$inf, -20 .. -1, 1 .. 20, $inf, $nan) {
 
         # Get addresses for later tests.
 
-        my $mbi_num_addr = Scalar::Util::refaddr($mbi_num);
+        my $mbi_num_addr;
+        $mbi_num_addr = refaddr($mbi_num) if $scalar_util_ok;
 
         # Compute actual output values.
 
@@ -426,10 +461,14 @@ for my $num (-$inf, -20 .. -1, 1 .. 20, $inf, $nan) {
 
         # Check addresses.
 
-        my $mbi_rem_addr = Scalar::Util::refaddr($mbi_rem);
+        my $mbi_rem_addr;
+        $mbi_rem_addr = refaddr($mbi_rem) if $scalar_util_ok;
 
-        is($mbi_rem_addr, $mbi_num_addr,
-           "the remainder object is the numerator object");
+      SKIP: {
+            skip "Scalar::Util not available", 1 unless $scalar_util_ok;
+
+            is($mbi_rem_addr, $mbi_num_addr,
+               "the remainder object is the numerator object");
+        }
     }
-
 }

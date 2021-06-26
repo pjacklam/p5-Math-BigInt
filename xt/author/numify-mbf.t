@@ -7,9 +7,9 @@ use Test::More tests => 9;
 
 use Math::BigFloat;
 
-use Math::Complex;
+use Math::Complex ();
 
-my $inf = Math::Complex::Inf();
+my $inf = $Math::Complex::Inf;
 my $nan = $inf - $inf;
 
 ###############################################################################

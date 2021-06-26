@@ -39,13 +39,13 @@ die $@ if $@;
 
 ###############################################################################
 
-can_ok($LIB, '_gcd');
-
 my $scalar_util_ok = eval { require Scalar::Util; };
 Scalar::Util -> import('refaddr') if $scalar_util_ok;
 
 diag "Skipping some tests since Scalar::Util is not installed."
   unless $scalar_util_ok;
+
+can_ok($LIB, '_gcd');
 
 my @data;
 
@@ -77,7 +77,7 @@ for (my $i = 0 ; $i <= $#data ; ++ $i) {
     is($@, "", "'$test' gives emtpy \$\@");
 
     subtest "_gcd() in list context: $test", sub {
-        plan tests => $scalar_util_ok ? 9 : 8;
+        plan tests => 9;
 
         cmp_ok(scalar @got, "==", 1,
                "'$test' gives one output arg");
@@ -91,9 +91,12 @@ for (my $i = 0 ; $i <= $#data ; ++ $i) {
         is($LIB->_str($got[0]), $out0,
            "'$test' output arg has the right value");
 
-        isnt(refaddr($got[0]), refaddr($y),
-             "'$test' output arg is not the second input arg")
-          if $scalar_util_ok;
+      SKIP: {
+            skip "Scalar::Util not available", 1 unless $scalar_util_ok;
+
+            isnt(refaddr($got[0]), refaddr($y),
+                 "'$test' output arg is not the second input arg");
+        }
 
         is(ref($x), $REF,
            "'$test' first input arg is still a $REF");
@@ -131,7 +134,7 @@ for (my $i = 0 ; $i <= $#data ; ++ $i) {
     is($@, "", "'$test' gives emtpy \$\@");
 
     subtest "_gcd() in scalar context: $test", sub {
-        plan tests => $scalar_util_ok ? 8 : 7;
+        plan tests => 8;
 
         is(ref($got), $REF,
            "'$test' output arg is a $REF");
@@ -142,9 +145,12 @@ for (my $i = 0 ; $i <= $#data ; ++ $i) {
         is($LIB->_str($got), $out0,
            "'$test' output arg has the right value");
 
-        isnt(refaddr($got), refaddr($y),
-             "'$test' output arg is not the second input arg")
-          if $scalar_util_ok;
+      SKIP: {
+            skip "Scalar::Util not available", 1 unless $scalar_util_ok;
+
+            isnt(refaddr($got), refaddr($y),
+                 "'$test' output arg is not the second input arg");
+        }
 
         is(ref($x), $REF,
            "'$test' first input arg is still a $REF");

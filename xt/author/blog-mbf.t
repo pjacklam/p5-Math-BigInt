@@ -4,7 +4,12 @@ use strict;
 use warnings;
 
 use Test::More tests => 139;
-use Scalar::Util qw< refaddr >;
+
+my $scalar_util_ok = eval { require Scalar::Util; };
+Scalar::Util -> import('refaddr') if $scalar_util_ok;
+
+diag "Skipping some tests since Scalar::Util is not installed."
+  unless $scalar_util_ok;
 
 my $class;
 
@@ -63,13 +68,18 @@ while (<DATA>) {
     die $@ if $@;       # this should never happen
 
     subtest $desc, sub {
-        plan tests => 5,
+        plan tests => 5;
 
         # Check output.
 
         is(ref($got), $class, "output arg is a $class");
         is($got, $out0, 'output arg has the right value');
-        is(refaddr($got), refaddr($x), 'output arg is the invocand');
+
+      SKIP: {
+            skip "Scalar::Util not available", 1 unless $scalar_util_ok;
+
+            is(refaddr($got), refaddr($x), 'output arg is the invocand');
+        }
 
         # The second argument (if the invocand is the first) shall *not* be
         # modified.

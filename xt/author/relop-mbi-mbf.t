@@ -6,9 +6,14 @@ use warnings;
 use Test::More tests => 17642;
 
 use Math::Complex ();
-use Scalar::Util qw< refaddr >;
 
-my $inf = Math::Complex::Inf();
+my $scalar_util_ok = eval { require Scalar::Util; };
+Scalar::Util -> import('refaddr') if $scalar_util_ok;
+
+diag "Skipping some tests since Scalar::Util is not installed."
+  unless $scalar_util_ok;
+
+my $inf = $Math::Complex::Inf;
 my $nan = $inf - $inf;
 
 my @table =
@@ -40,7 +45,7 @@ for my $class (@classes) {
         for my $xscalar (@values) {
             for my $yscalar (@values) {
 
-                my $expected = eval qq|"$xscalar" $operator "$yscalar"|;
+                my $expected = eval qq|\$xscalar $operator \$yscalar|;
 
                 note("#" x 70);
                 note("");
@@ -60,15 +65,15 @@ for my $class (@classes) {
                     $y = $class -> new("$yscalar");
 
                     my $test = qq|\$x = $class -> new("$xscalar"); |
-                             . qq|\$y = $class -> new("$yscalar"); |
+                             . qq|\$y = $class -> new("$yscalar"); |;
 
-                             . qq|\$xval = \$x -> copy(); |
-                             . qq|\$xaddr = refaddr(\$x); |
+                    $test .=   qq|\$xval = \$x -> copy(); |;
+                    $test .=   qq|\$xaddr = refaddr(\$x); | if $scalar_util_ok;
 
-                             . qq|\$yval = \$y -> copy(); |
-                             . qq|\$yaddr = refaddr(\$y); |
+                    $test .=   qq|\$yval = \$y -> copy(); |;
+                    $test .=   qq|\$yaddr = refaddr(\$y); | if $scalar_util_ok;
 
-                             . qq|\$z = \$x -> $method(\$y);|;
+                    $test .=   qq|\$z = \$x -> $method(\$y);|;
 
                     note("");
                     note("\$x -> $method(\$y) where \$x is an object",
@@ -84,11 +89,21 @@ for my $class (@classes) {
                     is($z,          $expected, 'value of $z');
                     is(ref($z),     '',        '$z is not a reference');
 
-                    is($x,          $xval,     'value of $x is unchanged');
-                    is(refaddr($x), $xaddr,    'address of $x is unchanged');
+                    is($x, $xval, 'value of $x is unchanged');
 
-                    is($y,          $yval,     'value of $y is unchanged');
-                    is(refaddr($y), $yaddr,    'address of $y is unchanged');
+                  SKIP: {
+                        skip "Scalar::Util not available", 1 unless $scalar_util_ok;
+
+                        is(refaddr($x), $xaddr, 'address of $x is unchanged')
+                    }
+
+                    is($y, $yval, 'value of $y is unchanged');
+
+                  SKIP: {
+                        skip "Scalar::Util not available", 1 unless $scalar_util_ok;
+
+                        is(refaddr($y), $yaddr, 'address of $y is unchanged')
+                    }
                 }
 
                 {
@@ -100,15 +115,15 @@ for my $class (@classes) {
                     $y = $class -> new("$yscalar");
 
                     my $test = qq|\$x = $class -> new("$xscalar"); |
-                             . qq|\$y = $class -> new("$yscalar"); |
+                             . qq|\$y = $class -> new("$yscalar"); |;
 
-                             . qq|\$xval = \$x -> copy(); |
-                             . qq|\$xaddr = refaddr(\$x); |
+                    $test .=   qq|\$xval = \$x -> copy(); |;
+                    $test .=   qq|\$xaddr = refaddr(\$x); | if $scalar_util_ok;
 
-                             . qq|\$yval = \$y -> copy(); |
-                             . qq|\$yaddr = refaddr(\$y); |
+                    $test .=   qq|\$yval = \$y -> copy(); |;
+                    $test .=   qq|\$yaddr = refaddr(\$y); | if $scalar_util_ok;
 
-                             . qq|\$z = \$x $operator \$y;|;
+                    $test .=   qq|\$z = \$x $operator \$y;|;
 
                     note("");
                     note("\$x $operator \$y where \$x is an object and",
@@ -124,11 +139,21 @@ for my $class (@classes) {
                     is($z,          $expected, 'value of $z');
                     is(ref($z),     '',        '$z is not a reference');
 
-                    is($x,          $xval,     'value of $x is unchanged');
-                    is(refaddr($x), $xaddr,    'address of $x is unchanged');
+                    is($x, $xval, 'value of $x is unchanged');
 
-                    is($y,          $yval,     'value of $y is unchanged');
-                    is(refaddr($y), $yaddr,    'address of $y is unchanged');
+                  SKIP: {
+                        skip "Scalar::Util not available", 1 unless $scalar_util_ok;
+
+                        is(refaddr($x), $xaddr, 'address of $x is unchanged')
+                    }
+
+                    is($y, $yval, 'value of $y is unchanged');
+
+                  SKIP: {
+                        skip "Scalar::Util not available", 1 unless $scalar_util_ok;
+
+                        is(refaddr($y), $yaddr, 'address of $y is unchanged');
+                    }
                 }
 
                 {
@@ -140,15 +165,15 @@ for my $class (@classes) {
                     $y = $yscalar;
 
                     my $test = qq|\$x = $class -> new("$xscalar"); |
-                             . qq|\$y = "$yscalar"; |
+                             . qq|\$y = "$yscalar"; |;
 
-                             . qq|\$xval = \$x -> copy(); |
-                             . qq|\$xaddr = refaddr(\$x); |
+                    $test .=   qq|\$xval = \$x -> copy(); |;
+                    $test .=   qq|\$xaddr = refaddr(\$x); | if $scalar_util_ok;
 
-                             . qq|\$yval = "$yscalar"; |
-                             . qq|\$yaddr = refaddr(\$y); |
+                    $test .=   qq|\$yval = "$yscalar"; |;
+                    $test .=   qq|\$yaddr = refaddr(\$y); | if $scalar_util_ok;
 
-                             . qq|\$z = \$x -> $method(\$y);|;
+                    $test .=   qq|\$z = \$x -> $method(\$y);|;
 
                     note("");
                     note("\$x -> $method(\$y) where \$x is an object",
@@ -164,11 +189,21 @@ for my $class (@classes) {
                     is($z,          $expected, 'value of $z');
                     is(ref($z),     '',        '$z is not a reference');
 
-                    is($x,          $xval,     'value of $x is unchanged');
-                    is(refaddr($x), $xaddr,    'address of $x is unchanged');
+                    is($x, $xval, 'value of $x is unchanged');
 
-                    is($y,          $yval,     'value of $y is unchanged');
-                    is(refaddr($y), $yaddr,    'address of $y is unchanged');
+                  SKIP: {
+                        skip "Scalar::Util not available", 1 unless $scalar_util_ok;
+
+                        is(refaddr($x), $xaddr, 'address of $x is unchanged');
+                    }
+
+                    is($y, $yval, 'value of $y is unchanged');
+
+                  SKIP: {
+                        skip "Scalar::Util not available", 1 unless $scalar_util_ok;
+
+                        is(refaddr($y), $yaddr, 'address of $y is unchanged');
+                    }
                 }
 
                 {
@@ -180,15 +215,15 @@ for my $class (@classes) {
                     $y = $class -> new("$yscalar");
 
                     my $test = qq|\$x = $class -> new("$xscalar"); |
-                             . qq|\$y = "$yscalar"; |
+                             . qq|\$y = "$yscalar"; |;
 
-                             . qq|\$xval = \$x -> copy(); |
-                             . qq|\$xaddr = refaddr(\$x); |
+                    $test .=   qq|\$xval = \$x -> copy(); |;
+                    $test .=   qq|\$xaddr = refaddr(\$x); | if $scalar_util_ok;
 
-                             . qq|\$yval = "$yscalar"; |
-                             . qq|\$yaddr = refaddr(\$y); |
+                    $test .=   qq|\$yval = "$yscalar"; |;
+                    $test .=   qq|\$yaddr = refaddr(\$y); | if $scalar_util_ok;
 
-                             . qq|\$z = \$x $operator \$y;|;
+                    $test .=   qq|\$z = \$x $operator \$y;|;
 
                     note("");
                     note("\$x $operator \$y where \$x is an object",
@@ -204,11 +239,21 @@ for my $class (@classes) {
                     is($z,          $expected, 'value of $z');
                     is(ref($z),     '',        '$z is not a reference');
 
-                    is($x,          $xval,     'value of $x is unchanged');
-                    is(refaddr($x), $xaddr,    'address of $x is unchanged');
+                    is($x, $xval, 'value of $x is unchanged');
 
-                    is($y,          $yval,     'value of $y is unchanged');
-                    is(refaddr($y), $yaddr,    'address of $y is unchanged');
+                  SKIP: {
+                        skip "Scalar::Util not available", 1 unless $scalar_util_ok;
+
+                        is(refaddr($x), $xaddr, 'address of $x is unchanged')
+                    }
+
+                    is($y, $yval, 'value of $y is unchanged');
+
+                  SKIP: {
+                        skip "Scalar::Util not available", 1 unless $scalar_util_ok;
+
+                        is(refaddr($y), $yaddr, 'address of $y is unchanged')
+                    }
                 }
 
                 {
@@ -220,15 +265,15 @@ for my $class (@classes) {
                     $y = $class -> new("$yscalar");
 
                     my $test = qq|\$x = "$xscalar"; |
-                             . qq|\$y = $class -> new("$yscalar"); |
+                             . qq|\$y = $class -> new("$yscalar"); |;
 
-                             . qq|\$xval = "$xscalar"; |
-                             . qq|\$xaddr = refaddr(\$x); |
+                    $test .=   qq|\$xval = "$xscalar"; |;
+                    $test .=   qq|\$xaddr = refaddr(\$x); | if $scalar_util_ok;
 
-                             . qq|\$yval = \$y -> copy(); |
-                             . qq|\$yaddr = refaddr(\$y); |
+                    $test .=   qq|\$yval = \$y -> copy(); |;
+                    $test .=   qq|\$yaddr = refaddr(\$y); | if $scalar_util_ok;
 
-                             . qq|\$z = \$x $operator \$y;|;
+                    $test .=   qq|\$z = \$x $operator \$y;|;
 
                     note("");
                     note("\$x $operator \$y where \$x is a scalar and",
@@ -244,13 +289,22 @@ for my $class (@classes) {
                     is($z,          $expected, 'value of $z');
                     is(ref($z),     '',        '$z is not a reference');
 
-                    is($x,          $xval,     'value of $x is unchanged');
-                    is(refaddr($x), $xaddr,    'address of $x is unchanged');
+                    is($x, $xval, 'value of $x is unchanged');
 
-                    is($y,          $yval,     'value of $y is unchanged');
-                    is(refaddr($y), $yaddr,    'address of $y is unchanged');
+                  SKIP: {
+                        skip "Scalar::Util not available", 1 unless $scalar_util_ok;
+
+                        is(refaddr($x), $xaddr, 'address of $x is unchanged');
+                    }
+
+                    is($y, $yval, 'value of $y is unchanged');
+
+                  SKIP: {
+                        skip "Scalar::Util not available", 1 unless $scalar_util_ok;
+
+                        is(refaddr($y), $yaddr, 'address of $y is unchanged');
+                    }
                 }
-
             }
         }
     }
