@@ -573,23 +573,54 @@ sub _nok {
     return $n;
 }
 
+#sub _fac {
+#    # factorial
+#    my ($class, $x) = @_;
+#
+#    my $two = $class -> _two();
+#
+#    if ($class -> _acmp($x, $two) < 0) {
+#        return $class -> _one();
+#    }
+#
+#    my $i = $class -> _copy($x);
+#    while ($class -> _acmp($i, $two) > 0) {
+#        $i = $class -> _dec($i);
+#        $x = $class -> _mul($x, $i);
+#    }
+#
+#    return $x;
+#}
+
 sub _fac {
     # factorial
     my ($class, $x) = @_;
 
+    # This is an implementation of the split recursive algorithm. See
+    # http://www.luschny.de/math/factorial/csharp/FactorialSplit.cs.html
+
+    my $p   = $class -> _one();
+    my $r   = $class -> _one();
     my $two = $class -> _two();
 
-    if ($class -> _acmp($x, $two) < 0) {
-        return $class -> _one();
-    }
+    my ($log2n) = $class -> _log_int($class -> _copy($x), $two);
+    my $h     = $class -> _zero();
+    my $shift = $class -> _zero();
+    my $k     = $class -> _one();
 
-    my $i = $class -> _copy($x);
-    while ($class -> _acmp($i, $two) > 0) {
-        $i = $class -> _dec($i);
-        $x = $class -> _mul($x, $i);
+    while ($class -> _acmp($h, $x)) {
+        $shift = $class -> _add($shift, $h);
+        $h = $class -> _rsft($class -> _copy($x), $log2n, $two);
+        $log2n = $class -> _dec($log2n) if !$class -> _is_zero($log2n);
+        my $high = $class -> _copy($h);
+        $high = $class -> _dec($high) if $class -> _is_even($h);
+        while ($class -> _acmp($k, $high)) {
+            $k = $class -> _add($k, $two);
+            $p = $class -> _mul($p, $k);
+        }
+        $r = $class -> _mul($r, $p);
     }
-
-    return $x;
+    return $class -> _lsft($r, $shift, $two);
 }
 
 sub _dfac {
@@ -725,7 +756,7 @@ sub _sqrt {
     #
     # x(i+1) = x(i) - f(x(i)) / f'(x(i))
     #        = x(i) - (x(i)^2 - y) / (2 * x(i))     # use if x(i)^2 > y
-    #        = y(i) + (y - x(i)^2) / (2 * x(i))     # use if x(i)^2 < y
+    #        = x(i) + (y - x(i)^2) / (2 * x(i))     # use if x(i)^2 < y
 
     # Determine if x, our guess, is too small, correct, or too large.
 
@@ -1851,8 +1882,8 @@ sub _lucas {
 
     return $class -> _two() if $n == 0;
 
-    return $class -> _add(scalar $class -> _fib($n - 1),
-                          scalar $class -> _fib($n + 1));
+    return $class -> _add(scalar($class -> _fib($n - 1)),
+                          scalar($class -> _fib($n + 1)));
 }
 
 sub _fib {

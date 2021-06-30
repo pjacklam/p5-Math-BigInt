@@ -35,6 +35,20 @@ can_ok($LIB, "_num");
 use lib "t";
 use Math::BigInt::Lib::TestUtil qw< randstr >;
 
+# Compute parameters for relative tolerance.
+#
+# $p is the precision, i.e., the number of bits in the mantissa/significand, as
+# defined in IEEE754. $eps is the smallest number that, when subtracted from 1,
+# gives a number smaller than 1.
+
+my $p = 0;
+my $eps = 1;
+while (((1 + $eps) - 1) != 0) {
+    $eps *= 0.5;
+    $p++;
+}
+my $reltol = 100 * $eps;
+
 # Generate test data.
 
 my @data;
@@ -49,14 +63,11 @@ for (my $n = 1 ; $n <= 300 ; ++ $n) {
     push @data, randstr($n, 10);        # random big integers
 }
 
-# Tolerance for floating point number comparisons.
-
-my $tol = 2e-15;
-
 # List context.
 
 for (my $i = 0 ; $i <= $#data ; ++ $i) {
     my $str = $data[$i];
+    my $num = 0 + $str;
 
     my ($x, @got);
 
@@ -81,17 +92,29 @@ for (my $i = 0 ; $i <= $#data ; ++ $i) {
         # values exactly ...
 
         if ($got[0] =~ /^\d+\z/) {
-            cmp_ok($got[0], "==", $str,
+            cmp_ok($got[0], "==", $num,
                    "'$test' output value is exactly right");
         }
 
         # ... otherwise compare them approximatly.
 
         else {
-            my $rel_err = abs($got[0] - $str) / $str;
-            cmp_ok($rel_err, "<", $tol,
-                   "'$test' output value is correct within" .
-                   " a relative error of $tol");
+            my $text = "'$test' output value is correct within"
+                     . " a relative error of $reltol";
+            my $abserr = $got[0] - $num;
+            my $relerr = $abserr / $num;
+            if (abs($relerr) <= $reltol) {
+                pass($text);
+            } else {
+                fail($text);
+                diag(<<EOF);
+          got: $got[0]
+     expected: $num
+    abs. err.: $abserr
+    rel. err.: $relerr
+    rel. tol.: $reltol
+EOF
+            }
         }
     };
 }
@@ -100,6 +123,7 @@ for (my $i = 0 ; $i <= $#data ; ++ $i) {
 
 for (my $i = 0 ; $i <= $#data ; ++ $i) {
     my $str = $data[$i];
+    my $num = 0 + $str;
 
     my ($x, $got);
 
@@ -121,17 +145,29 @@ for (my $i = 0 ; $i <= $#data ; ++ $i) {
         # values exactly ...
 
         if ($got =~ /^\d+\z/) {
-            cmp_ok($got, "==", $str,
+            cmp_ok($got, "==", $num,
                    "'$test' output value is exactly right");
         }
 
         # ... otherwise compare them approximatly.
 
         else {
-            my $rel_err = abs($got - $str) / $str;
-            cmp_ok($rel_err, "<", $tol,
-                   "'$test' output value is correct within" .
-                   " a relative error of $tol");
+            my $text = "'$test' output value is correct within"
+                     . " a relative error of $reltol";
+            my $abserr = $got - $num;
+            my $relerr = $abserr / $num;
+            if (abs($relerr) <= $reltol) {
+                pass($text);
+            } else {
+                fail($text);
+                diag(<<EOF);
+          got: $got
+     expected: $num
+    abs. err.: $abserr
+    rel. err.: $relerr
+    rel. tol.: $reltol
+EOF
+            }
         }
     };
 }

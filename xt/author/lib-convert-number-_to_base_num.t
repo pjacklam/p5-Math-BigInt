@@ -94,7 +94,7 @@ for (my $i = 0 ; $i <= $#data ; ++ $i) {
         diag("\n$test\n\n") if $ENV{AUTHOR_DEBUGGING};
 
         subtest "_to_base_num() in list context: $test", sub {
-            plan tests => 5,
+            plan tests => 3 + 2 * @$out0,
 
             cmp_ok(scalar @got, '==', 1,
                    "'$test' gives one output arg");
@@ -105,11 +105,20 @@ for (my $i = 0 ; $i <= $#data ; ++ $i) {
             is(scalar(@{ $got[0] }), scalar(@$out0),
                "'$test' output array has the right number of elements");
 
-            ok(! grep(ref() ne $REF, @{ $got[0] }),
-              "'$test' output: every element is a $REF");
+            for my $i (0 .. $#$out0) {
+                my $ref = ref($got[0][$i]);
+                ok($ref eq $REF || $ref eq $LIB,
+                   "'$test' output: element $i is a $ref")
+                  or diag(<<"EOF");
+         got: $ref
+    expected: $REF or $LIB
+EOF
+            }
 
-            is_deeply($got[0], $out0,
-               "'$test' output: contains the right values");
+            for my $i (0 .. $#$out0) {
+                is($LIB->_str($got[0][$i]), $out0->[$i],
+                   "'$test' output: element $i has the right value");
+            }
         };
     }
 }
@@ -140,7 +149,7 @@ for (my $i = 0 ; $i <= $#data ; ++ $i) {
         diag("\n$test\n\n") if $ENV{AUTHOR_DEBUGGING};
 
         subtest "_to_base_num() in scalar context: $test", sub {
-            plan tests => 4,
+            plan tests => 2 + 2 * @$out0,
 
             is(ref($got), "ARRAY",
                "'$test' output arg is an ARRAY");
@@ -148,11 +157,20 @@ for (my $i = 0 ; $i <= $#data ; ++ $i) {
             is(scalar(@$got), scalar(@$out0),
                "'$test' output array has the right number of elements");
 
-            ok(! grep(ref() ne $REF, @{ $got }),
-              "'$test' output: every element is a $REF");
+            for my $i (0 .. $#$out0) {
+                my $ref = ref($got->[$i]);
+                ok($ref eq $REF || $ref eq $LIB,
+                   "'$test' output: element $i is a $ref")
+                  or diag(<<"EOF");
+         got: $ref
+    expected: $REF or $LIB
+EOF
+            }
 
-            is_deeply($got, $out0,
-               "'$test' output: contains the right values");
+            for my $i (0 .. $#$out0) {
+                is($LIB->_str($got->[$i]), $out0->[$i],
+                   "'$test' output: element $i has the right value");
+            }
         };
     }
 }

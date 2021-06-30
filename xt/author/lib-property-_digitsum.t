@@ -23,6 +23,15 @@ die "No library defined in file '$config_file'"
 die "Invalid library name '$LIB' in file '$config_file'"
   unless $LIB =~ /^[A-Za-z]\w*(::\w+)*\z/;
 
+# Read the reference type(s) the library uses.
+
+our $REF = $config->{_}->{ref};
+
+die "No reference type defined in file '$config_file'"
+  unless defined $REF;
+die "Invalid reference type '$REF' in file '$config_file'"
+  unless $REF =~ /^[A-Za-z]\w*(::\w+)*\z/;
+
 # Load the library.
 
 eval "require $LIB";
@@ -78,8 +87,8 @@ for (my $i = 0 ; $i <= $#data ; ++ $i) {
         cmp_ok(scalar @got, "==", 1,
                "'$test' gives one output arg");
 
-        is(ref($got[0]), $LIB,
-           "'$test' output arg is a $LIB");
+        is(ref($got[0]), $REF,
+           "'$test' output arg is a $REF");
 
         is($LIB->_str($got[0]), $out0,
            "'$test' output arg has the right value");
@@ -104,8 +113,8 @@ for (my $i = 0 ; $i <= $#data ; ++ $i) {
     subtest "_digitsum() in scalar context: $test", sub {
         plan tests => 2,
 
-        is(ref($got), $LIB,
-           "'$test' output arg is a $LIB");
+        is(ref($got), $REF,
+           "'$test' output arg is a $REF");
 
         is($LIB->_str($got), $out0,
            "'$test' output arg has the right value");

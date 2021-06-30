@@ -3,7 +3,7 @@
 use strict;
 use warnings;
 
-use Test::More tests => 14;
+use Test::More tests => 15;
 
 use Math::BigInt;
 
@@ -11,6 +11,20 @@ use Math::Complex ();
 
 my $inf = $Math::Complex::Inf;
 my $nan = $inf - $inf;
+
+# Compute parameters for relative tolerance.
+#
+# $p is the precision, i.e., the number of bits in the mantissa/significand, as
+# defined in IEEE754. $eps is the smallest number that, when subtracted from 1,
+# gives a number smaller than 1.
+
+my $p = 0;
+my $eps = 1;
+while (((1 + $eps) - 1) != 0) {
+    $eps *= 0.5;
+    $p++;
+}
+my $reltol = 20 * $eps;
 
 ###############################################################################
 # Check numify() on finite values.
@@ -23,8 +37,35 @@ cmp_ok(Math::BigInt -> new("4711") -> numify(), "==", 4711,
        'Math::BigInt -> new("4711") -> numify()');
 cmp_ok(Math::BigInt -> new("-4711") -> numify(), "==", -4711,
        'Math::BigInt -> new("-4711") -> numify()');
-cmp_ok(Math::BigInt -> new("12345e67") -> numify(), "==", 12345e67,
-       qq|Math::BigInt -> new("12345e67") -> numify()|);
+
+###############################################################################
+# Check numify() on finite, floating point values.
+
+for my $entry
+  (
+   [ 'Math::BigInt -> new("+1234e+56") -> numify()', +1234e+56 ],
+   [ 'Math::BigInt -> new("-1234e+56") -> numify()', -1234e+56 ],
+  )
+{
+    my ($test, $expected) = @$entry;
+    my $x = eval $test;
+    die $@ if $@;
+
+    my $abserr   = $x - $expected;
+    my $relerr   = $abserr / $expected;
+    if (abs($relerr) <= $reltol) {
+        pass($test);
+    } else {
+        fail($test);
+        diag(<<EOF);
+          got: $x
+     expected: $expected
+    abs. err.: $abserr
+    rel. err.: $relerr
+    rel. tol.: $reltol
+EOF
+    }
+}
 
 ###############################################################################
 # Verify that numify() overflows when given "extreme" values.

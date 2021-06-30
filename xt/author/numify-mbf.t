@@ -3,7 +3,7 @@
 use strict;
 use warnings;
 
-use Test::More tests => 9;
+use Test::More tests => 12;
 
 use Math::BigFloat;
 
@@ -12,19 +12,50 @@ use Math::Complex ();
 my $inf = $Math::Complex::Inf;
 my $nan = $inf - $inf;
 
+# Compute parameters for relative tolerance.
+#
+# $p is the precision, i.e., the number of bits in the mantissa/significand, as
+# defined in IEEE754. $eps is the smallest number that, when subtracted from 1,
+# gives a number smaller than 1.
+
+my $p = 0;
+my $eps = 1;
+while (((1 + $eps) - 1) != 0) {
+    $eps *= 0.5;
+    $p++;
+}
+my $reltol = 20 * $eps;
+
 ###############################################################################
-# Check numify() on finite values.
+# Check numify() on finite, floating point values.
 
+for my $entry
+  (
+   [ 'Math::BigFloat -> new("+1234e+56") -> numify()', +1234e+56 ],
+   [ 'Math::BigFloat -> new("-1234e+56") -> numify()', -1234e+56 ],
+   [ 'Math::BigFloat -> new("+1234e-56") -> numify()', +1234e-56 ],
+   [ 'Math::BigFloat -> new("-1234e-56") -> numify()', -1234e-56 ],
+   [ 'Math::BigFloat -> bpi() -> numify()', atan2(0, -1) ],
+  )
 {
-    my $x = Math::BigFloat -> new("0.008");
-    my $y = Math::BigFloat -> new(2);
-    $x -> bdiv(3, $y);
-    cmp_ok($x, "==", "0.0027",
-           qq|\$x = Math::BigFloat -> new("0.008");|
-         . qq| \$y = Math::BigFloat -> new(2); \$x -> bdiv(3, \$y);|);
+    my ($test, $expected) = @$entry;
+    my $x = eval $test;
+    die $@ if $@;
 
-    cmp_ok(Math::BigFloat -> new("12345e67") -> numify(), "==", 1.2345e71,
-           qq|Math::BigFloat -> new("12345e67") -> numify()|);
+    my $abserr   = $x - $expected;
+    my $relerr   = $abserr / $expected;
+    if (abs($relerr) <= $reltol) {
+        pass($test);
+    } else {
+        fail($test);
+        diag(<<EOF);
+          got: $x
+     expected: $expected
+    abs. err.: $abserr
+    rel. err.: $relerr
+    rel. tol.: $reltol
+EOF
+    }
 }
 
 ###############################################################################

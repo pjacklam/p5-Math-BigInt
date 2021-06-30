@@ -3431,6 +3431,7 @@ sub bround {
 
     if (($pad > 0) && ($pad <= $len)) {
         substr($xs, -$pad, $pad) = '0' x $pad; # replace with '00...'
+        $xs =~ s/^0+(\d)/$1/;                  # "00000" -> "0"
         $put_back = 1;                         # need to put back
     } elsif ($pad > $len) {
         $x->bzero();            # round to '0'
@@ -3452,7 +3453,6 @@ sub bround {
             last if $c != 0;    # no overflow => early out
         }
         $xs = '1'.$xs if $c == 0;
-
     }
     $x->{value} = $LIB->_new($xs) if $put_back == 1; # put back, if needed
 
