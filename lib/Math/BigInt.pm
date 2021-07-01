@@ -4761,7 +4761,7 @@ Leading and trailing whitespace is ignored.
 
 =item *
 
-Leading and trailing zeros are ignored.
+Leading zeros are ignored.
 
 =item *
 
