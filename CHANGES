@@ -1,4 +1,4 @@
-1.999819 Not Released
+1.999819 2021-07-02
 
  * Add method btfac() (triple factorial) and bmfac() (multi-factorial),
    including tests and documentation.
@@ -10,9 +10,8 @@
  * Fix error in bsin() and bcos() causing them to hang indefinitely if the
    invocand is +/-inf.
 
- * Fix error in documentation of bdfac(), the double factorial.
-
- * Fix error in handling special cases in bfac() and bdfac().
+ * Make it possible for the end user to specify the base length used internally
+   in Math::BigInt::Calc.
 
 1.999818 2019-10-20
 

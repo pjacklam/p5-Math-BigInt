@@ -2397,8 +2397,8 @@ together with 'use_int', the current value for the base length is used.
 
 L<Math::BigInt::Lib> for a description of the API.
 
-Alternative libraries L<Math::BigInt::FastCalc>, L<Math::BigInt::GMP>, and
-L<Math::BigInt::Pari>.
+Alternative libraries L<Math::BigInt::FastCalc>, L<Math::BigInt::GMP>,
+L<Math::BigInt::Pari>, L<Math::BigInt::GMPz>, and L<Math::BigInt::BitVect>.
 
 Some of the modules that use these libraries L<Math::BigInt>,
 L<Math::BigFloat>, and L<Math::BigRat>.

@@ -7025,17 +7025,13 @@ You can also look for information at:
 
 =over 4
 
+=item * GitHub
+
+L<https://github.com/pjacklam/p5-Math-BigInt>
+
 =item * RT: CPAN's request tracker
 
-L<https://rt.cpan.org/Public/Dist/Display.html?Name=Math-BigInt>
-
-=item * AnnoCPAN: Annotated CPAN documentation
-
-L<http://annocpan.org/dist/Math-BigInt>
-
-=item * CPAN Ratings
-
-L<https://cpanratings.perl.org/dist/Math-BigInt>
+L<https://rt.cpan.org/Dist/Display.html?Name=Math-BigInt>
 
 =item * MetaCPAN
 
@@ -7044,6 +7040,10 @@ L<https://metacpan.org/release/Math-BigInt>
 =item * CPAN Testers Matrix
 
 L<http://matrix.cpantesters.org/?dist=Math-BigInt>
+
+=item * CPAN Ratings
+
+L<https://cpanratings.perl.org/dist/Math-BigInt>
 
 =item * The Bignum mailing list
 
