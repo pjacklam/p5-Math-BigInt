@@ -22,7 +22,7 @@ use warnings;
 
 use Carp qw< carp croak >;
 
-our $VERSION = '1.999819';
+our $VERSION = '1.999820';
 
 require Exporter;
 our @ISA = qw(Exporter);
@@ -228,7 +228,8 @@ our $_trap_inf = 0;                         # are infs ok? set w/ config()
 
 my $nan = 'NaN';                        # constants for easier life
 
-my $LIB = 'Math::BigInt::Calc';        # module to do the low level math
+my $DEFAULT_LIB = 'Math::BigInt::Calc'; # module to do the low level math
+my $LIB = $DEFAULT_LIB;
                                         # default is Calc.pm
 my $IMPORT = 0;                         # was import() called yet?
                                         # used to make require work
@@ -4215,76 +4216,90 @@ sub import {
     my $class = shift;
     $IMPORT++;                  # remember we did import()
     my @a;                      # unrecognized arguments
+    my @libs;                   # backend libriaries
     my $warn_or_die = 0;        # 0 - no warn, 1 - warn, 2 - die
+
     for (my $i = 0; $i <= $#_ ; $i++) {
+        croak "Error in import(): argument with index $i is undefined"
+          unless defined($_[$i]);
+
         if ($_[$i] eq ':constant') {
             # this causes overlord er load to step in
             overload::constant
                 integer => sub { $class->new(shift) },
                 binary  => sub { $class->new(shift) };
-        } elsif ($_[$i] eq 'upgrade') {
+        }
+
+        elsif ($_[$i] eq 'upgrade') {
             # this causes upgrading
             $upgrade = $_[$i+1]; # or undef to disable
             $i++;
-        } elsif ($_[$i] =~ /^(lib|try|only)\z/) {
-            # this causes a different low lib to take care...
-            $LIB = $_[$i+1] || '';
-            # try  => 0 (no warn)
+        }
+
+        elsif ($_[$i] =~ /^(lib|try|only)\z/) {
+            # try  => 0 (no warn if unavailable module)
             # lib  => 1 (warn on fallback)
             # only => 2 (die on fallback)
             $warn_or_die = 1 if $_[$i] eq 'lib';
             $warn_or_die = 2 if $_[$i] eq 'only';
+            # this causes the specified low lib to take care...
+            croak "Library argument for import parameter '$_[$i]' is undefined"
+              unless defined($_[$i+1]);
+            for my $lib (split /\s*,\s*/, $_[$i+1]) {
+                # limit to sane characters (warn about invalid characters?)
+                $lib =~ tr/a-zA-Z0-9_://cd;
+                $lib = 'Math::BigInt::' . $lib if $lib !~ /^Math::BigInt::/i;
+                push @libs, $lib;
+            }
             $i++;
-        } else {
+        }
+
+        else {
             push @a, $_[$i];
         }
     }
-    # any non :constant stuff is handled by our parent, Exporter
+
+    # any non ':constant' stuff is handled by our parent, Exporter
     if (@a > 0) {
         $class->SUPER::import(@a);            # need it for subclasses
         $class->export_to_level(1, $class, @a); # need it for MBF
     }
 
-    # try to load core math lib
-    my @c = split /\s*,\s*/, $LIB;
-    foreach (@c) {
-        tr/a-zA-Z0-9://cd;      # limit to sane characters
-    }
-    push @c, \'Calc'            # if all fail, try these
-      if $warn_or_die < 2;      # but not for "only"
-    $LIB = '';                  # signal error
-    foreach my $l (@c) {
-        # fallback libraries are "marked" as \'string', extract string if nec.
-        my $lib = $l;
-        $lib = $$l if ref($l);
+    # If all specified libraries fail, try the default, but pass it as a
+    # reference so we can tell later whether we had to revert to the default.
+    push @libs, \$DEFAULT_LIB   # if all fail, try this
+      if $warn_or_die < 2;      #    but not for "only"
 
-        next unless defined($lib) && CORE::length($lib);
-        $lib = 'Math::BigInt::'.$lib if $lib !~ /^Math::BigInt/i;
-        $lib =~ s/\.pm$//;
-        my @parts = split /::/, $lib;   # Math::BigInt => Math BigInt
-        $parts[-1] .= '.pm';            # BigInt => BigInt.pm
-        require File::Spec;
-        my $file = File::Spec->catfile(@parts);
-        eval { require $file; };
-        if ($@ eq '') {
-            $lib->import();
+    my $numfail = 0;            # increment for each lib that failed to load
+    my $arg;
+    for (my $i = 0 ; $i <= $#libs ; $i++) {
+        $arg = $libs[$i];
+        my $lib = ref($arg) ? $$arg : $arg;
+        eval "require $lib";
+        if (!$@) {
             $LIB = $lib;
-            if ($warn_or_die > 0 && ref($l)) {
-                my $msg = "Math::BigInt: couldn't load specified"
-                        . " math lib(s), fallback to $lib";
-                carp($msg)  if $warn_or_die == 1;
-                croak($msg) if $warn_or_die == 2;
-            }
-            last;               # found a usable one, break
+            last;
         }
+        $numfail++;
     }
-    if ($LIB eq '') {
-        if ($warn_or_die == 2) {
-            croak("Couldn't load specified math lib(s)" .
-                        " and fallback disallowed");
-        } else {
-            croak("Couldn't load any math lib(s), not even fallback to Calc.pm");
+
+    # If we were unable to load a library.
+
+    if ($numfail > 0) {
+        my $info = "Couldn't load the specified math lib(s)"
+          .  " (" . join(", ", grep { !ref } @libs) . ")";
+
+        if ($numfail == @libs) {
+            croak "$info, and fallback to $DEFAULT_LIB is disallowed"
+              if $warn_or_die == 2;
+            croak "$info, not even fallback to $DEFAULT_LIB";
         }
+
+        # If we failed to load some of the libraries, but were able to use the
+        # fallback library.
+
+        carp "$info, fallback to $DEFAULT_LIB"
+          if $warn_or_die == 1 && ref($arg);
     }
 
     # notify callbacks
