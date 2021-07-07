@@ -22,7 +22,7 @@ use warnings;
 
 use Carp qw< carp croak >;
 
-our $VERSION = '1.999820';
+our $VERSION = '1.999821';
 
 require Exporter;
 our @ISA = qw(Exporter);
@@ -614,7 +614,8 @@ sub new {
         return $self;
     }
 
-    # Handle hexadecimal numbers.
+    # Handle hexadecimal numbers. We auto-detect hexadecimal numbers if they
+    # have a "0x" or "0X" prefix.
 
     if ($wanted =~ /^\s*[+-]?0[Xx]/) {
         $self = $class -> from_hex($wanted);
@@ -622,7 +623,17 @@ sub new {
         return $self;
     }
 
-    # Handle binary numbers.
+    # Handle octal numbers. We auto-detect octal numbers if they have a "0o"
+    # or "0O" prefix.
+
+    if ($wanted =~ /^\s*[+-]?0[Oo]/) {
+        $self = $class -> from_oct($wanted);
+        $self->round($a, $p, $r) unless @_ >= 3 && !defined $a && !defined $p;
+        return $self;
+    }
+
+    # Handle binary numbers. We auto-detect binary numbers if they have a "0b"
+    # or "0B" prefix.
 
     if ($wanted =~ /^\s*[+-]?0[Bb]/) {
         $self = $class -> from_bin($wanted);
@@ -731,7 +742,7 @@ sub from_hex {
                      ^
                      \s*
                      ( [+-]? )
-                     (0?x)?
+                     ( 0 [Xx] )?
                      (
                          [0-9a-fA-F]*
                          ( _ [0-9a-fA-F]+ )*
@@ -787,6 +798,7 @@ sub from_oct {
                      ^
                      \s*
                      ( [+-]? )
+                     ( 0 [Oo] )?
                      (
                          [0-7]*
                          ( _ [0-7]+ )*
@@ -799,7 +811,7 @@ sub from_oct {
         # underscores or invalid characters.
 
         my $sign = $1;
-        my $chrs = $2;
+        my $chrs = $3;
         $chrs =~ tr/_//d;
         $chrs = '0' unless CORE::length $chrs;
 
@@ -842,7 +854,7 @@ sub from_bin {
                      ^
                      \s*
                      ( [+-]? )
-                     (0?b)?
+                     ( 0 [Bb] )?
                      (
                          [01]*
                          ( _ [01]+ )*
@@ -4784,6 +4796,10 @@ If the string has a "0x" prefix, it is interpreted as a hexadecimal number.
 
 =item *
 
+If the string has a "0o" prefix, it is interpreted as an octal number.
+
+=item *
+
 If the string has a "0b" prefix, it is interpreted as a binary number.
 
 =item *
@@ -4796,10 +4812,6 @@ If the string can not be interpreted, NaN is returned.
 
 =back
 
-Octal numbers are typically prefixed by "0", but since leading zeros are
-stripped, these methods can not automatically recognize octal numbers, so use
-the constructor from_oct() to interpret octal strings.
-
 Some examples of valid string input
 
     Input string                Resulting value
@@ -4807,7 +4819,11 @@ Some examples of valid string input
     1.23e2                      123
     12300e-2                    123
     0xcafe                      51966
+    0XCAFE                      51966
+    0o1337                      735
+    0O1337                      735
     0b1101                      13
+    0B1101                      13
     67_538_754                  67538754
     -4_5_6.7_8_9e+0_1_0         -4567890000000
 

@@ -1,3 +1,19 @@
+1.999821 2021-07-06
+
+ * Make new() and from_hex() accept the "0X" prefix, not just the "0x" prefix,
+   but not accept just "X" or "x". Now, "0XFF" returns 255, not NaN.
+
+ * Make new() and from_bin() accept the "0B" prefix, not just the "0b" prefix, but
+   not accept just "B" or "b". Now, "0B1111" returns 255, not NaN.
+
+ * Make new() and from_oct() accept the "0o" and "0O" prefixes, but not accept
+   just "O" (capital letter O) or "o" (lowercase letter o). Now, "0o377" and
+   "0O377" return 255, not NaN. Also intepret floating point numbers with a
+   leading zero and a binary exponent as an octal number, so that "01.4p0"
+   returns 1.5, not NaN. There is still no ambiguety, since decimal floating
+   point numbers use "e" or "E" before the exponent, and binary and hexadecimal
+   floating point numbers use a "0b"/"0B" or "0x"/"0x" prefix, respectively.
+
 1.999820 2021-07-06
 
  * Fix bug and improve error messages in Math::BigInt::import().
