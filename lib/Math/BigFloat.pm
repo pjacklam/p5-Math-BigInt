@@ -417,17 +417,18 @@ sub new {
         return $self;
     }
 
-    # Handle hexadecimal numbers. We auto-detect hexadecimal numbers if they
-    # have a "0x" or "0X" prefix.
+    # Handle hexadecimal numbers. Just like CORE::oct(), we accept octal numbers with
+    # prefix "0x", "0X", "x", or "X".
 
-    if ($wanted =~ /^\s*[+-]?0[Xx]/) {
+    if ($wanted =~ /^\s*[+-]?0?[Xx]/) {
         $self = $class -> from_hex($wanted);
         $self->round(@r) unless @r >= 2 && !defined $r[0] && !defined $r[1];
         return $self;
     }
 
-    # Handle octal numbers. We auto-detect octal numbers if they have a "0o"
-    # prefix or a "0" prefix and a binary exponent.
+    # Handle octal numbers. Just like CORE::oct(), we accept octal numbers with
+    # prefix "0o", "0O", "o", or "O". If the prefix is just "0", the number must
+    # have a binary exponent, or else the number is interpreted as decimal.
 
     if ($wanted =~ /
                        ^
@@ -438,7 +439,7 @@ sub new {
 
                        (?:
                            # prefix
-                           0 [Oo]
+                           0? [Oo]
                        |
 
                            # prefix
@@ -465,10 +466,10 @@ sub new {
         return $self;
     }
 
-    # Handle binary numbers. We auto-detect binary numbers if they have a "0b"
-    # or "0B" prefix.
+    # Handle binary numbers.  Just like CORE::oct(), we accept octal numbers with
+    # prefix "0b", "0B", "b", or "B".
 
-    if ($wanted =~ /^\s*[+-]?0[Bb]/) {
+    if ($wanted =~ /^\s*[+-]?0?[Bb]/) {
         $self = $class -> from_bin($wanted);
         $self->round(@r) unless @r >= 2 && !defined $r[0] && !defined $r[1];
         return $self;
@@ -576,8 +577,8 @@ sub from_hex {
                      # sign
                      ( [+-]? )
 
-                     # optional "hex marker"
-                     (?: 0 [Xx] )?
+                     # optional hexadecimal prefix
+                     (?: 0? [Xx] )?
 
                      # significand using the hex digits 0..9 and a..f
                      (
@@ -667,8 +668,8 @@ sub from_oct {
                      # sign
                      ( [+-]? )
 
-                     # optional "octal marker"
-                     (?: 0 [Oo] )?
+                     # optional octal prefix
+                     (?: 0? [Oo] )?
 
                      # significand using the octal digits 0..7
                      (
@@ -758,8 +759,8 @@ sub from_bin {
                      # sign
                      ( [+-]? )
 
-                     # optional "bin marker"
-                     (?: 0 [Bb] )?
+                     # optional binary prefix
+                     (?: 0? [Bb] )?
 
                      # significand using the binary digits 0 and 1
                      (

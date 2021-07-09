@@ -615,27 +615,27 @@ sub new {
     }
 
     # Handle hexadecimal numbers. We auto-detect hexadecimal numbers if they
-    # have a "0x" or "0X" prefix.
+    # have a "0x", "0X", "x", or "X" prefix, cf. CORE::oct().
 
-    if ($wanted =~ /^\s*[+-]?0[Xx]/) {
+    if ($wanted =~ /^\s*[+-]?0?[Xx]/) {
         $self = $class -> from_hex($wanted);
         $self->round($a, $p, $r) unless @_ >= 3 && !defined $a && !defined $p;
         return $self;
     }
 
-    # Handle octal numbers. We auto-detect octal numbers if they have a "0o"
-    # or "0O" prefix.
+    # Handle octal numbers. We auto-detect octal numbers if they have a "0o",
+    # "0O", "o", "O" prefix, cf. CORE::oct().
 
-    if ($wanted =~ /^\s*[+-]?0[Oo]/) {
+    if ($wanted =~ /^\s*[+-]?0?[Oo]/) {
         $self = $class -> from_oct($wanted);
         $self->round($a, $p, $r) unless @_ >= 3 && !defined $a && !defined $p;
         return $self;
     }
 
-    # Handle binary numbers. We auto-detect binary numbers if they have a "0b"
-    # or "0B" prefix.
+    # Handle binary numbers. We auto-detect binary numbers if they have a "0b",
+    # "B", "b", or "B" prefix, cf. CORE::oct().
 
-    if ($wanted =~ /^\s*[+-]?0[Bb]/) {
+    if ($wanted =~ /^\s*[+-]?0?[Bb]/) {
         $self = $class -> from_bin($wanted);
         $self->round($a, $p, $r) unless @_ >= 3 && !defined $a && !defined $p;
         return $self;
@@ -742,7 +742,7 @@ sub from_hex {
                      ^
                      \s*
                      ( [+-]? )
-                     ( 0 [Xx] )?
+                     ( 0? [Xx] )?
                      (
                          [0-9a-fA-F]*
                          ( _ [0-9a-fA-F]+ )*
@@ -798,7 +798,7 @@ sub from_oct {
                      ^
                      \s*
                      ( [+-]? )
-                     ( 0 [Oo] )?
+                     ( 0? [Oo] )?
                      (
                          [0-7]*
                          ( _ [0-7]+ )*
@@ -854,7 +854,7 @@ sub from_bin {
                      ^
                      \s*
                      ( [+-]? )
-                     ( 0 [Bb] )?
+                     ( 0? [Bb] )?
                      (
                          [01]*
                          ( _ [01]+ )*
