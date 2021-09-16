@@ -1,4 +1,4 @@
-#!perl
+# -*- mode: perl; -*-
 
 # test calling conventions, and :constant overloading
 
