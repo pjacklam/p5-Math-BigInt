@@ -543,7 +543,7 @@ sub new {
 
     return $self->bzero() unless @_;
 
-    my ($wanted, $a, $p, $r) = @_;
+    my ($wanted, @r) = @_;
 
     # Always return a new object, so if called as an instance method, copy the
     # invocand, and if called as a class method, initialize a new object.
@@ -553,7 +553,7 @@ sub new {
 
     unless (defined $wanted) {
         #carp("Use of uninitialized value in new()");
-        return $self->bzero($a, $p, $r);
+        return $self->bzero(@r);
     }
 
     if (ref($wanted) && $wanted->isa($class)) {         # MBI or subclass
@@ -584,16 +584,7 @@ sub new {
         my $abs = $2;
         $self->{sign} = $sgn || '+';
         $self->{value} = $LIB->_new($abs);
-
-        no strict 'refs';
-        if (defined($a) || defined($p)
-            || defined(${"${class}::precision"})
-            || defined(${"${class}::accuracy"}))
-        {
-            $self->round($a, $p, $r)
-              unless @_ >= 3 && !defined $a && !defined $p;
-        }
-
+        $self->round(@r) unless @r >= 2 && !defined($r[0]) && !defined($r[1]);
         return $self;
     }
 
@@ -609,7 +600,7 @@ sub new {
 
     if ($wanted =~ /^\s*([+-]?)nan\s*\z/i) {
         $self = $class -> bnan();
-        $self->round($a, $p, $r) unless @_ >= 3 && !defined $a && !defined $p;
+        $self->round(@r) unless @r >= 2 && !defined($r[0]) && !defined($r[1]);
         return $self;
     }
 
@@ -618,7 +609,7 @@ sub new {
 
     if ($wanted =~ /^\s*[+-]?0?[Xx]/) {
         $self = $class -> from_hex($wanted);
-        $self->round($a, $p, $r) unless @_ >= 3 && !defined $a && !defined $p;
+        $self->round(@r) unless @r >= 2 && !defined($r[0]) && !defined($r[1]);
         return $self;
     }
 
@@ -627,7 +618,7 @@ sub new {
 
     if ($wanted =~ /^\s*[+-]?0?[Oo]/) {
         $self = $class -> from_oct($wanted);
-        $self->round($a, $p, $r) unless @_ >= 3 && !defined $a && !defined $p;
+        $self->round(@r) unless @r >= 2 && !defined($r[0]) && !defined($r[1]);
         return $self;
     }
 
@@ -636,7 +627,7 @@ sub new {
 
     if ($wanted =~ /^\s*[+-]?0?[Bb]/) {
         $self = $class -> from_bin($wanted);
-        $self->round($a, $p, $r) unless @_ >= 3 && !defined $a && !defined $p;
+        $self->round(@r) unless @r >= 2 && !defined($r[0]) && !defined($r[1]);
         return $self;
     }
 
@@ -670,7 +661,7 @@ sub new {
                 croak("$wanted not an integer in $class");
             }
             #print "NOI 1\n";
-            return $upgrade->new($wanted, $a, $p, $r) if defined $upgrade;
+            return $upgrade->new($wanted, @r) if defined $upgrade;
             $self->{sign} = $nan;
         } else {                 # diff >= 0
             # adjust fraction and add it to value
@@ -686,7 +677,7 @@ sub new {
                 croak("$wanted not an integer in $class");
             }
             #print "NOI 2 \$\$mfv '$$mfv'\n";
-            return $upgrade->new($wanted, $a, $p, $r) if defined $upgrade;
+            return $upgrade->new($wanted, @r) if defined $upgrade;
             $self->{sign} = $nan;
         } elsif ($e < 0) {
             # xE-y, and empty mfv
@@ -701,7 +692,7 @@ sub new {
                     croak("$wanted not an integer in $class");
                 }
                 #print "NOI 3\n";
-                return $upgrade->new($wanted, $a, $p, $r) if defined $upgrade;
+                return $upgrade->new($wanted, @r) if defined $upgrade;
                 $self->{sign} = $nan;
             }
         }
@@ -716,7 +707,7 @@ sub new {
     # $self. Do not round for new($x, undef, undef) since that is used by MBF
     # to signal no rounding.
 
-    $self->round($a, $p, $r) unless @_ >= 3 && !defined $a && !defined $p;
+    $self->round(@r) unless @r >= 2 && !defined($r[0]) && !defined($r[1]);
     $self;
 }
 
