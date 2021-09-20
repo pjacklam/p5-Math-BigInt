@@ -723,6 +723,7 @@ sub from_hex {
     return if $selfref && $self->modify('from_hex');
 
     my $str = shift;
+    my @r = @_;
 
     # If called as a class method, initialize a new object.
 
@@ -758,13 +759,13 @@ sub from_hex {
         $self->{sign} = $sign eq '-' && ! $LIB->_is_zero($self->{value})
                           ? '-' : '+';
 
-        return $self;
+        return $self -> round(@r);
     }
 
     # CORE::hex() parses as much as it can, and ignores any trailing garbage.
     # For backwards compatibility, we return NaN.
 
-    return $self->bnan();
+    return $self -> bnan(@r);
 }
 
 # Create a Math::BigInt from an octal string.
@@ -779,6 +780,7 @@ sub from_oct {
     return if $selfref && $self->modify('from_oct');
 
     my $str = shift;
+    my @r = @_;
 
     # If called as a class method, initialize a new object.
 
@@ -814,13 +816,13 @@ sub from_oct {
         $self->{sign} = $sign eq '-' && ! $LIB->_is_zero($self->{value})
                           ? '-' : '+';
 
-        return $self;
+        return $self -> round(@r);
     }
 
     # CORE::oct() parses as much as it can, and ignores any trailing garbage.
     # For backwards compatibility, we return NaN.
 
-    return $self->bnan();
+    return $self -> bnan(@r);
 }
 
 # Create a Math::BigInt from a binary string.
@@ -835,6 +837,7 @@ sub from_bin {
     return if $selfref && $self->modify('from_bin');
 
     my $str = shift;
+    my @r = @_;
 
     # If called as a class method, initialize a new object.
 
@@ -870,13 +873,13 @@ sub from_bin {
         $self->{sign} = $sign eq '-' && ! $LIB->_is_zero($self->{value})
                           ? '-' : '+';
 
-        return $self;
+        return $self -> round(@r);
     }
 
     # For consistency with from_hex() and from_oct(), we return NaN when the
     # input is invalid.
 
-    return $self->bnan();
+    return $self -> bnan(@r);
 
 }
 
@@ -895,13 +898,14 @@ sub from_bytes {
         unless $LIB->can('_from_bytes');
 
     my $str = shift;
+    my @r = @_;
 
     # If called as a class method, initialize a new object.
 
     $self = $class -> bzero() unless $selfref;
     $self -> {sign}  = '+';
     $self -> {value} = $LIB -> _from_bytes($str);
-    return $self;
+    return $self -> round(@r);
 }
 
 sub from_base {
@@ -945,7 +949,7 @@ sub from_base {
     $self -> {sign}  = '+';
     $self -> {value}
       = $LIB->_from_base($str, $base -> {value}, @_ ? shift() : ());
-    return $self
+    return $self;
 }
 
 sub from_base_num {
@@ -974,6 +978,8 @@ sub from_base_num {
     my $base = shift;
     $base = $class -> new($base) unless ref($base) && $base -> isa($class);
 
+    my @r = @_;
+
     # If called as a class method, initialize a new object.
 
     $self = $class -> bzero() unless $selfref;
@@ -985,7 +991,7 @@ sub from_base_num {
     $self -> {value} = $LIB -> _from_base_num([ map { $_ -> {value} } @$nums ],
                                            $base -> {value});
 
-    return $self;
+    return $self -> round(@r);
 }
 
 sub bzero {
@@ -1165,6 +1171,22 @@ sub bnan {
 
     $self -> {sign}  = $nan;
     $self -> {value} = $LIB -> _zero();
+
+    # If rounding parameters are given as arguments, use them. If no rounding
+    # parameters are given, and if called as a class method initialize the new
+    # instance with the class variables.
+
+    if (@_) {
+        croak "can't specify both accuracy and precision"
+          if @_ >= 2 && defined $_[0] && defined $_[1];
+        $self->{_a} = $_[0];
+        $self->{_p} = $_[1];
+    } else {
+        unless($selfref) {
+            $self->{_a} = $class -> accuracy();
+            $self->{_p} = $class -> precision();
+        }
+    }
 
     return $self;
 }

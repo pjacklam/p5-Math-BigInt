@@ -565,6 +565,7 @@ sub from_hex {
     return if $selfref && $self->modify('from_hex');
 
     my $str = shift;
+    my @r = @_;
 
     # If called as a class method, initialize a new object.
 
@@ -640,10 +641,10 @@ sub from_hex {
             $self -> bmul($factor);
         }
 
-        return $self;
+        return $self -> round(@r);
     }
 
-    return $self->bnan();
+    return $self -> bnan(@r);
 }
 
 sub from_oct {
@@ -656,6 +657,7 @@ sub from_oct {
     return if $selfref && $self->modify('from_oct');
 
     my $str = shift;
+    my @r = @_;
 
     # If called as a class method, initialize a new object.
 
@@ -731,10 +733,10 @@ sub from_oct {
             $self -> bmul($factor);
         }
 
-        return $self;
+        return $self -> bround(@r);
     }
 
-    return $self->bnan();
+    return $self -> bnan(@r);
 }
 
 sub from_bin {
@@ -747,6 +749,7 @@ sub from_bin {
     return if $selfref && $self->modify('from_bin');
 
     my $str = shift;
+    my @r = @_;
 
     # If called as a class method, initialize a new object.
 
@@ -819,10 +822,10 @@ sub from_bin {
             $self -> bmul($factor);
         }
 
-        return $self;
+        return $self -> round(@r);
     }
 
-    return $self->bnan();
+    return $self->bnan(@r);
 }
 
 sub from_ieee754 {
@@ -839,6 +842,7 @@ sub from_ieee754 {
     my $enc;                # significand encoding (applies only to decimal)
     my $k;                  # storage width in bits
     my $b;                  # base
+    my @r = @_;
 
     if ($format =~ /^binary(\d+)\z/) {
         $k = $1;
@@ -907,7 +911,7 @@ sub from_ieee754 {
 
         unless (defined $in) {
             carp("Input is undefined");
-            return $self -> bzero();
+            return $self -> bzero(@r);
         }
 
         # Make sure input string is a string of zeros and ones.
@@ -978,7 +982,7 @@ sub from_ieee754 {
         } else {
             $self = $x;
         }
-        return $self;
+        return $self -> round(@r);
     }
 
     croak("The format '$format' is not yet supported.");
