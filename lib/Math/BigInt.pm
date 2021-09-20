@@ -20,7 +20,8 @@ use 5.006001;
 use strict;
 use warnings;
 
-use Carp qw< carp croak >;
+use Carp          qw< carp croak >;
+use Scalar::Util  qw< blessed >;
 
 our $VERSION = '1.999824';
 
@@ -530,44 +531,50 @@ sub new {
     my $selfref = ref $self;
     my $class   = $selfref || $self;
 
-    # The POD says:
-    #
-    # "Currently, Math::BigInt->new() defaults to 0, while Math::BigInt->new('')
-    # results in 'NaN'. This might change in the future, so use always the
-    # following explicit forms to get a zero or NaN:
-    #     $zero = Math::BigInt->bzero();
-    #     $nan = Math::BigInt->bnan();
-    #
-    # But although this use has been discouraged for more than 10 years, people
+    # Make "require" work.
+
+    $class -> import() if $IMPORT == 0;
+
+    # Although this use has been discouraged for more than 10 years, people
     # apparently still use it, so we still support it.
 
-    return $self->bzero() unless @_;
+    return $class -> bzero() unless @_;
 
     my ($wanted, @r) = @_;
 
-    # Always return a new object, so if called as an instance method, copy the
-    # invocand, and if called as a class method, initialize a new object.
-
-    $self = $selfref ? $self -> copy()
-                     : bless {}, $class;
-
-    unless (defined $wanted) {
-        #carp("Use of uninitialized value in new()");
-        return $self->bzero(@r);
+    if (!defined($wanted)) {
+        #if (warnings::enabled("uninitialized")) {
+        #    warnings::warn("uninitialized",
+        #                   "Use of uninitialized value in new()");
+        #}
+        return $class -> bzero(@r);
     }
 
-    if (ref($wanted) && $wanted->isa($class)) {         # MBI or subclass
-        # Using "$copy = $wanted -> copy()" here fails some tests. Fixme!
-        my $copy = $class -> copy($wanted);
-        if ($selfref) {
-            %$self = %$copy;
-        } else {
-            $self = $copy;
-        }
+    if (!ref($wanted) && $wanted eq "") {
+        #if (warnings::enabled("numeric")) {
+        #    warnings::warn("numeric",
+        #                   q|Argument "" isn't numeric in new()|);
+        #}
+        #return $class -> bzero(@r);
+        return $class -> bnan(@r);
+    }
+
+    # Initialize a new object.
+
+    $self = bless {}, $class;
+
+    # Math::BigInt or subclass
+
+    if (defined(blessed($wanted)) && $wanted -> isa($class)) {
+
+        # We don't copy the accuracy and precision, because a new object should
+        # get them from the global configuration.
+
+        $self -> {sign}  = $wanted -> {sign};
+        $self -> {value} = $LIB -> _copy($wanted -> {value});
+        $self->round(@r) unless @r >= 2 && !defined($r[0]) && !defined($r[1]);
         return $self;
     }
-
-    $class->import() if $IMPORT == 0;           # make require work
 
     # Shortcut for non-zero scalar integers with no non-zero exponent.
 

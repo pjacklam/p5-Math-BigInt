@@ -3,7 +3,7 @@
 use strict;
 use warnings;
 
-use Test::More tests => 40;
+use Test::More tests => 41;
 
 use Scalar::Util qw< refaddr >;
 
@@ -74,22 +74,6 @@ while (<DATA>) {
         is($x, "0", 'output arg has the right value');
     };
 }
-
-{
-    my ($p, $x, $y);
-    $p = $class -> precision();         # get current precision
-    $class -> precision(2);             # set new precision
-
-    $x = $class -> new("314");
-    is($x, 300, 'object is rounded to the global precision');
-
-    $x = $class -> new("314", undef, undef);
-    is($x, 314, 'object is not rounded to the global precision');
-
-    $class -> precision($p);            # reset precision
-}
-
-exit;
 
 # new($x)
 #

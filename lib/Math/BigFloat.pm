@@ -360,13 +360,32 @@ sub new {
     my $selfref = ref $self;
     my $class   = $selfref || $self;
 
+    # Make "require" work.
+
+    $class -> import() if $IMPORT == 0;
+
+    # Although this use has been discouraged for more than 10 years, people
+    # apparently still use it, so we still support it.
+
+    return $class -> bzero() unless @_;
+
     my ($wanted, @r) = @_;
 
-    # avoid numify-calls by not using || on $wanted!
+    if (!defined($wanted)) {
+        #if (warnings::enabled("uninitialized")) {
+        #    warnings::warn("uninitialized",
+        #                   "Use of uninitialized value in new()");
+        #}
+        return $class -> bzero(@r);
+    }
 
-    unless (defined $wanted) {
-        #carp("Use of uninitialized value in new");
-        return $self->bzero(@r);
+    if (!ref($wanted) && $wanted eq "") {
+        #if (warnings::enabled("numeric")) {
+        #    warnings::warn("numeric",
+        #                   q|Argument "" isn't numeric in new()|);
+        #}
+        #return $class -> bzero(@r);
+        return $class -> bnan(@r);
     }
 
     # Using $wanted->isa("Math::BigFloat") here causes a 'Deep recursion on
@@ -382,30 +401,18 @@ sub new {
         return $copy;
     }
 
-    $class->import() if $IMPORT == 0;             # make require work
-
     # If called as a class method, initialize a new object.
 
     $self = bless {}, $class unless $selfref;
-
-    # shortcut for bigints and its subclasses
-    if ((ref($wanted)) && $wanted -> can("as_number")) {
-        $self->{_m} = $wanted->as_number()->{value};  # get us a bigint copy
-        $self->{_e} = $LIB->_zero();
-        $self->{_es} = '+';
-        $self->{sign} = $wanted->sign();
-        return $self->bnorm();
-    }
-
-    # else: got a string or something masquerading as number (with overload)
 
     # Handle Infs.
 
     if ($wanted =~ /^\s*([+-]?)inf(inity)?\s*\z/i) {
         return $downgrade->new($wanted) if $downgrade;
         my $sgn = $1 || '+';
-        $self->{sign} = $sgn . 'inf';   # set a default sign for bstr()
-        return $self->binf($sgn);
+        $self = $class -> binf($sgn);
+        $self->round(@r) unless @r >= 2 && !defined($r[0]) && !defined($r[1]);
+        return $self;
     }
 
     # Handle explicit NaNs (not the ones returned due to invalid input).
