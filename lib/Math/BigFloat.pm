@@ -1462,7 +1462,7 @@ sub bcmp {
 
     # Handle all 'nan' cases.
 
-    return undef if ($x->{sign} eq $nan) || ($y->{sign} eq $nan);
+    return    if ($x->{sign} eq $nan) || ($y->{sign} eq $nan);
 
     # Handle all '+inf' and '-inf' cases.
 
@@ -1620,9 +1620,9 @@ sub bacmp {
 
     # handle +-inf and NaN's
     if ($x->{sign} !~ /^[+-]$/ || $y->{sign} !~ /^[+-]$/) {
-        return undef if (($x->{sign} eq $nan) || ($y->{sign} eq $nan));
-        return 0 if ($x->is_inf() && $y->is_inf());
-        return 1 if ($x->is_inf() && !$y->is_inf());
+        return    if (($x->{sign} eq $nan) || ($y->{sign} eq $nan));
+        return  0 if ($x->is_inf() && $y->is_inf());
+        return  1 if ($x->is_inf() && !$y->is_inf());
         return -1;
     }
 

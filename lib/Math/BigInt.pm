@@ -1335,8 +1335,8 @@ sub bcmp {
 
     if (($x->{sign} !~ /^[+-]$/) || ($y->{sign} !~ /^[+-]$/)) {
         # handle +-inf and NaN
-        return undef if (($x->{sign} eq $nan) || ($y->{sign} eq $nan));
-        return 0 if $x->{sign} eq $y->{sign} && $x->{sign} =~ /^[+-]inf$/;
+        return    if (($x->{sign} eq $nan) || ($y->{sign} eq $nan));
+        return  0 if $x->{sign} eq $y->{sign} && $x->{sign} =~ /^[+-]inf$/;
         return +1 if $x->{sign} eq '+inf';
         return -1 if $x->{sign} eq '-inf';
         return -1 if $y->{sign} eq '+inf';
@@ -1375,7 +1375,7 @@ sub bacmp {
 
     if (($x->{sign} !~ /^[+-]$/) || ($y->{sign} !~ /^[+-]$/)) {
         # handle +-inf and NaN
-        return undef if (($x->{sign} eq $nan) || ($y->{sign} eq $nan));
+        return   if (($x->{sign} eq $nan) || ($y->{sign} eq $nan));
         return 0 if $x->{sign} =~ /^[+-]inf$/ && $y->{sign} =~ /^[+-]inf$/;
         return 1 if $x->{sign} =~ /^[+-]inf$/ && $y->{sign} !~ /^[+-]inf$/;
         return -1;
@@ -4429,7 +4429,7 @@ sub _split_dec_string {
                $trailing);
     }
 
-    return undef;
+    return;
 }
 
 sub _split {
