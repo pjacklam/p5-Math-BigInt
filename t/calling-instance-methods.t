@@ -51,7 +51,7 @@ while (<DATA>) {
     my @args = split /:/, $_, 99;
     $expected = pop @args;
     foreach my $class (qw/
-                             Math::BigInt Math::BigFloat
+                             Math::BigInt       Math::BigFloat
                              Math::BigInt::Test Math::BigFloat::Test
                          /)
     {
