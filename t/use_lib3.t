@@ -9,7 +9,7 @@ use lib 't';
 
 use Test::More tests => 2;
 
-use Math::BigInt lib => 'BareCalc';
+use Math::BigInt lib => 'BareCalc';             # ignores "BareCalc"
 use Math::BigFloat;
 
 is(Math::BigInt->config('lib'), 'Math::BigInt::BareCalc',

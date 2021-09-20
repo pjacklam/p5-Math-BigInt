@@ -9,7 +9,7 @@ use lib 't';
 
 use Test::More tests => 2;
 
-use Math::BigFloat lib => 'BareCalc';
+use Math::BigFloat lib => 'BareCalc';           # loads "BareCalc"
 
 is(Math::BigInt->config('lib'), 'Math::BigInt::BareCalc',
    "Math::BigInt->config('lib')");

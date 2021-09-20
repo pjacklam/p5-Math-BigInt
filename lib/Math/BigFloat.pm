@@ -4697,57 +4697,85 @@ sub import {
     my $class = shift;
     $IMPORT++;                  # remember we did import()
     my @a;                      # unrecognized arguments
-    my $lib = '';
-    my $lib_kind = 'try';
+    my $lib_param = '';
+    my $lib_value = '';
 
-    for (my $i = 0; $i <= $#_ ; $i++) {
-        croak "Error in import(): argument with index $i is undefined"
-          unless defined($_[$i]);
+    while (@_) {
+        my $param = shift;
 
-        if ($_[$i] eq ':constant') {
-            # This causes overlord er load to step in. 'binary' and 'integer'
-            # are handled by BigInt.
+        # Enable overloading of constants.
+
+        if ($param eq ':constant') {
             overload::constant float => sub { $class->new(shift); };
+            next;
         }
 
-        elsif ($_[$i] eq 'upgrade') {
-            # this causes upgrading
-            $upgrade = $_[$i+1];        # or undef to disable
-            $i++;
+        # Upgrading.
+
+        if ($param eq 'upgrade') {
+            $class -> upgrade(shift);
+            next;
         }
 
-        elsif ($_[$i] eq 'downgrade') {
-            # this causes downgrading
-            $downgrade = $_[$i+1];      # or undef to disable
-            $i++;
+        # Downgrading.
+
+        if ($param eq 'downgrade') {
+            $class -> downgrade(shift);
+            next;
         }
 
-        elsif ($_[$i] =~ /^(lib|try|only)\z/) {
+        # Accuracy.
+
+        if ($param eq 'accuracy') {
+            $class -> accuracy(shift);
+            next;
+        }
+
+        # Precision.
+
+        if ($param eq 'precision') {
+            $class -> precision(shift);
+            next;
+        }
+
+        # Rounding mode.
+
+        if ($param eq 'round_mode') {
+            $class -> round_mode(shift);
+            next;
+        }
+
+        # Backend library.
+
+        if ($param =~ /^(lib|try|only)\z/) {
             # alternative library
-            $lib = $_[$i+1] || '';
-            $lib_kind = $1;             # "lib", "try", or "only"
-            $i++;
+            $lib_param = $param;        # "lib", "try", or "only"
+            $lib_value = shift;
+            next;
         }
 
-        elsif ($_[$i] eq 'with') {
+        if ($param eq 'with') {
             # alternative class for our private parts()
             # XXX: no longer supported
-            # $LIB = $_[$i+1] || 'Calc';
+            # $LIB = shift() || 'Calc';
             # carp "'with' is no longer supported, use 'lib', 'try', or 'only'";
-            $i++;
+            shift;
+            next;
         }
 
-        else {
-            push @a, $_[$i];
-        }
+        # Unrecognized parameter.
+
+        push @a, $param;
     }
 
+    require Math::BigInt;
+
     my @import = ('objectify');
-    push @import, $lib_kind, $lib if $lib ne '';
+    push @import, $lib_param, $lib_value if $lib_param ne '';
     Math::BigInt -> import(@import);
 
     # find out which one was actually loaded
-    $LIB = Math::BigInt->config('lib');
+    $LIB = Math::BigInt -> config('lib');
 
     $class->export_to_level(1, $class, @a); # export wanted functions
 }
@@ -5850,53 +5878,34 @@ work.
 Math with the numbers is done (by default) by a module called
 Math::BigInt::Calc. This is equivalent to saying:
 
-    use Math::BigFloat lib => 'Calc';
+    use Math::BigFloat lib => "Calc";
 
 You can change this by using:
 
-    use Math::BigFloat lib => 'GMP';
+    use Math::BigFloat lib => "GMP";
 
-B<Note>: General purpose packages should not be explicit about the library
-to use; let the script author decide which is best.
+B<Note>: General purpose packages should not be explicit about the library to
+use; let the script author decide which is best.
 
 Note: The keyword 'lib' will warn when the requested library could not be
 loaded. To suppress the warning use 'try' instead:
 
-    use Math::BigFloat try => 'GMP';
+    use Math::BigFloat try => "GMP";
 
-If your script works with huge numbers and Calc is too slow for them,
-you can also for the loading of one of these libraries and if none
-of them can be used, the code will die:
+If your script works with huge numbers and Calc is too slow for them, you can
+also for the loading of one of these libraries and if none of them can be used,
+the code will die:
 
-    use Math::BigFloat only => 'GMP,Pari';
+    use Math::BigFloat only => "GMP,Pari";
 
-The following would first try to find Math::BigInt::Foo, then
-Math::BigInt::Bar, and when this also fails, revert to Math::BigInt::Calc:
+The following would first try to find Math::BigInt::Foo, then Math::BigInt::Bar,
+and when this also fails, revert to Math::BigInt::Calc:
 
-    use Math::BigFloat lib => 'Foo,Math::BigInt::Bar';
+    use Math::BigFloat lib => "Foo,Math::BigInt::Bar";
 
 See the respective low-level library documentation for further details.
 
-Please note that Math::BigFloat does B<not> use the denoted library itself,
-but it merely passes the lib argument to Math::BigInt. So, instead of the need
-to do:
-
-    use Math::BigInt lib => 'GMP';
-    use Math::BigFloat;
-
-you can roll it all into one line:
-
-    use Math::BigFloat lib => 'GMP';
-
-It is also possible to just require Math::BigFloat:
-
-    require Math::BigFloat;
-
-This will load the necessary things (like BigInt) when they are needed, and
-automatically.
-
-See L<Math::BigInt> for more details than you ever wanted to know about using
-a different low-level library.
+See L<Math::BigInt> for more details about using a different low-level library.
 
 =head2 Using Math::BigInt::Lite
 
