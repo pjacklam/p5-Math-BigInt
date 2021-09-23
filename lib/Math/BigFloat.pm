@@ -19,7 +19,7 @@ use warnings;
 use Carp qw< carp croak >;
 use Math::BigInt ();
 
-our $VERSION = '1.999824';
+our $VERSION = '1.999825';
 
 require Exporter;
 our @ISA        = qw/Math::BigInt/;
