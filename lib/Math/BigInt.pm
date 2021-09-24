@@ -602,8 +602,9 @@ sub new {
 
     if ($wanted =~ /^\s*([+-]?)inf(inity)?\s*\z/i) {
         my $sgn = $1 || '+';
-        $self->{sign} = $sgn . 'inf';   # set a default sign for bstr()
-        return $class->binf($sgn);
+        $self = $class -> binf($sgn);
+        $self->round(@r) unless @r >= 2 && !defined($r[0]) && !defined($r[1]);
+        return $self;
     }
 
     # Handle explicit NaNs (not the ones returned due to invalid input).
