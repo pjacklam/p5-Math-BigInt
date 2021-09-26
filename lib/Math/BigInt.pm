@@ -4161,9 +4161,13 @@ sub objectify {
 
     no strict 'refs';
 
-    # What we upgrade to, if anything.
+    # What we upgrade to, if anything. Note that we need the whole chain of
+    # upgrading, because we accept objects that go through multiple upgrades,
+    # e.g., when Math::BigInt upgrades to Math::BigFloat which upgrades to
+    # Math::BigRat. We delay getting the chain until we actually need it.
 
-    my $up = ${"$a[0]::upgrade"};
+    my @upg = ();
+    my $have_upgrade_chain = 0;
 
     # Disable downgrading, because Math::BigFloat -> foo('1.0', '2.0') needs
     # floats.
@@ -4174,7 +4178,7 @@ sub objectify {
         ${"$a[0]::downgrade"} = undef;
     }
 
-    for my $i (1 .. $count) {
+  ARG: for my $i (1 .. $count) {
 
         my $ref = ref $a[$i];
 
@@ -4191,8 +4195,19 @@ sub objectify {
 
         # Upgrading is OK, so skip further tests if the argument is upgraded.
 
-        if (defined $up && $ref -> isa($up)) {
-            next;
+        unless ($have_upgrade_chain) {
+            my $cls = $class;
+            my $upg = $cls -> upgrade();
+            while (defined $upg) {
+                push @upg, $upg;
+                $cls = $upg;
+                $upg = $cls -> upgrade();
+            }
+            $have_upgrade_chain = 1;
+        }
+
+        for my $upg (@upg) {
+            next ARG if $ref -> isa($upg);
         }
 
         # See if we can call one of the as_xxx() methods. We don't know whether
