@@ -1,3 +1,10 @@
+1.999826 2021-10-01
+
+ * Improve documentation related to floating point literals.
+
+ * Skip tests that fail due to Perl's broken handling of floating point literals
+   before v5.32.0.
+
 1.999825 2021-09-28
 
  * Make Math::BigInt accept integers regardless of whether they are written as
