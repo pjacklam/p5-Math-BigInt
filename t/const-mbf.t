@@ -1,11 +1,27 @@
 # -*- mode: perl; -*-
 
+# Binary, octal, and hexadecimal floating point literals were introduced in
+# v5.22.0.
+#
+# - It wasn't until v5.28.0 that binary, octal, and hexadecimal floating point
+#   literals were converted to the correct value on perls compiled with quadmath
+#   support.
+#
+# - It wasn't until v5.32.0 that binary and octal floating point literals worked
+#   correctly with constant overloading. Before v5.32.0, it seems like the
+#   second character is always silently converted to an "x", so, e.g., "0b1.1p8"
+#   is passed to the overload::constant subroutine as "0x1.1p8", and "01.1p+8"
+#   is passed as "0x.1p+8".
+#
+# - Octal floating point literals using the "0o" prefix were introduced in
+#   v5.34.0.
+
 # Note that all numeric literals that should not be overloaded must be quoted.
 
 use strict;
 use warnings;
 
-use Test::More tests => "174";
+use Test::More tests => "171";
 
 use Math::BigFloat ":constant";
 
@@ -31,7 +47,7 @@ is($x, "255", "octal integer literal 0377");
 is(ref($x), $class, "value is a $class");
 
 SKIP: {
-    # Octal literals using the "0o" prefix were introduced in v5.34.0.
+    # Octal literals using the "0o" prefix require v5.34.0.
     skip "perl v5.34.0 required for octal floating point literals"
       . " with '0o' prefix", "4" if $] < "5.034";
 
@@ -67,11 +83,9 @@ is(ref($x), $class, "value is a $class");
 # These are handled by "float".
 
 SKIP: {
-    # Hexadecimal floating point literals were introduced in v5.22.0, but it
-    # wasn't until v5.28.0 that they worked on perls compiled with quadmath
-    # support, so require v5.28.0.
-    skip "perl v5.22.0 required for hexadecimal floating point literals",
-      "6" * "2" + "2" * "2" if $] < "5.022";
+    # Hexadecimal floating point literals require v5.28.0.
+    skip "perl v5.28.0 required for hexadecimal floating point literals",
+      "6" * "2" + "2" * "2" if $] < "5.028";
 
     for my $str (qw/ 0x1.3ap+8 0X1.3AP+8
                      0x1.3ap8  0X1.3AP8
@@ -91,8 +105,7 @@ SKIP: {
 }
 
 SKIP: {
-    # Octal floating point literals using the "0o" prefix were introduced in
-    # v5.34.0.
+    # Octal floating point literals using the "0o" prefix require v5.34.0.
     skip "perl v5.34.0 required for octal floating point literals"
       . " with '0o' prefix", "6" * "2" + "6" * "2" if $] < "5.034";
 
@@ -116,11 +129,9 @@ SKIP: {
 }
 
 SKIP: {
-    # Octal floating point literals using the "0" prefix were introduced in
-    # v5.22.0, but it wasn't until v5.28.0 that they worked on perls compiled
-    # with quadmath support, so require v5.28.0.
-    skip "perl v5.28.0 required for octal floating point literals",
-      "6" * "2" + "6" * "2" if $] < "5.028";
+    # Octal floating point literals using the "0" prefix require v5.32.0.
+    skip "perl v5.32.0 required for octal floating point literals",
+      "6" * "2" + "6" * "2" if $] < "5.032";
 
     for my $str (qw/ 01.164p+8 01.164P+8
                      01.164p8  01.164P8
@@ -142,11 +153,9 @@ SKIP: {
 }
 
 SKIP: {
-    # Binary floating point literals were introduced in v5.22.0, but it wasn't
-    # until v5.28.0 that they worked on perls compiled with quadmath support, so
-    # require v5.28.0.
-    skip "perl v5.28.0 required for binary floating point literals",
-      "6" * "2" + "6" * "2" if $] < "5.028";
+    # Binary floating point literals require v5.32.0.
+    skip "perl v5.32.0 required for binary floating point literals",
+      "6" * "2" + "6" * "2" if $] < "5.032";
 
     for my $str (qw/ 0b1.0011101p+8   0B1.0011101P+8
                      0b1.0011101p8    0B1.0011101P8
@@ -193,22 +202,21 @@ is(ref($x), $class, "value is a $class");
     # hexadecimal constant
     $x = 0x123456789012345678901234567890;
     is($x,
-       $class->new("0x123456789012345678901234567890"),
+       "94522879687365475552814062743484560",
        "hexadecimal constant 0x123456789012345678901234567890");
     is(ref($x), $class, "value is a $class");
 
     # octal constant
     $x = 012345676543210123456765432101234567654321;
     is($x,
-       $class->from_oct("012345676543210123456765432101234567654321"),
+       "1736132869400711976876385488263403729",
        "octal constant 012345676543210123456765432101234567654321");
     is(ref($x), $class, "value is a $class");
 
     # binary constant
     $x = 0b01010100011001010110110001110011010010010110000101101101;
     is($x,
-       $class->new("0b0101010001100101011011000111"
-                         . "0011010010010110000101101101"),
+       "23755414508757357",
        "binary constant 0b0101010001100101011011000111"
        . "0011010010010110000101101101");
     is(ref($x), $class, "value is a $class");
@@ -234,11 +242,9 @@ is(ref($x), $class, "value is a $class");
 # These are handled by "float".
 
 SKIP: {
-    # Hexadecimal floating point literals were introduced in v5.22.0, but it
-    # wasn't until v5.28.0 that they worked on perls compiled with quadmath
-    # support, so require v5.28.0.
-    skip "perl v5.22.0 required for hexadecimal floating point literals",
-      "6" * "2" if $] < "5.022";
+    # Hexadecimal floating point literals require v5.28.0.
+    skip "perl v5.28.0 required for hexadecimal floating point literals",
+      "6" * "2" if $] < "5.028";
 
     for my $str (qw/ 0x1.92p+1 0X1.92P+1
                      0x1.92p1 0X1.92P1
@@ -251,8 +257,7 @@ SKIP: {
 }
 
 SKIP: {
-    # Octal floating point literals using the "0o" prefix were introduced in
-    # v5.34.0.
+    # Octal floating point literals using the "0o" prefix require v5.34.0.
     skip "perl v5.34.0 required for octal floating point literals"
       . " with '0o' prefix", "6" * "2" if $] < "5.034";
 
@@ -267,11 +272,9 @@ SKIP: {
 }
 
 SKIP: {
-    # Octal floating point literals using the "0" prefix were introduced in
-    # v5.22.0, but it wasn't until v5.28.0 that they worked on perls compiled
-    # with quadmath support.
-    skip "perl v5.28.0 required for octal floating point literals",
-      "6" * "2" if $] < "5.028";
+    # Octal floating point literals using the "0" prefix require v5.32.0.
+    skip "perl v5.32.0 required for octal floating point literals",
+      "6" * "2" if $] < "5.032";
 
     for my $str (qw/ 01.444p+1 01.444P+1
                      01.444p1  01.444P1
@@ -284,11 +287,9 @@ SKIP: {
 }
 
 SKIP: {
-    # Binary floating point literals were introduced in v5.22.0, but it wasn't
-    # until v5.28.0 that they worked on perls compiled with quadmath support, so
-    # require v5.28.0.
-    skip "perl v5.28.0 required for binary floating point literals",
-      "6" * "2" if $] < "5.028";
+    # Binary floating point literals require v5.32.0.
+    skip "perl v5.32.0 required for binary floating point literals",
+      "6" * "2" if $] < "5.032";
 
     for my $str (qw/ 0b1.1001001p+1 0B1.1001001P+1
                      0b1.1001001p1  0B1.1001001P1
@@ -302,14 +303,3 @@ SKIP: {
 
 is(1.0 / 3.0, "0.3333333333333333333333333333333333333333",
    "1.0 / 3.0 = 0.3333333333333333333333333333333333333333");
-
-# stress-test $class->import()
-
-eval { $class->import(qw/:constant/); };
-is($@, "", "$class->import(qw/:constant/);");
-
-eval { $class->import(qw/:constant upgrade Math::BigRat/); };
-is($@, "", "$class->import(qw/:constant upgrade Math::BigRat/);");
-
-eval { $class->import(qw/upgrade Math::BigRat :constant/); };
-is($@, "", "$class->import(qw/upgrade Math::BigRat :constant/);");

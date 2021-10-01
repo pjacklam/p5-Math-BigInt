@@ -7517,47 +7517,69 @@ Examples for converting:
   my $x = Math::BigInt->new('0b1'.'01' x 123);
   print "bin: ",$x->as_bin()," hex:",$x->as_hex()," dec: ",$x,"\n";
 
-=head1 Autocreating constants
+=head1 NUMERIC LITERALS
 
-After C<use Math::BigInt ':constant'> all the B<integer> decimal, hexadecimal
-and binary constants in the given scope are converted to C<Math::BigInt>. This
-conversion happens at compile time.
+After C<use Math::BigInt ':constant'> all numeric literals in the given scope
+are converted to C<Math::BigInt> objects. This conversion happens at compile
+time. Every non-integer is convert to a NaN.
 
-In particular,
+For example,
 
-  perl -MMath::BigInt=:constant -e 'print 2**100,"\n"'
+    perl -MMath::BigInt=:constant -le 'print 2**150'
 
-prints the integer value of C<2**100>. Note that without conversion of
-constants the expression 2**100 is calculated using Perl scalars.
+prints the exact value of C<2**150>. Note that without conversion of constants
+to objects the expression C<2**150> is calculated using Perl scalars, which
+leads to an inaccurate result.
 
-Please note that strings and floating point constants are not affected, so that
+Please note that strings are not affected, so that
 
     use Math::BigInt qw/:constant/;
 
-    $x = 1234567890123456789012345678901234567890
-            + 123456789123456789;
+    $x = "1234567890123456789012345678901234567890"
+            + "123456789123456789";
 
-does not give you what you expect. You need an explicit Math::BigInt->new()
-around one of the operands. You should also quote large constants to protect
+does give you what you expect. You need an explicit Math::BigInt->new() around
+at least one of the operands. You should also quote large constants to prevent
 loss of precision:
 
     use Math::BigInt;
 
-    $x = Math::BigInt->new('1234567889123456789123456789123456789');
+    $x = Math::BigInt->new("1234567889123456789123456789123456789");
 
-Without the quotes Perl would convert the large number to a floating point
-constant at compile time and then hand the result to Math::BigInt, which
-results in an truncated result or a NaN.
+Without the quotes Perl first converts the large number to a floating point
+constant at compile time, and then converts the result to a Math::BigInt object
+at run time, which results in an inaccurate result.
 
-This also applies to integers that look like floating point constants:
+=head2 Hexadecimal, octal, and binary floating point literals
 
-    use Math::BigInt ':constant';
+Perl (and this module) accepts hexadecimal, octal, and binary floating point
+literals, but use them with care with Perl versions before v5.32.0, because some
+versions of Perl silently give the wrong result. Below are some examples of
+different ways to write the number decimal 314.
 
-    print ref(123e2),"\n";
-    print ref(123.2e2),"\n";
+Hexadecimal floating point literals:
 
-prints nothing but newlines. Use either L<bignum> or L<Math::BigFloat> to get
-this to work.
+    0x1.3ap+8         0X1.3AP+8
+    0x1.3ap8          0X1.3AP8
+    0x13a0p-4         0X13A0P-4
+
+Octal floating point literals (with "0" prefix):
+
+    01.164p+8         01.164P+8
+    01.164p8          01.164P8
+    011640p-4         011640P-4
+
+Octal floating point literals (with "0o" prefix) (requires v5.34.0):
+
+    0o1.164p+8        0O1.164P+8
+    0o1.164p8         0O1.164P8
+    0o11640p-4        0O11640P-4
+
+Binary floating point literals:
+
+    0b1.0011101p+8    0B1.0011101P+8
+    0b1.0011101p8     0B1.0011101P8
+    0b10011101000p-2  0B10011101000P-2
 
 =head1 PERFORMANCE
 
