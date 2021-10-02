@@ -21,7 +21,7 @@ use Scalar::Util  qw< blessed >;
 
 use Math::BigInt ();
 
-our $VERSION = '1.999826';
+our $VERSION = '1.999827';
 
 require Exporter;
 our @ISA        = qw/Math::BigInt/;
