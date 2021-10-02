@@ -21,7 +21,7 @@
 use strict;
 use warnings;
 
-use Test::More tests => "171";
+use Test::More tests => "170";
 
 use Math::BigFloat ":constant";
 
@@ -312,6 +312,3 @@ SKIP: {
         is(ref($x), $class, "value is a $class");
     }
 }
-
-is(1.0 / 3.0, "0.3333333333333333333333333333333333333333",
-   "1.0 / 3.0 = 0.3333333333333333333333333333333333333333");
