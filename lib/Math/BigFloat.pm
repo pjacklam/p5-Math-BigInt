@@ -2194,71 +2194,81 @@ sub bpow {
         ($class, $x, $y, $a, $p, $r) = objectify(2, @_);
     }
 
-    return $x if $x->modify('bpow');
+    return $x if $x -> modify('bpow');
 
     # $x and/or $y is a NaN
-    return $x->bnan() if $x->is_nan() || $y->is_nan();
+    return $x -> bnan() if $x -> is_nan() || $y -> is_nan();
 
     # $x and/or $y is a +/-Inf
-    if ($x->is_inf("-")) {
-        return $x->bzero()   if $y->is_negative();
-        return $x->bnan()    if $y->is_zero();
-        return $x            if $y->is_odd();
-        return $x->bneg();
-    } elsif ($x->is_inf("+")) {
-        return $x->bzero()   if $y->is_negative();
-        return $x->bnan()    if $y->is_zero();
+    if ($x -> is_inf("-")) {
+        return $x -> bzero()   if $y -> is_negative();
+        return $x -> bnan()    if $y -> is_zero();
+        return $x            if $y -> is_odd();
+        return $x -> bneg();
+    } elsif ($x -> is_inf("+")) {
+        return $x -> bzero()   if $y -> is_negative();
+        return $x -> bnan()    if $y -> is_zero();
         return $x;
-    } elsif ($y->is_inf("-")) {
-        return $x->bnan()    if $x -> is_one("-");
-        return $x->binf("+") if $x > -1 && $x < 1;
-        return $x->bone()    if $x -> is_one("+");
-        return $x->bzero();
-    } elsif ($y->is_inf("+")) {
-        return $x->bnan()    if $x -> is_one("-");
-        return $x->bzero()   if $x > -1 && $x < 1;
-        return $x->bone()    if $x -> is_one("+");
-        return $x->binf("+");
+    } elsif ($y -> is_inf("-")) {
+        return $x -> bnan()    if $x -> is_one("-");
+        return $x -> binf("+") if $x > -1 && $x < 1;
+        return $x -> bone()    if $x -> is_one("+");
+        return $x -> bzero();
+    } elsif ($y -> is_inf("+")) {
+        return $x -> bnan()    if $x -> is_one("-");
+        return $x -> bzero()   if $x > -1 && $x < 1;
+        return $x -> bone()    if $x -> is_one("+");
+        return $x -> binf("+");
     }
 
-    # we don't support complex numbers, so return NaN
-    return $x->bnan() if $x->is_negative() && !$y->is_int();
-
-    # cache the result of is_zero
-    my $y_is_zero = $y->is_zero();
-    return $x->bone() if $y_is_zero;
-    return $x         if $x->is_one() || $y->is_one();
-
-    my $x_is_zero = $x->is_zero();
-    return $x->_pow($y, $a, $p, $r) if !$x_is_zero && !$y->is_int();
-
-    my $y1 = $y->as_number()->{value}; # make MBI part
-
-    if ($x->is_one("-")) {
-        # if $x == -1 and odd/even y => +1/-1  because +-1 ^ (+-1) => +-1
-        return $LIB->_is_odd($y1) ? $x : $x->babs(1);
+    if ($x -> is_zero()) {
+        return $x -> bone() if $y -> is_zero();
+        return $x -> binf() if $y -> is_negative();
+        return $x;
     }
-    if ($x_is_zero) {
-        return $x if $y->{sign} eq '+'; # 0**y => 0 (if not y <= 0)
-        # 0 ** -y => 1 / (0 ** y) => 1 / 0! (1 / 0 => +inf)
-        return $x->binf();
+
+    # We don't support complex numbers, so upgrade or return NaN.
+
+    if ($x -> is_negative() && !$y -> is_int()) {
+        return $upgrade -> bpow($upgrade -> new($x), $y, $a, $p, $r)
+          if defined $upgrade;
+        return $x -> bnan();
     }
+
+    if ($x -> is_one("+") || $y -> is_one()) {
+        return $x;
+    }
+
+    if ($x -> is_one("-")) {
+        return $x if $y -> is_odd();
+        return $x -> bneg();
+    }
+
+    return $x -> _pow($y, $a, $p, $r) if !$y -> is_int();
+
+    my $y1 = $y -> as_int()->{value}; # make MBI part
 
     my $new_sign = '+';
-    $new_sign = $LIB->_is_odd($y1) ? '-' : '+' if $x->{sign} ne '+';
+    $new_sign = $LIB -> _is_odd($y1) ? '-' : '+' if $x->{sign} ne '+';
 
     # calculate $x->{_m} ** $y and $x->{_e} * $y separately (faster)
-    $x->{_m} = $LIB->_pow($x->{_m}, $y1);
-    $x->{_e} = $LIB->_mul ($x->{_e}, $y1);
+    $x->{_m} = $LIB -> _pow($x->{_m}, $y1);
+    $x->{_e} = $LIB -> _mul($x->{_e}, $y1);
 
     $x->{sign} = $new_sign;
-    $x->bnorm();
+    $x -> bnorm();
+
+    # x ** (-y) = 1 / (x ** y)
+
     if ($y->{sign} eq '-') {
         # modify $x in place!
-        my $z = $x->copy(); $x->bone();
-        return scalar $x->bdiv($z, $a, $p, $r); # round in one go (might ignore y's A!)
+        my $z = $x -> copy();
+        $x -> bone();
+        # round in one go (might ignore y's A!)
+        return scalar $x -> bdiv($z, $a, $p, $r);
     }
-    $x->round($a, $p, $r, $y);
+
+    $x -> round($a, $p, $r, $y);
 }
 
 sub blog {

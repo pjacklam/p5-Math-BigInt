@@ -2430,47 +2430,63 @@ sub bpow {
         ($class, $x, $y, @r) = objectify(2, @_);
     }
 
-    return $x if $x->modify('bpow');
+    return $x if $x -> modify('bpow');
 
     # $x and/or $y is a NaN
-    return $x->bnan() if $x->is_nan() || $y->is_nan();
+    return $x -> bnan() if $x -> is_nan() || $y -> is_nan();
 
     # $x and/or $y is a +/-Inf
-    if ($x->is_inf("-")) {
-        return $x->bzero()   if $y->is_negative();
-        return $x->bnan()    if $y->is_zero();
-        return $x            if $y->is_odd();
-        return $x->bneg();
-    } elsif ($x->is_inf("+")) {
-        return $x->bzero()   if $y->is_negative();
-        return $x->bnan()    if $y->is_zero();
+    if ($x -> is_inf("-")) {
+        return $x -> bzero()   if $y -> is_negative();
+        return $x -> bnan()    if $y -> is_zero();
+        return $x            if $y -> is_odd();
+        return $x -> bneg();
+    } elsif ($x -> is_inf("+")) {
+        return $x -> bzero()   if $y -> is_negative();
+        return $x -> bnan()    if $y -> is_zero();
         return $x;
-    } elsif ($y->is_inf("-")) {
-        return $x->bnan()    if $x -> is_one("-");
-        return $x->binf("+") if $x -> is_zero();
-        return $x->bone()    if $x -> is_one("+");
-        return $x->bzero();
-    } elsif ($y->is_inf("+")) {
-        return $x->bnan()    if $x -> is_one("-");
-        return $x->bzero()   if $x -> is_zero();
-        return $x->bone()    if $x -> is_one("+");
-        return $x->binf("+");
+    } elsif ($y -> is_inf("-")) {
+        return $x -> bnan()    if $x -> is_one("-");
+        return $x -> binf("+") if $x -> is_zero();
+        return $x -> bone()    if $x -> is_one("+");
+        return $x -> bzero();
+    } elsif ($y -> is_inf("+")) {
+        return $x -> bnan()    if $x -> is_one("-");
+        return $x -> bzero()   if $x -> is_zero();
+        return $x -> bone()    if $x -> is_one("+");
+        return $x -> binf("+");
     }
 
-    return $upgrade->bpow($upgrade->new($x), $y, @r)
-      if defined $upgrade && (!$y->isa($class) || $y->{sign} eq '-');
+    if ($x -> is_zero()) {
+        return $x -> bone() if $y -> is_zero();
+        return $x -> binf() if $y -> is_negative();
+        return $x;
+    }
+
+    if ($x -> is_one("+")) {
+        return $x;
+    }
+
+    if ($x -> is_one("-")) {
+        return $x if $y -> is_odd();
+        return $x -> bneg();
+    }
+
+    # We don't support finite non-integers, so upgrade or return zero. The
+    # reason for returning zero, not NaN, is that all output is in the open
+    # interval (0,1), and truncating that to integer gives zero.
+
+    if ($y->{sign} eq '-' || !$y -> isa($class)) {
+        return $upgrade -> bpow($upgrade -> new($x), $y, @r)
+          if defined $upgrade;
+        return $x -> bzero();
+    }
 
     $r[3] = $y;                 # no push!
 
-    # 0 ** -y => ( 1 / (0 ** y)) => 1 / 0 => +inf
-    return $x->binf() if $y->is_negative() && $x->is_zero();
-
-    # 1 ** -y => 1 / (1 ** |y|)
-    return $x->bzero() if $y->is_negative() && !$LIB->_is_one($x->{value});
-
-    $x->{value} = $LIB->_pow($x->{value}, $y->{value});
-    $x->{sign}  = $x->is_negative() && $y->is_odd() ? '-' : '+';
-    $x->round(@r);
+    $x->{value} = $LIB -> _pow($x->{value}, $y->{value});
+    $x->{sign}  = $x -> is_negative() && $y -> is_odd() ? '-' : '+';
+    $x -> round(@r);
 }
 
 sub blog {
