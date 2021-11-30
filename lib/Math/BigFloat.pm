@@ -4510,7 +4510,7 @@ sub to_ieee754 {
                 $mant -> bmul($b -> copy() -> bpow($expo_abs));
             }
 
-            # Final adjustment.
+            # Final adjustment of the estimate above.
 
             while ($mant >= $b && $expo <= $emax) {
                 $mant -> bmul($binv);
@@ -4522,19 +4522,63 @@ sub to_ieee754 {
                 $expo -> bdec();
             }
 
-            # Encode as infinity, normal number or subnormal number?
+            # This is when the magnitude is larger than what can be represented
+            # in this format. Encode as infinity.
 
-            if ($expo > $emax) {                # overflow => infinity
-                $expo = $emax -> copy() -> binc();
+            if ($expo > $emax) {
                 $mant = $class -> bzero();
-            } elsif ($expo < $emin) {           # subnormal number
-                my $const = $class -> new(2) -> bpow($t - 1);
+                $expo = $emax -> copy() -> binc();
+            }
+
+            # This is when the magnitude is so small that the number is encoded
+            # as a subnormal number.
+            #
+            # If the magnitude is smaller than that of the smallest subnormal
+            # number, and rounded downwards, it is encoded as zero. This works
+            # transparently and does not need to be treated as a special case.
+            #
+            # If the number is between the largest subnormal number and the
+            # smallest normal number, and the value is rounded upwards, the
+            # value must be encoded as a normal number. This must be treated as
+            # a special case.
+
+            elsif ($expo < $emin) {
+
+                # Scale up the mantissa (significand), and round to integer.
+
+                my $const = $class -> new($b) -> bpow($t - 1);
                 $mant -> bmul($const);
                 $mant -> bfround(0);
-            } else {                            # normal number
-                $mant -> bdec();                # remove implicit leading bit
-                my $const = $class -> new(2) -> bpow($t);
+
+                # If the mantissa overflowed, encode as the smallest normal
+                # number.
+
+                if ($mant == $const -> bmul($b)) {
+                    $mant -> bzero();
+                    $expo -> binc();
+                }
+            }
+
+            # This is when the magnitude is within the range of what can be
+            # encoded as a normal number.
+
+            else {
+
+                # Remove implicit leading bit, scale up the mantissa
+                # (significand) to an integer, and round.
+
+                $mant -> bdec();
+                my $const = $class -> new($b) -> bpow($t);
                 $mant -> bmul($const) -> bfround(0);
+
+                # If the mantissa overflowed, encode as the next larger value.
+                # This works correctly also when the next larger value is
+                # infinity.
+
+                if ($mant == $const) {
+                    $mant -> bzero();
+                    $expo -> binc();
+                }
             }
         }
 
