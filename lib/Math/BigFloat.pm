@@ -4071,6 +4071,94 @@ sub dparts {
     return ($int, $frc);
 }
 
+sub fparts {
+    my $x = shift;
+    my $class = ref $x;
+
+    croak("fparts() is an instance method") unless $class;
+
+    return ($class -> bnan(),
+            $class -> bnan()) if $x -> is_nan();
+
+    return ($class -> binf($x -> sign()),
+            $class -> bone()) if $x -> is_inf();
+
+    return ($class -> bzero(),
+            $class -> bone()) if $x -> is_zero();
+
+    if ($x -> {_es} eq '-') {                   # exponent < 0
+        my $numer_lib = $LIB -> _copy($x -> {_m});
+        my $denom_lib = $LIB -> _1ex($x -> {_e});
+        my $gcd_lib = $LIB -> _gcd($LIB -> _copy($numer_lib), $denom_lib);
+        $numer_lib = $LIB -> _div($numer_lib, $gcd_lib);
+        $denom_lib = $LIB -> _div($denom_lib, $gcd_lib);
+        return ($class -> new($x -> {sign} . $LIB -> _str($numer_lib)),
+                $class -> new($LIB -> _str($denom_lib)));
+    }
+
+    elsif (! $LIB -> _is_zero($x -> {_e})) {    # exponent > 0
+        my $numer_lib = $LIB -> _copy($x -> {_m});
+        $numer_lib = $LIB -> _lsft($numer_lib, $x -> {_e}, 10);
+        return ($class -> new($x -> {sign} . $LIB -> _str($numer_lib)),
+                $class -> bone());
+    }
+
+    else {                                      # exponent = 0
+        return ($class -> new($x -> {sign} . $LIB -> _str($x -> {_m})),
+                $class -> bone());
+    }
+}
+
+sub numerator {
+    my $x = shift;
+    my $class = ref $x;
+
+    croak("numerator() is an instance method") unless $class;
+
+    return $class -> bnan()             if $x -> is_nan();
+    return $class -> binf($x -> sign()) if $x -> is_inf();
+    return $class -> bzero()            if $x -> is_zero();
+
+    if ($x -> {_es} eq '-') {                   # exponent < 0
+        my $numer_lib = $LIB -> _copy($x -> {_m});
+        my $denom_lib = $LIB -> _1ex($x -> {_e});
+        my $gcd_lib = $LIB -> _gcd($LIB -> _copy($numer_lib), $denom_lib);
+        $numer_lib = $LIB -> _div($numer_lib, $gcd_lib);
+        return $class -> new($x -> {sign} . $LIB -> _str($numer_lib));
+    }
+
+    elsif (! $LIB -> _is_zero($x -> {_e})) {    # exponent > 0
+        my $numer_lib = $LIB -> _copy($x -> {_m});
+        $numer_lib = $LIB -> _lsft($numer_lib, $x -> {_e}, 10);
+        return $class -> new($x -> {sign} . $LIB -> _str($numer_lib));
+    }
+
+    else {                                      # exponent = 0
+        return $class -> new($x -> {sign} . $LIB -> _str($x -> {_m}));
+    }
+}
+
+sub denominator {
+    my $x = shift;
+    my $class = ref $x;
+
+    croak("denominator() is an instance method") unless $class;
+
+    return $class -> bnan() if $x -> is_nan();
+
+    if ($x -> {_es} eq '-') {                   # exponent < 0
+        my $numer_lib = $LIB -> _copy($x -> {_m});
+        my $denom_lib = $LIB -> _1ex($x -> {_e});
+        my $gcd_lib = $LIB -> _gcd($LIB -> _copy($numer_lib), $denom_lib);
+        $denom_lib = $LIB -> _div($denom_lib, $gcd_lib);
+        return $class -> new($LIB -> _str($denom_lib));
+    }
+
+    else {                                      # exponent >= 0
+        return $class -> bone();
+    }
+}
+
 ###############################################################################
 # String conversion methods
 ###############################################################################
@@ -5246,6 +5334,9 @@ Math::BigFloat - Arbitrary size floating point math package
   $x->nparts();            # mantissa and exponent (normalised)
   $x->eparts();            # mantissa and exponent (engineering notation)
   $x->dparts();            # integer and fraction part
+  $x->fparts();            # numerator and denominator
+  $x->numerator();         # numerator
+  $x->denominator();       # denominator
 
   # Conversion methods (do not modify the invocand)
 

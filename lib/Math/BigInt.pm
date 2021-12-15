@@ -3792,6 +3792,34 @@ sub dparts {
     return ($int, $frc);
 }
 
+sub fparts {
+    my $x = shift;
+    my $class = ref $x;
+
+    croak("fparts() is an instance method") unless $class;
+
+    return ($x -> copy(),
+            $x -> is_nan() ? $class -> bnan() : $class -> bone());
+}
+
+sub numerator {
+    my $x = shift;
+    my $class = ref $x;
+
+    croak("numerator() is an instance method") unless $class;
+
+    return $x -> copy();
+}
+
+sub denominator {
+    my $x = shift;
+    my $class = ref $x;
+
+    croak("denominator() is an instance method") unless $class;
+
+    return $x -> is_nan() ? $class -> bnan() : $class -> bone();
+}
+
 ###############################################################################
 # String conversion methods
 ###############################################################################
@@ -5435,6 +5463,9 @@ Math::BigInt - Arbitrary size integer/float math package
   $x->nparts();            # mantissa and exponent (normalised)
   $x->eparts();            # mantissa and exponent (engineering notation)
   $x->dparts();            # integer and fraction part
+  $x->fparts();            # numerator and denominator
+  $x->numerator();         # numerator
+  $x->denominator();       # denominator
 
   # Conversion methods (do not modify the invocand)
 
@@ -6745,6 +6776,24 @@ is returned.
 Returns the integer part and the fraction part. If the fraction part can not be
 represented as an integer, upgrading is performed or NaN is returned. The
 output of C<dparts()> corresponds to the output from C<bdstr()>.
+
+=item fparts()
+
+Returns the smallest possible numerator and denominator so that the numerator
+divided by the denominator gives back the original value. For finite numbers,
+both values are integers. Mnemonic: fraction.
+
+=item numerator()
+
+Together with L</denominator()>, returns the smallest integers so that the
+numerator divided by the denominator reproduces the original value. With
+Math::BigInt, numerator() simply returns a copy of the invocand.
+
+=item denominator()
+
+Together with L</numerator()>, returns the smallest integers so that the
+numerator divided by the denominator reproduces the original value. With
+Math::BigInt, denominator() always returns either a 1 or a NaN.
 
 =back
 
