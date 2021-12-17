@@ -4446,7 +4446,7 @@ sub import {
 
     if (@a) {
         $class->SUPER::import(@a);              # need it for subclasses
-        $class->export_to_level(1, $class, @a); # need it for Math::BigFlaot
+        $class->export_to_level(1, $class, @a); # need it for Math::BigFloat
     }
 
     # We might not have loaded any backend library yet, either because the user
@@ -7247,7 +7247,7 @@ This is how it works now:
   * You can also set P globally by using Math::SomeClass->precision()
     likewise.
   * Globals are classwide, and not inherited by subclasses.
-  * to undefine A, use Math::SomeCLass->accuracy(undef);
+  * to undefine A, use Math::SomeClass->accuracy(undef);
   * to undefine P, use Math::SomeClass->precision(undef);
   * Setting Math::SomeClass->accuracy() clears automatically
     Math::SomeClass->precision(), and vice versa.
@@ -7282,8 +7282,8 @@ This is how it works now:
         use Math::BigInt;
 
         Math::BigInt->accuracy(2);
-        Math::BigInt::SomeSubClass->accuracy(3);
-        $x = Math::BigInt::SomeSubClass->new(1234);
+        Math::BigInt::SomeSubclass->accuracy(3);
+        $x = Math::BigInt::SomeSubclass->new(1234);
 
     $x is now 1230, and not 1200. A subclass might choose to implement
     this otherwise, e.g. falling back to the parent's A and P.
@@ -7545,7 +7545,7 @@ when dividing any negative number by 0.
   $x = Math::BigInt->babs("-12345");    # Math::BigInt "12345"
   $x = Math::BigInt->bnorm("-0.00");    # Math::BigInt "0"
   $x = bigint(1) + bigint(2);           # Math::BigInt "3"
-  $x = bigint(1) + "2";                 # ditto (auto-Math::BigIntify of "2")
+  $x = bigint(1) + "2";                 # ditto ("2" becomes a Math::BigInt)
   $x = bigint(1);                       # Math::BigInt "1"
   $x = $x + 5 / 2;                      # Math::BigInt "3"
   $x = $x ** 3;                         # Math::BigInt "27"
