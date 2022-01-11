@@ -2588,10 +2588,6 @@ You can also look for information at:
 
 L<https://rt.cpan.org/Public/Dist/Display.html?Name=Math-BigInt>
 
-=item * AnnoCPAN: Annotated CPAN documentation
-
-L<http://annocpan.org/dist/Math-BigInt>
-
 =item * CPAN Ratings
 
 L<https://cpanratings.perl.org/dist/Math-BigInt>
