@@ -5,6 +5,7 @@ use strict;
 use warnings;
 
 our $VERSION = '1.999830';
+$VERSION =~ tr/_//d;
 
 use Carp;
 
