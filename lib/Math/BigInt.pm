@@ -23,7 +23,7 @@ use warnings;
 use Carp          qw< carp croak >;
 use Scalar::Util  qw< blessed >;
 
-our $VERSION = '1.999829';
+our $VERSION = '1.999830';
 
 require Exporter;
 our @ISA = qw(Exporter);
