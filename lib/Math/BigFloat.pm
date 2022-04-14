@@ -1688,16 +1688,13 @@ sub badd {
 
         my $es;
 
-        ($e, $es) = _e_sub($e, $x->{_e}, $y->{_es} || '+', $x->{_es});
-        #($e, $es) = $LIB -> _ssub($e, $y->{_es} || '+', $x->{_e}, $x->{_es});
+        ($e, $es) = $LIB -> _ssub($e, $y->{_es} || '+', $x->{_e}, $x->{_es});
 
         my $add = $LIB->_copy($y->{_m});
 
         if ($es eq '-') {                       # < 0
             $x->{_m} = $LIB->_lsft($x->{_m}, $e, 10);
-            ($x->{_e}, $x->{_es}) = _e_add($x->{_e}, $e, $x->{_es}, $es);
-            #$x->{_m} = $LIB->_lsft($x->{_m}, $e, 10);
-            #($x->{_e}, $x->{_es}) = $LIB -> _sadd($x->{_e}, $x->{_es}, $e, $es);
+            ($x->{_e}, $x->{_es}) = $LIB -> _sadd($x->{_e}, $x->{_es}, $e, $es);
         } elsif (!$LIB->_is_zero($e)) {         # > 0
             $add = $LIB->_lsft($add, $e, 10);
         }
@@ -1708,9 +1705,7 @@ sub badd {
             $x->{_m} = $LIB->_add($x->{_m}, $add);
         } else {
             ($x->{_m}, $x->{sign}) =
-              _e_add($x->{_m}, $add, $x->{sign}, $y->{sign});
-            #($x->{_m}, $x->{sign}) =
-            #  $LIB -> _sadd($x->{_m}, $x->{sign}, $add, $y->{sign});
+              $LIB -> _sadd($x->{_m}, $x->{sign}, $add, $y->{sign});
         }
 
         # delete trailing zeros, then round
@@ -1796,8 +1791,7 @@ sub bmul {
 
     # aEb * cEd = (a*c)E(b+d)
     $x->{_m} = $LIB->_mul($x->{_m}, $y->{_m});
-    ($x->{_e}, $x->{_es}) = _e_add($x->{_e}, $y->{_e}, $x->{_es}, $y->{_es});
-    #($x->{_e}, $x->{_es}) = $LIB -> _sadd($x->{_e}, $x->{_es}, $y->{_e}, $y->{_es});
+    ($x->{_e}, $x->{_es}) = $LIB -> _sadd($x->{_e}, $x->{_es}, $y->{_e}, $y->{_es});
 
     $r[3] = $y;                 # no push!
 
@@ -1834,8 +1828,7 @@ sub bmuladd {
 
     # aEb * cEd = (a*c)E(b+d)
     $x->{_m} = $LIB->_mul($x->{_m}, $y->{_m});
-    ($x->{_e}, $x->{_es}) = _e_add($x->{_e}, $y->{_e}, $x->{_es}, $y->{_es});
-    #($x->{_e}, $x->{_es}) = $LIB -> _sadd($x->{_e}, $x->{_es}, $y->{_e}, $y->{_es});
+    ($x->{_e}, $x->{_es}) = $LIB -> _sadd($x->{_e}, $x->{_es}, $y->{_e}, $y->{_es});
 
     $r[3] = $y;                 # no push!
 
@@ -1856,17 +1849,14 @@ sub bmuladd {
 
     my $es;
 
-    ($e, $es) = _e_sub($e, $x->{_e}, $z->{_es} || '+', $x->{_es});
-    #($e, $es) = $LIB -> _ssub($e, $z->{_es} || '+', $x->{_e}, $x->{_es});
+    ($e, $es) = $LIB -> _ssub($e, $z->{_es} || '+', $x->{_e}, $x->{_es});
 
     my $add = $LIB->_copy($z->{_m});
 
     if ($es eq '-')             # < 0
     {
         $x->{_m} = $LIB->_lsft($x->{_m}, $e, 10);
-        ($x->{_e}, $x->{_es}) = _e_add($x->{_e}, $e, $x->{_es}, $es);
-        #$x->{_m} = $LIB->_lsft($x->{_m}, $e, 10);
-        #($x->{_e}, $x->{_es}) = $LIB -> _sadd($x->{_e}, $x->{_es}, $e, $es);
+        ($x->{_e}, $x->{_es}) = $LIB -> _sadd($x->{_e}, $x->{_es}, $e, $es);
     } elsif (!$LIB->_is_zero($e)) # > 0
     {
         $add = $LIB->_lsft($add, $e, 10);
@@ -1878,9 +1868,7 @@ sub bmuladd {
         $x->{_m} = $LIB->_add($x->{_m}, $add);
     } else {
         ($x->{_m}, $x->{sign}) =
-          _e_add($x->{_m}, $add, $x->{sign}, $z->{sign});
-        #($x->{_m}, $x->{sign}) =
-        #  $LIB -> _sadd($x->{_m}, $x->{sign}, $add, $z->{sign});
+          $LIB -> _sadd($x->{_m}, $x->{sign}, $add, $z->{sign});
     }
 
     # delete trailing zeros, then round
@@ -2041,13 +2029,11 @@ sub bdiv {
             $x->{_m} = $LIB->_div($x->{_m}, $y->{_m}); # a/c
 
             # correct exponent of $x
-            ($x->{_e}, $x->{_es}) = _e_sub($x->{_e}, $y->{_e}, $x->{_es}, $y->{_es});
-            #($x->{_e}, $x->{_es})
-            #  = $LIB -> _ssub($x->{_e}, $x->{_es}, $y->{_e}, $y->{_es});
+            ($x->{_e}, $x->{_es})
+              = $LIB -> _ssub($x->{_e}, $x->{_es}, $y->{_e}, $y->{_es});
             # correct for 10**scale
-            ($x->{_e}, $x->{_es}) = _e_sub($x->{_e}, $LIB->_new($scale), $x->{_es}, '+');
-            #($x->{_e}, $x->{_es})
-            #  = $LIB -> _ssub($x->{_e}, $x->{_es}, $LIB->_new($scale), '+');
+            ($x->{_e}, $x->{_es})
+              = $LIB -> _ssub($x->{_e}, $x->{_es}, $LIB->_new($scale), '+');
             $x->bnorm();        # remove trailing 0's
         }
     }                           # end else $x != $y
@@ -5147,9 +5133,7 @@ sub _log_10 {
             $dbd_sign = '-';
         }
         ($x->{_e}, $x->{_es}) =
-          _e_sub($x->{_e}, $LIB->_new($dbd), $x->{_es}, $dbd_sign); # 123 => 1.23
-        #($x->{_e}, $x->{_es}) =
-        #  $LIB -> _ssub($x->{_e}, $x->{_es}, $LIB->_new($dbd), $dbd_sign);
+          $LIB -> _ssub($x->{_e}, $x->{_es}, $LIB->_new($dbd), $dbd_sign);
     }
 
     # Now: 0.1 <= $x < 10 (and possible correction in l_10)
@@ -5197,49 +5181,6 @@ sub _log_10 {
 
     # all done, $x contains now the result
     $x;
-}
-
-sub _e_add {
-    # Internal helper sub to take two positive integers and their signs and
-    # then add them. Input ($LIB, $LIB, ('+'|'-'), ('+'|'-')), output
-    # ($LIB, ('+'|'-')).
-
-    my ($x, $y, $xs, $ys) = @_;
-
-    # if the signs are equal we can add them (-5 + -3 => -(5 + 3) => -8)
-    if ($xs eq $ys) {
-        $x = $LIB->_add($x, $y); # +a + +b or -a + -b
-    } else {
-        my $a = $LIB->_acmp($x, $y);
-        if ($a == 0) {
-            # This does NOT modify $x in-place. TODO: Fix this?
-            $x = $LIB->_zero(); # result is 0
-            $xs = '+';
-            return ($x, $xs);
-        }
-        if ($a > 0) {
-            $x = $LIB->_sub($x, $y);     # abs sub
-        } else {                         # a < 0
-            $x = $LIB->_sub ($y, $x, 1); # abs sub
-            $xs = $ys;
-        }
-    }
-
-    $xs = '+' if $xs eq '-' && $LIB->_is_zero($x); # no "-0"
-
-    return ($x, $xs);
-}
-
-sub _e_sub {
-    # Internal helper sub to take two positive integers and their signs and
-    # then subtract them. Input ($LIB, $LIB, ('+'|'-'), ('+'|'-')),
-    # output ($LIB, ('+'|'-'))
-    my ($x, $y, $xs, $ys) = @_;
-
-    # flip sign
-    $ys = $ys eq '+' ? '-' : '+'; # swap sign of second operand ...
-    _e_add($x, $y, $xs, $ys);     # ... and let _e_add() do the job
-    #$LIB -> _sadd($x, $xs, $y, $ys);     # ... and let $LIB -> _sadd() do the job
 }
 
 sub _pow {

@@ -4481,116 +4481,6 @@ sub import {
     # import done
 }
 
-sub _split {
-    # input: num_str; output: undef for invalid or
-    # (\$mantissa_sign, \$mantissa_value, \$mantissa_fraction,
-    # \$exp_sign, \$exp_value)
-    # Internal, take apart a string and return the pieces.
-    # Strip leading/trailing whitespace, leading zeros, underscore and reject
-    # invalid input.
-    my $x = shift;
-
-    # strip white space at front, also extraneous leading zeros
-    $x =~ s/^\s*([-]?)0*([0-9])/$1$2/g; # will not strip '  .2'
-    $x =~ s/^\s+//;                     # but this will
-    $x =~ s/\s+$//g;                    # strip white space at end
-
-    # shortcut, if nothing to split, return early
-    if ($x =~ /^[+-]?[0-9]+\z/) {
-        $x =~ s/^([+-])0*([0-9])/$2/;
-        my $sign = $1 || '+';
-        return (\$sign, \$x, \'', \'', \0);
-    }
-
-    # invalid starting char?
-    return if $x !~ /^[+-]?(\.?[0-9]|0b[0-1]|0x[0-9a-fA-F])/;
-
-    return Math::BigInt->from_hex($x) if $x =~ /^[+-]?0x/; # hex string
-    return Math::BigInt->from_bin($x) if $x =~ /^[+-]?0b/; # binary string
-
-    # strip underscores between digits
-    $x =~ s/([0-9])_([0-9])/$1$2/g;
-    $x =~ s/([0-9])_([0-9])/$1$2/g; # do twice for 1_2_3
-
-    # some possible inputs:
-    # 2.1234 # 0.12        # 1          # 1E1 # 2.134E1 # 434E-10 # 1.02009E-2
-    # .2     # 1_2_3.4_5_6 # 1.4E1_2_3  # 1e3 # +.2     # 0e999
-
-    my ($m, $e, $last) = split /[Ee]/, $x;
-    return if defined $last;    # last defined => 1e2E3 or others
-    $e = '0' if !defined $e || $e eq "";
-
-    # sign, value for exponent, mantint, mantfrac
-    my ($es, $ev, $mis, $miv, $mfv);
-    # valid exponent?
-    if ($e =~ /^([+-]?)0*([0-9]+)$/) # strip leading zeros
-    {
-        $es = $1;
-        $ev = $2;
-        # valid mantissa?
-        return if $m eq '.' || $m eq '';
-        my ($mi, $mf, $lastf) = split /\./, $m;
-        return if defined $lastf; # lastf defined => 1.2.3 or others
-        $mi = '0' if !defined $mi;
-        $mi .= '0' if $mi =~ /^[\-\+]?$/;
-        $mf = '0' if !defined $mf || $mf eq '';
-        if ($mi =~ /^([+-]?)0*([0-9]+)$/) # strip leading zeros
-        {
-            $mis = $1 || '+';
-            $miv = $2;
-            return unless ($mf =~ /^([0-9]*?)0*$/); # strip trailing zeros
-            $mfv = $1;
-            # handle the 0e999 case here
-            $ev = 0 if $miv eq '0' && $mfv eq '';
-            return (\$mis, \$miv, \$mfv, \$es, \$ev);
-        }
-    }
-    return;                     # NaN, not a number
-}
-
-sub _e_add {
-    # Internal helper sub to take two positive integers and their signs and
-    # then add them. Input ($LIB, $LIB, ('+'|'-'), ('+'|'-')), output
-    # ($LIB, ('+'|'-')).
-
-    my ($x, $y, $xs, $ys) = @_;
-
-    # if the signs are equal we can add them (-5 + -3 => -(5 + 3) => -8)
-    if ($xs eq $ys) {
-        $x = $LIB->_add($x, $y); # +a + +b or -a + -b
-    } else {
-        my $a = $LIB->_acmp($x, $y);
-        if ($a == 0) {
-            # This does NOT modify $x in-place. TODO: Fix this?
-            $x = $LIB->_zero(); # result is 0
-            $xs = '+';
-            return ($x, $xs);
-        }
-        if ($a > 0) {
-            $x = $LIB->_sub($x, $y);     # abs sub
-        } else {                         # a < 0
-            $x = $LIB->_sub ($y, $x, 1); # abs sub
-            $xs = $ys;
-        }
-    }
-
-    $xs = '+' if $xs eq '-' && $LIB->_is_zero($x); # no "-0"
-
-    return ($x, $xs);
-}
-
-sub _e_sub {
-    # Internal helper sub to take two positive integers and their signs and
-    # then subtract them. Input ($LIB, $LIB, ('+'|'-'), ('+'|'-')),
-    # output ($LIB, ('+'|'-'))
-    my ($x, $y, $xs, $ys) = @_;
-
-    # flip sign
-    $ys = $ys eq '+' ? '-' : '+'; # swap sign of second operand ...
-    _e_add($x, $y, $xs, $ys);     # ... and let _e_add() do the job
-    #$LIB -> _sadd($x, $xs, $y, $ys);     # ... and let $LIB -> _sadd() do the job
-}
-
 sub _trailing_zeros {
     # return the amount of trailing zeros in $x (as scalar)
     my $x = shift;
@@ -4979,8 +4869,7 @@ sub _dec_parts_to_lib_parts {
         $delta = $LIB -> _sub($delta, $LIB -> _new($idx));
 
         # exponent - delta
-        ($exp_lib, $exp_sgn) = _e_sub($exp_lib, $delta, $exp_sgn, '+');
-        #($exp_lib, $exp_sgn) = $LIB -> _ssub($exp_lib, $exp_sgn, $delta, '+');
+        ($exp_lib, $exp_sgn) = $LIB -> _ssub($exp_lib, $exp_sgn, $delta, '+');
 
         $sig_str =~ s/^0+//;
     }
@@ -5052,8 +4941,7 @@ sub _bin_parts_to_lib_parts {
         $delta = $LIB -> _mul($delta, $bpc_lib) if $bpc != 1;
 
         # exponent - delta
-        ($exp_lib, $exp_sgn) = _e_sub($exp_lib, $delta, $exp_sgn, '+');
-        #($exp_lib, $exp_sgn) = $LIB -> _ssub($exp_lib, $exp_sgn, $delta, '+');
+        ($exp_lib, $exp_sgn) = $LIB -> _ssub($exp_lib, $exp_sgn, $delta, '+');
 
         $sig_str =~ s/^0+//;
     }
