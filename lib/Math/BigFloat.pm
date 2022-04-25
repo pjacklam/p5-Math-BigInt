@@ -260,9 +260,6 @@ BEGIN {
     # whether it is valid or not.
     $rnd_mode   = 'even';
     tie $rnd_mode, 'Math::BigFloat';
-
-    # we need both of them in this package:
-    *as_int = \&as_number;
 }
 
 sub DESTROY {
@@ -1210,11 +1207,9 @@ sub copy {
     return $copy;
 }
 
-sub as_number {
+sub as_int {
     # return copy as a bigint representation of this Math::BigFloat number
     my ($class, $x) = ref($_[0]) ? (ref($_[0]), $_[0]) : objectify(1, @_);
-
-    return $x if $x->modify('as_number');
 
     if (!$x->isa('Math::BigFloat')) {
         # if the object can as_number(), use it
@@ -1234,6 +1229,21 @@ sub as_number {
     }
     $z = Math::BigInt->new($x->{sign} . $LIB->_str($z));
     $z;
+}
+
+sub as_number {
+    # return copy as a bigint representation of this Math::BigFloat number
+    my ($class, $x) = ref($_[0]) ? (ref($_[0]), $_[0]) : objectify(1, @_);
+
+    (shift) -> as_int(@_);
+}
+
+sub as_float {
+    my $self    = shift;
+    my $selfref = ref $self;
+    my $class   = $selfref || $self;
+
+    return $selfref ? $self -> copy() : $class -> new(shift);
 }
 
 ###############################################################################
@@ -5336,6 +5346,8 @@ Math::BigFloat - arbitrary size floating point math package
 
   $y = $x->copy();        # make a copy (unlike $y = $x)
   $y = $x->as_int();      # return as BigInt
+  $y = $x->as_float();    # return as a Math::BigFloat
+  $y = $x->as_rat();      # return as a Math::BigRat
 
   # Boolean methods (these don't modify the invocand)
 

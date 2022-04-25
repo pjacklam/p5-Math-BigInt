@@ -262,7 +262,6 @@ BEGIN {
     tie $rnd_mode, 'Math::BigInt';
 
     # set up some handy alias names
-    *as_int = \&as_number;
     *is_pos = \&is_positive;
     *is_neg = \&is_negative;
 }
@@ -1220,11 +1219,37 @@ sub copy {
     return $copy;
 }
 
+sub as_int {
+    my $self    = shift;
+    my $selfref = ref $self;
+    my $class   = $selfref || $self;
+
+    return $selfref ? $self -> copy() : $class -> new(shift);
+}
+
 sub as_number {
     # An object might be asked to return itself as bigint on certain overloaded
     # operations. This does exactly this, so that sub classes can simple inherit
     # it or override with their own integer conversion routine.
-    $_[0]->copy();
+    (shift) -> as_int(@_);
+}
+
+sub as_float {
+    my $self    = shift;
+    my $selfref = ref $self;
+
+    require Math::BigFloat;
+    $selfref ? Math::BigFloat -> new($self)     # called as instance method
+             : Math::BigFloat -> new(shift);    # called as class method
+}
+
+sub as_rat {
+    my $self    = shift;
+    my $selfref = ref $self;
+
+    require Math::BigRat;
+    $selfref ? Math::BigRat -> new($self)       # called as instance method
+             : Math::BigRat -> new(shift);      # called as class method
 }
 
 ###############################################################################
@@ -5266,8 +5291,10 @@ Math::BigInt - arbitrary size integer math package
   $x = Math::BigInt->bnan();                # create a Not-A-Number
   $x = Math::BigInt->bpi();                 # returns pi
 
-  $y = $x->copy();         # make a copy (unlike $y = $x)
-  $y = $x->as_int();       # return as a Math::BigInt
+  $y = $x->copy();        # make a copy (unlike $y = $x)
+  $y = $x->as_int();      # return as a Math::BigInt
+  $y = $x->as_float();    # return as a Math::BigFloat
+  $y = $x->as_rat();      # return as a Math::BigRat
 
   # Boolean methods (these don't modify the invocand)
 
@@ -5895,6 +5922,14 @@ C<as_number()> is an alias to C<as_int()>. C<as_number> was introduced in
 v1.22, while C<as_int()> was introduced in v1.68.
 
 In Math::BigInt, C<as_int()> has the same effect as C<copy()>.
+
+=item as_float()
+
+Return the argument as a Math::BigFloat object.
+
+=item as_rat()
+
+Return the argument as a Math::BigRat object.
 
 =back
 
