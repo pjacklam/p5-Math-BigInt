@@ -3985,6 +3985,20 @@ sub bdstr {
     return $x->{sign} eq '-' ? "-$str" : $str;
 }
 
+# Fractional notation, e.g., "123.4375" is written as "1975/16".
+
+sub bfstr {
+    my ($class, $x, @r) = ref($_[0]) ? (ref($_[0]), $_[0]) : objectify(1, @_);
+
+    if ($x->{sign} ne '+' && $x->{sign} ne '-') {
+        return $x->{sign} unless $x->{sign} eq '+inf'; # -inf, NaN
+        return 'inf';                                  # +inf
+    }
+
+    return $x -> bdstr() if $x -> is_int();
+    return join '/', $x -> fparts();
+}
+
 sub to_hex {
     # return as hex string, with prefixed 0x
     my $x = shift;
@@ -5420,7 +5434,7 @@ Math::BigInt - arbitrary size integer math package
   $x->bsstr();        # string in scientific notation with integers
   $x->bnstr();        # string in normalized notation
   $x->bestr();        # string in engineering notation
-  $x->bdstr();        # string in decimal notation
+  $x->bfstr();        # string in fractional notation
 
   $x->to_hex();       # as signed hexadecimal string
   $x->to_bin();       # as signed binary string
@@ -6817,6 +6831,17 @@ corresponds to the output from C<dparts()>.
     12300 is returned as "12300"
     12000 is returned as "12000"
     10000 is returned as "10000"
+
+=item bfstr()
+
+Returns a string representing the number using fractional notation. The output
+corresponds to the output from C<fparts()>.
+
+        12.345 is returned as "2469/200"
+       123.45 is returned as "2469/20"
+      1234.5 is returned as "2469/2"
+     12345 is returned as "12345"
+    123450 is returned as "123450"
 
 =item to_hex()
 

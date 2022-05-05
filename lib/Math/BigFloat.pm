@@ -4423,6 +4423,20 @@ sub bestr {
     return $mant . 'e' . $esgn . $eabs;
 }
 
+# Fractional notation, e.g., "123.4375" is written as "1975/16".
+
+sub bfstr {
+    my ($class, $x, @r) = ref($_[0]) ? (ref($_[0]), $_[0]) : objectify(1, @_);
+
+    if ($x->{sign} ne '+' && $x->{sign} ne '-') {
+        return $x->{sign} unless $x->{sign} eq '+inf'; # -inf, NaN
+        return 'inf';                                  # +inf
+    }
+
+    return $x -> bdstr() if $x -> is_int();
+    return join '/', $x -> fparts();
+}
+
 sub to_hex {
     # return number as hexadecimal string (only for integers defined)
 
@@ -5469,6 +5483,8 @@ Math::BigFloat - arbitrary size floating point math package
   $x->bnstr();        # string in normalized notation
   $x->bestr();        # string in engineering notation
   $x->bdstr();        # string in decimal notation
+  $x->bfstr();        # string in fractional notation
+
   $x->as_hex();       # as signed hexadecimal string with prefixed 0x
   $x->as_bin();       # as signed binary string with prefixed 0b
   $x->as_oct();       # as signed octal string with prefixed 0
