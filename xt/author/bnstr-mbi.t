@@ -3,7 +3,7 @@
 use strict;
 use warnings;
 
-use Test::More tests => 220;
+use Test::More tests => 2 * 222;
 
 use Math::BigInt;
 
@@ -15,17 +15,22 @@ while (<DATA>) {
     my ($x_str, $expected) = split /:/;
     my ($x, $str);
 
-    {
-        my $test = qq|\$x = Math::BigInt -> new("$x_str");|
+    for my $accu ("undef", "20") {
+        my $test = qq|Math::BigInt -> accuracy($accu);|
+                 . qq| \$x = Math::BigInt -> new("$x_str");|
                  . qq| \$str = \$x -> bnstr();|;
 
         note "\n$test\n\n";
         eval $test;
+        die $@ if $@;           # should never happen
 
-        is($str, $expected, qq|input value is "$x_str"|);
-        is($x,   $x_str, "input object is unmodified");
+        is($str, $expected, qq|output is "$expected"|);
+        if ($x_str eq 'NaN') {
+            ok($x -> is_nan(), "input object is unmodified");
+        } else {
+            cmp_ok($x, "==", $x_str, "input object is unmodified");
+        }
     }
-
 }
 
 __DATA__
@@ -36,6 +41,7 @@ inf:inf
 -inf:-inf
 
 0:0e+0
+-0:0e+0
 
 # positive numbers
 

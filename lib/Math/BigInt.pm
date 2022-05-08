@@ -3673,7 +3673,7 @@ sub length {
 
 sub exponent {
     # return a copy of the exponent (here always 0, NaN or 1 for $m == 0)
-    my ($class, $x) = ref($_[0]) ? (ref($_[0]), $_[0]) : objectify(1, @_);
+    my ($class, $x, @r) = ref($_[0]) ? (ref($_[0]), @_) : objectify(1, @_);
 
     if ($x->{sign} !~ /^[+-]$/) {
         my $s = $x->{sign};
@@ -3688,7 +3688,7 @@ sub exponent {
 
 sub mantissa {
     # return the mantissa (compatible to Math::BigFloat, e.g. reduced)
-    my ($class, $x) = ref($_[0]) ? (ref($_[0]), $_[0]) : objectify(1, @_);
+    my ($class, $x, @r) = ref($_[0]) ? (ref($_[0]), @_) : objectify(1, @_);
 
     if ($x->{sign} !~ /^[+-]$/) {
         # for NaN, +inf, -inf: keep the sign
@@ -3711,17 +3711,17 @@ sub parts {
     ($x->mantissa(), $x->exponent());
 }
 
-sub sparts {
-    my $self  = shift;
-    my $class = ref $self;
+# Parts used for scientific notation with significand/mantissa and exponent as
+# integers. E.g., "12345.6789" is returned as "123456789" (mantissa) and "-4"
+# (exponent).
 
-    croak("sparts() is an instance method, not a class method")
-        unless $class;
+sub sparts {
+    my ($class, $x, @r) = ref($_[0]) ? (ref($_[0]), @_) : objectify(1, @_);
 
     # Not-a-number.
 
-    if ($self -> is_nan()) {
-        my $mant = $self -> copy();             # mantissa
+    if ($x -> is_nan()) {
+        my $mant = $class -> bnan();            # mantissa
         return $mant unless wantarray;          # scalar context
         my $expo = $class -> bnan();            # exponent
         return ($mant, $expo);                  # list context
@@ -3729,8 +3729,8 @@ sub sparts {
 
     # Infinity.
 
-    if ($self -> is_inf()) {
-        my $mant = $self -> copy();             # mantissa
+    if ($x -> is_inf()) {
+        my $mant = $class -> binf($x->{sign});  # mantissa
         return $mant unless wantarray;          # scalar context
         my $expo = $class -> binf('+');         # exponent
         return ($mant, $expo);                  # list context
@@ -3738,54 +3738,38 @@ sub sparts {
 
     # Finite number.
 
-    my $mant   = $self -> copy();
+    my $mant   = $x -> copy();
     my $nzeros = $LIB -> _zeros($mant -> {value});
-
-    $mant -> brsft($nzeros, 10) if $nzeros != 0;
+    $mant = $mant -> brsft($nzeros, 10) if $nzeros != 0;
     return $mant unless wantarray;
 
     my $expo = $class -> new($nzeros);
     return ($mant, $expo);
 }
 
+# Parts used for normalized notation with significand/mantissa as either 0 or a
+# number in the semi-open interval [1,10). E.g., "12345.6789" is returned as
+# "1.23456789" and "4".
+
 sub nparts {
-    my $self  = shift;
-    my $class = ref $self;
+    my ($class, $x, @r) = ref($_[0]) ? (ref($_[0]), @_) : objectify(1, @_);
 
-    croak("nparts() is an instance method, not a class method")
-        unless $class;
+    # Not-a-Number and Infinity.
 
-    # Not-a-number.
-
-    if ($self -> is_nan()) {
-        my $mant = $self -> copy();             # mantissa
-        return $mant unless wantarray;          # scalar context
-        my $expo = $class -> bnan();            # exponent
-        return ($mant, $expo);                  # list context
-    }
-
-    # Infinity.
-
-    if ($self -> is_inf()) {
-        my $mant = $self -> copy();             # mantissa
-        return $mant unless wantarray;          # scalar context
-        my $expo = $class -> binf('+');         # exponent
-        return ($mant, $expo);                  # list context
-    }
+    return $x -> sparts() if $x -> is_nan() || $x -> is_inf();
 
     # Finite number.
 
-    my ($mant, $expo) = $self -> sparts();
-
+    my ($mant, $expo) = $x -> sparts();
     if ($mant -> bcmp(0)) {
         my ($ndigtot, $ndigfrac) = $mant -> length();
         my $expo10adj = $ndigtot - $ndigfrac - 1;
 
-        if ($expo10adj != 0) {
-            return $upgrade -> new($self) -> nparts() if $upgrade;
-            $mant -> bnan();
+        if ($expo10adj > 0) {          # if mantissa is not an integer
+            return $upgrade -> nparts($x) if defined $upgrade;
+            $mant = $mant -> bnan();
             return $mant unless wantarray;
-            $expo -> badd($expo10adj);
+            $expo = $expo -> badd($expo10adj);
             return ($mant, $expo);
         }
     }
@@ -3794,34 +3778,34 @@ sub nparts {
     return ($mant, $expo);
 }
 
+# Parts used for engineering notation with significand/mantissa as either 0 or a
+# number in the semi-open interval [1,1000) and the exponent is a multiple of 3.
+# E.g., "12345.6789" is returned as "12.3456789" and "3".
+
 sub eparts {
-    my $self  = shift;
-    my $class = ref $self;
+    my ($class, $x, @r) = ref($_[0]) ? (ref($_[0]), @_) : objectify(1, @_);
 
-    croak("eparts() is an instance method, not a class method")
-        unless $class;
+    # Not-a-Number and Infinity.
 
-    # Not-a-number and Infinity.
-
-    return $self -> sparts() if $self -> is_nan() || $self -> is_inf();
+    return $x -> sparts() if $x -> is_nan() || $x -> is_inf();
 
     # Finite number.
 
-    my ($mant, $expo) = $self -> sparts();
+    my ($mant, $expo) = $x -> sparts();
 
     if ($mant -> bcmp(0)) {
         my $ndigmant  = $mant -> length();
-        $expo -> badd($ndigmant);
+        $expo = $expo -> badd($ndigmant);
 
         # $c is the number of digits that will be in the integer part of the
         # final mantissa.
 
         my $c = $expo -> copy() -> bdec() -> bmod(3) -> binc();
-        $expo -> bsub($c);
+        $expo = $expo -> bsub($c);
 
         if ($ndigmant > $c) {
-            return $upgrade -> new($self) -> eparts() if $upgrade;
-            $mant -> bnan();
+            return $upgrade -> eparts($x) if defined $upgrade;
+            $mant = $class -> bnan();
             return $mant unless wantarray;
             return ($mant, $expo);
         }
@@ -3833,44 +3817,77 @@ sub eparts {
     return ($mant, $expo);
 }
 
+# Parts used for decimal notation, e.g., "12345.6789" is returned as "12345"
+# (integer part) and "0.6789" (fraction part).
+
 sub dparts {
-    my $self  = shift;
-    my $class = ref $self;
+    my ($class, $x, @r) = ref($_[0]) ? (ref($_[0]), @_) : objectify(1, @_);
 
-    croak("dparts() is an instance method, not a class method")
-        unless $class;
+    # Not-a-number.
 
-    my $int = $self -> copy();
+    if ($x -> is_nan()) {
+        my $int = $class -> bnan();
+        return $int unless wantarray;
+        my $frc = $class -> bzero();    # or NaN?
+        return ($int, $frc);
+    }
+
+    # Infinity.
+
+    if ($x -> is_inf()) {
+        my $int = $class -> binf($x->{sign});
+        return $int unless wantarray;
+        my $frc = $class -> bzero();
+        return ($int, $frc);
+    }
+
+    # Finite number.
+
+    my $int = $x -> copy();
     return $int unless wantarray;
 
     my $frc = $class -> bzero();
     return ($int, $frc);
 }
 
+# Fractional parts with the numerator and denominator as integers. E.g.,
+# "123.4375" is returned as "1975" and "16".
+
 sub fparts {
-    my $x = shift;
-    my $class = ref $x;
+    my ($class, $x, @r) = ref($_[0]) ? (ref($_[0]), @_) : objectify(1, @_);
 
-    croak("fparts() is an instance method") unless $class;
+    # NaN => NaN/NaN
 
-    return ($x -> copy(),
-            $x -> is_nan() ? $class -> bnan() : $class -> bone());
+    if ($x -> is_nan()) {
+        return $class -> bnan() unless wantarray;
+        return $class -> bnan(), $class -> bnan();
+    }
+
+    # ±Inf => ±Inf/1
+
+    if ($x -> is_inf()) {
+        my $numer = $class -> binf($x->{sign});
+        return $numer unless wantarray;
+        my $denom = $class -> bone();
+        return $numer, $denom;
+    }
+
+    # N => N/1
+
+    my $numer = $x -> copy();
+    return $numer unless wantarray;
+    my $denom = $class -> bone();
+    return $numer, $denom;
 }
 
 sub numerator {
-    my $x = shift;
-    my $class = ref $x;
-
-    croak("numerator() is an instance method") unless $class;
+    my ($class, $x, @r) = ref($_[0]) ? (ref($_[0]), @_) : objectify(1, @_);
 
     return $x -> copy();
 }
 
 sub denominator {
-    my $x = shift;
-    my $class = ref $x;
-
-    croak("denominator() is an instance method") unless $class;
+    my ($class, $x, @r) = ref($_[0]) ? (ref($_[0]), @_) : objectify(1, @_);
 
     return $x -> is_nan() ? $class -> bnan() : $class -> bone();
 }
@@ -3880,7 +3897,7 @@ sub denominator {
 ###############################################################################
 
 sub bstr {
-    my ($class, $x) = ref($_[0]) ? (undef, $_[0]) : objectify(1, @_);
+    my (undef, $x, @r) = ref($_[0]) ? (undef, @_) : objectify(1, @_);
 
     if ($x->{sign} ne '+' && $x->{sign} ne '-') {
         return $x->{sign} unless $x->{sign} eq '+inf'; # -inf, NaN
@@ -3894,21 +3911,22 @@ sub bstr {
 # written as "1.2345e+4".
 
 sub bsstr {
-    my ($class, $x) = ref($_[0]) ? (undef, $_[0]) : objectify(1, @_);
+    my (undef, $x, @r) = ref($_[0]) ? (undef, @_) : objectify(1, @_);
 
     if ($x->{sign} ne '+' && $x->{sign} ne '-') {
         return $x->{sign} unless $x->{sign} eq '+inf';  # -inf, NaN
         return 'inf';                                   # +inf
     }
+
     my ($m, $e) = $x -> parts();
-    my $str = $LIB->_str($m->{value}) . 'e+' . $LIB->_str($e->{value});
-    return $x->{sign} eq '-' ? "-$str" : $str;
+    ($x->{sign} eq '-' ? '-' : '') . $LIB->_str($m->{value})
+      . 'e+' . $LIB->_str($e->{value});
 }
 
 # Normalized notation, e.g., "12345" is written as "12345e+0".
 
 sub bnstr {
-    my $x = shift;
+    my (undef, $x, @r) = ref($_[0]) ? (undef, @_) : objectify(1, @_);
 
     if ($x->{sign} ne '+' && $x->{sign} ne '-') {
         return $x->{sign} unless $x->{sign} eq '+inf';  # -inf, NaN
@@ -3939,14 +3957,14 @@ sub bnstr {
 # Engineering notation, e.g., "12345" is written as "12.345e+3".
 
 sub bestr {
-    my $x = shift;
+    my (undef, $x, @r) = ref($_[0]) ? (undef, @_) : objectify(1, @_);
 
     if ($x->{sign} ne '+' && $x->{sign} ne '-') {
         return $x->{sign} unless $x->{sign} eq '+inf';  # -inf, NaN
         return 'inf';                                   # +inf
     }
 
-    my ($mant, $expo) = $x -> parts();
+    my ($mant, $expo) = $x -> sparts();
 
     my $sign = $mant -> sign();
     $mant -> babs();
@@ -3974,21 +3992,20 @@ sub bestr {
 # Decimal notation, e.g., "12345".
 
 sub bdstr {
-    my $x = shift;
+    my (undef, $x, @r) = ref($_[0]) ? (undef, @_) : objectify(1, @_);
 
     if ($x->{sign} ne '+' && $x->{sign} ne '-') {
         return $x->{sign} unless $x->{sign} eq '+inf'; # -inf, NaN
         return 'inf';                                  # +inf
     }
 
-    my $str = $LIB->_str($x->{value});
-    return $x->{sign} eq '-' ? "-$str" : $str;
+    ($x->{sign} eq '-' ? '-' : '') . $LIB->_str($x->{value});
 }
 
 # Fractional notation, e.g., "123.4375" is written as "1975/16".
 
 sub bfstr {
-    my ($class, $x, @r) = ref($_[0]) ? (ref($_[0]), $_[0]) : objectify(1, @_);
+    my (undef, $x, @r) = ref($_[0]) ? (undef, @_) : objectify(1, @_);
 
     if ($x->{sign} ne '+' && $x->{sign} ne '-') {
         return $x->{sign} unless $x->{sign} eq '+inf'; # -inf, NaN
