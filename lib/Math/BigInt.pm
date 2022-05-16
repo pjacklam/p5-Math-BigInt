@@ -4776,7 +4776,7 @@ sub _find_round_parameters {
 
 # Return true if the input is numeric and false if it is a string.
 
-sub is_numeric {
+sub _is_numeric {
     shift;              # class name
     my $value = shift;
     no warnings 'numeric';
