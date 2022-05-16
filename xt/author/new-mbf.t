@@ -3,7 +3,7 @@
 use strict;
 use warnings;
 
-use Test::More tests => 112;
+use Test::More tests => 116;
 
 use Scalar::Util qw< refaddr >;
 
@@ -11,6 +11,8 @@ my $class;
 
 BEGIN { $class = 'Math::BigFloat'; }
 BEGIN { use_ok($class, '1.999821'); }
+
+my $LIB = Math::BigFloat -> config('lib');
 
 while (<DATA>) {
     s/#.*$//;           # remove comments
@@ -27,12 +29,18 @@ while (<DATA>) {
     die $@ if $@;       # this should never happen
 
     subtest $desc, sub {
-        plan tests => 2,
+        plan tests => 3;
 
         # Check output.
 
         is(ref($x), $class, "output arg is a $class");
         is($x, $out0, 'output arg has the right value');
+
+        if ($LIB -> _is_zero($x->{_e})) {
+            is($x->{_es}, '+', "exponent sign is + when exponent is 0");
+        } else {
+            ok($x->{_es} eq '+' || $x->{_es} eq '-', "exponent sign is valid");
+        }
     };
 
 }
@@ -42,10 +50,16 @@ while (<DATA>) {
 {
     my $x = $class -> new();
     subtest qq|\$x = $class -> new();|, => sub {
-        plan tests => 2;
+        plan tests => 3;
 
         is(ref($x), $class, "output arg is a $class");
         is($x, "0", 'output arg has the right value');
+
+        if ($LIB -> _is_zero($x->{_e})) {
+            is($x->{_es}, '+', "exponent sign is + when exponent is 0");
+        } else {
+            ok($x->{_es} eq '+' || $x->{_es} eq '-', "exponent sign is valid");
+        }
     };
 }
 
@@ -55,11 +69,17 @@ while (<DATA>) {
     no warnings "numeric";
     my $x = $class -> new("");
     subtest qq|\$x = $class -> new("");|, => sub {
-        plan tests => 2;
+        plan tests => 3;
 
         is(ref($x), $class, "output arg is a $class");
 #        is($x, "0", 'output arg has the right value');
         is($x, "NaN", 'output arg has the right value');
+
+        if ($LIB -> _is_zero($x->{_e})) {
+            is($x->{_es}, '+', "exponent sign is + when exponent is 0");
+        } else {
+            ok($x->{_es} eq '+' || $x->{_es} eq '-', "exponent sign is valid");
+        }
     };
 }
 
@@ -69,10 +89,16 @@ while (<DATA>) {
     no warnings "uninitialized";
     my $x = $class -> new(undef);
     subtest qq|\$x = $class -> new(undef);|, => sub {
-        plan tests => 2;
+        plan tests => 3;
 
         is(ref($x), $class, "output arg is a $class");
         is($x, "0", 'output arg has the right value');
+
+        if ($LIB -> _is_zero($x->{_e})) {
+            is($x->{_es}, '+', "exponent sign is '+' when exponent is 0");
+        } else {
+            ok($x->{_es} eq '+' || $x->{_es} eq '-', "exponent sign is valid");
+        }
     };
 }
 
@@ -82,7 +108,7 @@ while (<DATA>) {
 # copied from $x, not the accuracy or precision.
 
 SKIP: {
-    skip "This test reveals a bug that has not been fixed yet", 2;
+    skip "This test reveals a bug that has not been fixed yet", 2;  # Fixme!
 
     my ($a, $p, $x, $y);
 
@@ -134,10 +160,16 @@ for my $str (qw/
     my $x;
     $x = $class -> new($str);
     subtest $str, sub {
-        plan tests => 2,
+        plan tests => 3;
 
         is(ref($x), $class, "output arg is a $class");
         is($x -> bnstr(), $str, 'output arg has the right value');
+
+        if ($LIB -> _is_zero($x->{_e})) {
+            is($x->{_es}, '+', "exponent sign is + when exponent is 0");
+        } else {
+            ok($x->{_es} eq '+' || $x->{_es} eq '-', "exponent sign is valid");
+        }
     }
 }
 
@@ -150,6 +182,11 @@ infinity:inf
 +infinity:inf
 -inf:-inf
 -infinity:-inf
+
+0e-0:0
+0e+0:0
+3e-0:3
+3e+0:3
 
 # This is the same data as in from_bin-mbf.t, except that some of them are
 # commented out, since new() only treats input as binary if it has a "0b" or

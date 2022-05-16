@@ -3,7 +3,7 @@
 use strict;
 use warnings;
 
-use Test::More tests => 16;
+use Test::More tests => 22;
 
 use Math::BigInt;
 
@@ -21,8 +21,6 @@ while (<DATA>) {
     eval $test;
     die $@ if $@;       # this should never happen
 
-
-
     subtest $test => sub {
         plan tests => 4;
         is($ss, $out0, 'sign of the significand');
@@ -34,8 +32,15 @@ while (<DATA>) {
 
 __DATA__
 
+3:+:3:+:0
+3e+0:+:3:+:0
+3e-0:+:3:+:0
+-3e+0:-:3:+:0
+-3e-0:-:3:+:0
+
 0:+:0:+:0
 0e-0:+:0:+:0
+0e+0:+:0:+:0
 0e-7:+:0:+:0
 0e+7:+:0:+:0
 

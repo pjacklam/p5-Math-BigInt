@@ -21,8 +21,8 @@ while (<DATA>) {
         my $x = Math::BigFloat -> new($x_str);
         my ($mant_got, $expo_got) = $x -> sparts();
 
-        isa_ok($mant_got, "Math::BigFloat");
-        isa_ok($expo_got, "Math::BigFloat");
+        is(ref($mant_got), "Math::BigFloat");
+        is(ref($expo_got), "Math::BigFloat");
 
         is($mant_got, $mant_str, "value of mantissa");
         is($expo_got, $expo_str, "value of exponent");
@@ -36,7 +36,7 @@ while (<DATA>) {
         my $x = Math::BigFloat -> new($x_str);
         my $mant_got = $x -> sparts();
 
-        isa_ok($mant_got, "Math::BigFloat");
+        is(ref($mant_got), "Math::BigFloat");
 
         is($mant_got, $mant_str, "value of mantissa");
         is($x,        $x_str,    "input is unmodified");
