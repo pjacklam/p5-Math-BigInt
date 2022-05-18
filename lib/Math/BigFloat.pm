@@ -1227,22 +1227,25 @@ EOF
 }
 
 sub copy {
-    my $self    = shift;
-    my $selfref = ref $self;
-    my $class   = $selfref || $self;
+    my ($x, $class);
+    if (ref($_[0])) {           # $y = $x -> copy()
+        $x = shift;
+        $class = ref($x);
+    } else {                    # $y = Math::BigInt -> copy($y)
+        $class = shift;
+        $x = shift;
+    }
 
-    # If called as a class method, the object to copy is the next argument.
-
-    $self = shift() unless $selfref;
+    carp "Rounding is not supported for ", (caller(0))[3], "()" if @_;
 
     my $copy = bless {}, $class;
 
-    $copy->{sign} = $self->{sign};
-    $copy->{_es}  = $self->{_es};
-    $copy->{_m}   = $LIB->_copy($self->{_m});
-    $copy->{_e}   = $LIB->_copy($self->{_e});
-    $copy->{_a}   = $self->{_a} if exists $self->{_a};
-    $copy->{_p}   = $self->{_p} if exists $self->{_p};
+    $copy->{sign} = $x->{sign};
+    $copy->{_es}  = $x->{_es};
+    $copy->{_m}   = $LIB->_copy($x->{_m});
+    $copy->{_e}   = $LIB->_copy($x->{_e});
+    $copy->{_a}   = $x->{_a} if exists $x->{_a};
+    $copy->{_p}   = $x->{_p} if exists $x->{_p};
 
     return $copy;
 }
