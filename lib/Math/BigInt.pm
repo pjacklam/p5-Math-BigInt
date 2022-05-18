@@ -3305,6 +3305,8 @@ sub brsft {
     $b = 2 if !defined $b;
     return $x -> bnan(@r) if $b <= 0 || $y -> {sign} eq '-';
 
+    return $upgrade -> brsft($x, $y, $b, @r) if defined $upgrade;
+
     # this only works for negative numbers when shifting in base 2
     if (($x -> {sign} eq '-') && ($b == 2)) {
         return $x -> round(@r) if $x -> is_one('-'); # -1 => -1
