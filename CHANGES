@@ -1,3 +1,20 @@
+1.999832 2022-05-21
+
+- Improve as_int(), as_float(), and as_rat() so that they return a
+  Math::BigInt, Math::BigFloat, and Math::BigRat, respectivly,
+  regardless of upgrading and downgrading.
+
+- Improve stringification method bsstr() so that it handles upgrading
+  and downgrading better.
+
+- Fix Math::BigFloat->bpi(), which unfortunately didn't handle downgrading.
+
+- Avoid unnecessary downgrading/upgrading.
+
+- Add missed cases where downgrading/upgrading should be performed.
+
+- Avoid unnecessary stringification.
+
 1.999831 2022-05-16
 
  * Further improvements to upgrading, downgrading, and rounding.
