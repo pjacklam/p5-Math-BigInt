@@ -2248,6 +2248,7 @@ sub _from_bin {
 # special modulus functions
 
 sub _modinv {
+
     # modular multiplicative inverse
     my ($c, $x, $y) = @_;
 
