@@ -1771,7 +1771,7 @@ sub _modinv {
 
     # modulo zero
     if ($class -> _is_zero($y)) {
-        return (undef, undef);
+        return;
     }
 
     # modulo one
@@ -1801,7 +1801,7 @@ sub _modinv {
     }
 
     # if the gcd is not 1, there exists no modular multiplicative inverse
-    return (undef, undef) unless $class -> _is_one($a);
+    return unless $class -> _is_one($a);
 
     ($v, $sign == 1 ? '+' : '-');
 }
