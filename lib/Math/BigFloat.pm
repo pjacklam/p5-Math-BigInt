@@ -1210,7 +1210,7 @@ EOF
             $tn = $tn -> bsub($pn * $prev_an * $prev_an);
             $pn = $pn -> badd($pn);
         }
-        $n = $an -> badd($bn);
+        $an = $an -> badd($bn);
         $an = $an -> bmul($an, $n) -> bdiv(4 * $tn, $n);
 
         $an = $an -> round(@r);
