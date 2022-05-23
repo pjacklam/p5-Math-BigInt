@@ -4,7 +4,7 @@ use 5.006001;
 use strict;
 use warnings;
 
-our $VERSION = '1.999832';
+our $VERSION = '1.999833';
 $VERSION =~ tr/_//d;
 
 use Carp;
