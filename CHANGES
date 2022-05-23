@@ -1,3 +1,7 @@
+1.999834 2022-05-23
+
+ * Further improvements to upgrading and downgrading.
+
 1.999833 2022-05-23
 
  * Fix Math::BigFloat->bpi(). The previous attempt at correcting it
