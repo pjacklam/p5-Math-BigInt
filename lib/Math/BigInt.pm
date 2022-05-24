@@ -23,7 +23,7 @@ use warnings;
 use Carp          qw< carp croak >;
 use Scalar::Util  qw< blessed refaddr >;
 
-our $VERSION = '1.999834';
+our $VERSION = '1.999835';
 $VERSION =~ tr/_//d;
 
 require Exporter;
@@ -3339,8 +3339,16 @@ sub blsft {
     return $x -> bnan() if ($x -> {sign} !~ /^[+-]$/ ||
                             $y -> {sign} !~ /^[+-]$/);
     return $x -> round(@r) if $y -> is_zero();
+    return $x -> bzero(@r) if $x -> is_zero(); # 0 => 0
 
-    $b = defined($b) ? $b -> numify() : 2;
+    $b = 2 if !defined $b;
+    return $x -> bnan(@r) if $b <= 0 || $y -> {sign} eq '-';
+    $b = $class -> new($b) unless defined(blessed($b));
+
+    #return $upgrade -> blsft($x, $y, $b, @r)
+    #  if defined($upgrade) && (!$x -> isa($class) ||
+    #                           !$y -> isa($class) ||
+    #                           !$b -> isa($class));
 
     # shift by a negative amount?
     #return $x -> brsft($y -> copy() -> babs(), $b) if $y -> {sign} =~ /^-/;
@@ -3352,10 +3360,7 @@ sub blsft {
     my $uintmax = ~0;
     croak("Base is too large.") if $b > $uintmax;
 
-    #return $upgrade -> blsft($x, $y, $b, @r)
-    #  if defined($upgrade) && (!$x -> isa($class) ||
-    #                           !$y -> isa($class) ||
-    #                           !$b -> isa($class));
+    $b = $b -> numify();
 
     return $x -> bnan() if $b <= 0 || $y -> {sign} eq '-';
 
@@ -3367,12 +3372,19 @@ sub brsft {
     # (BINT or num_str, BINT or num_str) return BINT
     # compute x >> y, base n, y >= 0
 
-    # set up parameters
     my ($class, $x, $y, $b, @r) = (ref($_[0]), @_);
 
-    # objectify is costly, so avoid it
-    if ((!ref($_[0])) || (ref($_[0]) ne ref($_[1]))) {
-        ($class, $x, $y, $b, @r) = objectify(2, @_);
+    # Objectify the base only when it is defined, since an undefined base, as
+    # in $x->blsft(3) or $x->blog(3, undef) means use the default base 2.
+
+    if (!ref($_[0]) && $_[0] =~ /^[A-Za-z]|::/) {
+        # E.g., Math::BigInt->blog(256, 5, 2)
+        ($class, $x, $y, $b, @r) =
+          defined $_[3] ? objectify(3, @_) : objectify(2, @_);
+    } else {
+        # E.g., Math::BigInt::blog(256, 5, 2) or $x->blog(5, 2)
+        ($class, $x, $y, $b, @r) =
+          defined $_[2] ? objectify(3, @_) : objectify(2, @_);
     }
 
     return $x if $x -> modify('brsft');
@@ -3383,11 +3395,25 @@ sub brsft {
 
     $b = 2 if !defined $b;
     return $x -> bnan(@r) if $b <= 0 || $y -> {sign} eq '-';
+    $b = $class -> new($b) unless defined(blessed($b));
+
+    # Shifting right by a positive amount might lead to a non-integer result, so
+    # include this case in the test.
 
     return $upgrade -> brsft($x, $y, $b, @r)
       if defined($upgrade) && (!$x -> isa($class) ||
                                !$y -> isa($class) ||
-                               !$b -> isa($class));
+                               !$b -> isa($class) ||
+                               $y -> is_pos());
+
+    # While some of the libraries support an arbitrarily large base, not all of
+    # them do, so rather than returning an incorrect result in those cases,
+    # disallow bases that don't work with all libraries.
+
+    my $uintmax = ~0;
+    croak("Base is too large.") if $b > $uintmax;
+
+    $b = $b -> numify();
 
     # this only works for negative numbers when shifting in base 2
     if (($x -> {sign} eq '-') && ($b == 2)) {
