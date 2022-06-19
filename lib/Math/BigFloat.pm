@@ -1265,7 +1265,7 @@ sub as_int {
 
     # disable upgrading and downgrading
 
-    require Math::BigFloat;
+    require Math::BigInt;
     my $upg = Math::BigInt -> upgrade();
     my $dng = Math::BigInt -> downgrade();
     Math::BigInt -> upgrade(undef);
@@ -1303,17 +1303,17 @@ sub as_float {
     # disable upgrading and downgrading
 
     require Math::BigFloat;
-    my $upg = Math::BigInt -> upgrade();
-    my $dng = Math::BigInt -> downgrade();
-    Math::BigInt -> upgrade(undef);
-    Math::BigInt -> downgrade(undef);
+    my $upg = Math::BigFloat -> upgrade();
+    my $dng = Math::BigFloat -> downgrade();
+    Math::BigFloat -> upgrade(undef);
+    Math::BigFloat -> downgrade(undef);
 
     my $y = Math::BigFloat -> new($x);
 
     # reset upgrading and downgrading
 
-    Math::BigInt -> upgrade($upg);
-    Math::BigInt -> downgrade($dng);
+    Math::BigFloat -> upgrade($upg);
+    Math::BigFloat -> downgrade($dng);
 
     return $y;
 }
