@@ -5690,6 +5690,12 @@ sub _lib_parts_to_dec_str {
     }
 }
 
+# Add the function _register_callback() to Math::BigInt. It is provided for
+# backwards compabibility so that old version of Math::BigRat etc. don't
+# complain about missing it.
+
+sub _register_callback { }
+
 ###############################################################################
 # this method returns 0 if the object can be modified, or 1 if not.
 # We use a fast constant sub() here, to avoid costly calls. Subclasses

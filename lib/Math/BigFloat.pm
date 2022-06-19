@@ -5671,6 +5671,19 @@ sub _pow {
     $x;
 }
 
+# These functions are only provided for backwards compabibility so that old
+# version of Math::BigRat etc. don't complain about missing them.
+
+sub _e_add {
+    my ($x, $y, $xs, $ys) = @_;
+    return $LIB -> _sadd($x, $xs, $y, $ys);
+}
+
+sub _e_sub {
+    my ($x, $y, $xs, $ys) = @_;
+    return $LIB -> _ssub($x, $xs, $y, $ys);
+}
+
 1;
 
 __END__
