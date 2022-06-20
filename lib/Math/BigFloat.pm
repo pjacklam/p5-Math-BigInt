@@ -2083,6 +2083,12 @@ sub bdiv {
         return $quo;
     }
 
+    # Division might return a value that we can not represent exactly, so
+    # upgrade, if upgrading is enabled.
+
+    return $upgrade -> bdiv($x, $y, @r)
+      if defined($upgrade) && !wantarray && !$LIB -> _is_one($y -> {_m});
+
     # we need to limit the accuracy to protect against overflow
     my $fallback = 0;
     my (@params, $scale);
