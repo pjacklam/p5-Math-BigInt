@@ -4620,14 +4620,18 @@ sub bstr {
     # (ref to BFLOAT or num_str) return num_str
     # Convert number from internal format to (non-scientific) string format.
     # internal format is always normalized (no leading zeros, "-0" => "+0")
-    my (undef, $x, @r) = ref($_[0]) ? (undef, @_) : objectify(1, @_);
+    my ($class, $x, @r) = ref($_[0]) ? (ref($_[0]), @_) : objectify(1, @_);
 
     carp "Rounding is not supported for ", (caller(0))[3], "()" if @r;
 
-    if ($x->{sign} !~ /^[+-]$/) {
-        return $x->{sign} unless $x->{sign} eq '+inf'; # -inf, NaN
-        return 'inf';                                  # +inf
+    # Inf and NaN
+
+    if ($x->{sign} ne '+' && $x->{sign} ne '-') {
+        return $x->{sign} unless $x->{sign} eq '+inf';  # -inf, NaN
+        return 'inf';                                   # +inf
     }
+
+    # Finite number
 
     my $es = '0';
     my $len = 1;
@@ -4676,47 +4680,77 @@ sub bstr {
     $es;
 }
 
-# Decimal notation, e.g., "12345.6789".
+# Decimal notation, e.g., "12345.6789" (no exponent).
 
 sub bdstr {
-    my (undef, $x, @r) = ref($_[0]) ? (undef, @_) : objectify(1, @_);
+    my ($class, $x, @r) = ref($_[0]) ? (ref($_[0]), @_) : objectify(1, @_);
 
     carp "Rounding is not supported for ", (caller(0))[3], "()" if @r;
 
+    # Inf and NaN
+
     if ($x->{sign} ne '+' && $x->{sign} ne '-') {
-        return $x->{sign} unless $x->{sign} eq '+inf'; # -inf, NaN
-        return 'inf';                                  # +inf
+        return $x->{sign} unless $x->{sign} eq '+inf';  # -inf, NaN
+        return 'inf';                                   # +inf
     }
+
+    # Upgrade?
+
+    return $upgrade -> bdstr($x, @r)
+      if defined($upgrade) && !$x -> isa($class);
+
+    # Finite number
 
     my $mant = $LIB->_str($x->{_m});
     my $esgn = $x->{_es};
     my $eabs = $LIB -> _num($x->{_e});
 
+    my $uintmax = ~0;
+
     my $str = $mant;
     if ($esgn eq '+') {
+
+        croak("The absolute value of the exponent is too large")
+          if $eabs > $uintmax;
+
         $str .= "0" x $eabs;
+
     } else {
         my $mlen = CORE::length($mant);
         my $c = $mlen - $eabs;
+
+        my $intmax = ($uintmax - 1) / 2;
+        croak("The absolute value of the exponent is too large")
+          if (1 - $c) > $intmax;
+
         $str = "0" x (1 - $c) . $str if $c <= 0;
         substr($str, -$eabs, 0) = '.';
     }
 
-    return $x->{sign} eq '-' ? "-$str" : $str;
+    return $x->{sign} eq '-' ? '-' . $str : $str;
 }
 
 # Scientific notation with significand/mantissa and exponent as integers, e.g.,
 # "12345.6789" is written as "123456789e-4".
 
 sub bsstr {
-    my (undef, $x, @r) = ref($_[0]) ? (undef, @_) : objectify(1, @_);
+    my ($class, $x, @r) = ref($_[0]) ? (ref($_[0]), @_) : objectify(1, @_);
 
     carp "Rounding is not supported for ", (caller(0))[3], "()" if @r;
 
+    # Inf and NaN
+
     if ($x->{sign} ne '+' && $x->{sign} ne '-') {
-        return $x->{sign} unless $x->{sign} eq '+inf'; # -inf, NaN
-        return 'inf';                                  # +inf
+        return $x->{sign} unless $x->{sign} eq '+inf';  # -inf, NaN
+        return 'inf';                                   # +inf
     }
+
+    # Upgrade?
+
+    return $upgrade -> bsstr($x, @r)
+      if defined($upgrade) && !$x -> isa($class);
+
+    # Finite number
 
     ($x->{sign} eq '-' ? '-' : '') . $LIB->_str($x->{_m})
       . 'e' . $x->{_es} . $LIB->_str($x->{_e});
@@ -4725,42 +4759,107 @@ sub bsstr {
 # Normalized notation, e.g., "12345.6789" is written as "1.23456789e+4".
 
 sub bnstr {
-    my (undef, $x, @r) = ref($_[0]) ? (undef, @_) : objectify(1, @_);
+    my ($class, $x, @r) = ref($_[0]) ? (ref($_[0]), @_) : objectify(1, @_);
 
     carp "Rounding is not supported for ", (caller(0))[3], "()" if @r;
 
+    # Inf and NaN
+
     if ($x->{sign} ne '+' && $x->{sign} ne '-') {
-        return $x->{sign} unless $x->{sign} eq '+inf'; # -inf, NaN
-        return 'inf';                                  # +inf
+        return $x->{sign} unless $x->{sign} eq '+inf';  # -inf, NaN
+        return 'inf';                                   # +inf
     }
 
-    my ($mant, $expo) = $x -> nparts();
-    my $esgn = $expo < 0 ? '-' : '+';
-    my $eabs = $expo -> babs() -> bdstr();
-    #$eabs = '0' . $eabs if length($eabs) < 2;
+    # Upgrade?
 
-    return $mant -> bdstr() . 'e' . $esgn . $eabs;
+    return $upgrade -> bnstr($x, @r)
+      if defined($upgrade) && !$x -> isa($class);
+
+    # Finite number
+
+    my $str = $x->{sign} eq '-' ? '-' : '';
+
+    # Get the mantissa and the length of the mantissa.
+
+    my $mant = $LIB->_str($x->{_m});
+    my $mantlen = CORE::length($mant);
+
+    if ($mantlen == 1) {
+
+        # Not decimal point when the mantissa has length one, i.e., return the
+        # number 2 as the string "2", not "2.".
+
+        $str .= $mant . 'e' . $x->{_es} . $LIB->_str($x->{_e});
+
+    } else {
+
+        # Compute new exponent where the original exponent is adjusted by the
+        # length of the mantissa minus one (because the decimal point is after
+        # one digit).
+
+        my ($eabs, $esgn) = $LIB -> _sadd($LIB -> _copy($x->{_e}), $x->{_es},
+                                      $LIB -> _new($mantlen - 1), "+");
+        substr $mant, 1, 0, ".";
+        $str .= $mant . 'e' . $esgn . $LIB->_str($eabs);
+
+    }
+
+    return $str;
 }
 
 # Engineering notation, e.g., "12345.6789" is written as "12.3456789e+3".
 
 sub bestr {
-    my (undef, $x, @r) = ref($_[0]) ? (undef, @_) : objectify(1, @_);
+    my ($class, $x, @r) = ref($_[0]) ? (ref($_[0]), @_) : objectify(1, @_);
 
     carp "Rounding is not supported for ", (caller(0))[3], "()" if @r;
 
+    # Inf and NaN
+
     if ($x->{sign} ne '+' && $x->{sign} ne '-') {
-        return $x->{sign} unless $x->{sign} eq '+inf'; # -inf, NaN
-        return 'inf';                                  # +inf
+        return $x->{sign} unless $x->{sign} eq '+inf';  # -inf, NaN
+        return 'inf';                                   # +inf
     }
 
-    my ($mant, $expo) = $x -> eparts();
-    my $esgn = $expo < 0 ? '-' : '+';
-    my $eabs = $expo -> babs() -> bdstr();
-    #$eabs = '0' . $eabs if length($eabs) < 2;
+    # Upgrade?
 
-    #print "<" . $mant -> bdstr() . ">";
-    return $mant -> bdstr() . 'e' . $esgn . $eabs;
+    return $upgrade -> bestr($x, @r)
+      if defined($upgrade) && !$x -> isa($class);
+
+    # Finite number
+
+    my $str = $x->{sign} eq '-' ? '-' : '';
+
+    # Get the mantissa, the length of the mantissa, and adjust the exponent by
+    # the length of the mantissa minus 1 (because the dot is after one digit).
+
+    my $mant = $LIB->_str($x->{_m});
+    my $mantlen = CORE::length($mant);
+    my ($eabs, $esgn) = $LIB -> _sadd($LIB -> _copy($x->{_e}), $x->{_es},
+                                  $LIB -> _new($mantlen - 1), "+");
+
+    my $dotpos = 1;
+    my $mod = $LIB -> _mod($LIB -> _copy($eabs), $LIB -> _new("3"));
+    unless ($LIB -> _is_zero($mod)) {
+        if ($esgn eq '+') {
+            $eabs = $LIB -> _sub($eabs, $mod);
+            $dotpos += $LIB -> _num($mod);
+        } else {
+            my $delta = $LIB -> _sub($LIB -> _new("3"), $mod);
+            $eabs = $LIB -> _add($eabs, $delta);
+            $dotpos += $LIB -> _num($delta);
+        }
+    }
+
+    if ($dotpos < $mantlen) {
+        substr $mant, $dotpos, 0, ".";
+    } elsif ($dotpos > $mantlen) {
+        $mant .= "0" x ($dotpos - $mantlen);
+    }
+
+    $str .= $mant . 'e' . $esgn . $LIB->_str($eabs);
+
+    return $str;
 }
 
 # Fractional notation, e.g., "123.4375" is written as "1975/16".
@@ -4770,23 +4869,56 @@ sub bfstr {
 
     carp "Rounding is not supported for ", (caller(0))[3], "()" if @r;
 
+    # Inf and NaN
+
     if ($x->{sign} ne '+' && $x->{sign} ne '-') {
-        return $x->{sign} unless $x->{sign} eq '+inf'; # -inf, NaN
-        return 'inf';                                  # +inf
+        return $x->{sign} unless $x->{sign} eq '+inf';  # -inf, NaN
+        return 'inf';                                   # +inf
     }
 
-    return $x -> bdstr() if $x -> is_int();
-    my ($num, $den) = $x -> fparts();
-    return $num -> bdstr() . '/' . $den -> bdstr();
+    # Upgrade?
+
+    return $upgrade -> bfstr($x, @r)
+      if defined($upgrade) && !$x -> isa($class);
+
+    # Finite number
+
+    my $str = $x->{sign} eq '-' ? '-' : '';
+
+    if ($x->{_es} eq '+') {
+        $str .= $LIB -> _str($x->{_m}) . ("0" x $LIB -> _num($x->{_e}));
+    } else {
+        my $numer = $x->{_m};
+        my $denom = $LIB -> _new("1" . ("0" x $LIB -> _num($x->{_e})));
+        my $gcd   = $LIB -> _gcd($LIB -> _copy($numer), $denom);
+        $numer = $LIB -> _div($LIB -> _copy($numer), $gcd);
+        $denom = $LIB -> _div($LIB -> _copy($denom), $gcd);
+        $str .= $LIB -> _str($numer) . "/" . $LIB -> _str($denom);
+    }
+
+    return $str;
 }
 
 sub to_hex {
     # return number as hexadecimal string (only for integers defined)
-    my (undef, $x, @r) = ref($_[0]) ? (undef, @_) : objectify(1, @_);
+    my ($class, $x, @r) = ref($_[0]) ? (ref($_[0]), $_[0]) : objectify(1, @_);
 
     carp "Rounding is not supported for ", (caller(0))[3], "()" if @r;
 
-    return $x->bstr() if $x->{sign} !~ /^[+-]$/; # inf, nan etc
+    # Inf and NaN
+
+    if ($x->{sign} ne '+' && $x->{sign} ne '-') {
+        return $x->{sign} unless $x->{sign} eq '+inf';  # -inf, NaN
+        return 'inf';                                   # +inf
+    }
+
+    # Upgrade?
+
+    return $upgrade -> to_hex($x, @r)
+      if defined($upgrade) && !$x -> isa($class);
+
+    # Finite number
+
     return '0' if $x->is_zero();
 
     return $nan if $x->{_es} ne '+';    # how to do 1e-1 in hex?
@@ -4801,11 +4933,24 @@ sub to_hex {
 
 sub to_oct {
     # return number as octal digit string (only for integers defined)
-    my (undef, $x, @r) = ref($_[0]) ? (undef, @_) : objectify(1, @_);
+    my ($class, $x, @r) = ref($_[0]) ? (ref($_[0]), $_[0]) : objectify(1, @_);
 
     carp "Rounding is not supported for ", (caller(0))[3], "()" if @r;
 
-    return $x->bstr() if $x->{sign} !~ /^[+-]$/; # inf, nan etc
+    # Inf and NaN
+
+    if ($x->{sign} ne '+' && $x->{sign} ne '-') {
+        return $x->{sign} unless $x->{sign} eq '+inf';  # -inf, NaN
+        return 'inf';                                   # +inf
+    }
+
+    # Upgrade?
+
+    return $upgrade -> to_hex($x, @r)
+      if defined($upgrade) && !$x -> isa($class);
+
+    # Finite number
+
     return '0' if $x->is_zero();
 
     return $nan if $x->{_es} ne '+';    # how to do 1e-1 in octal?
@@ -4820,11 +4965,24 @@ sub to_oct {
 
 sub to_bin {
     # return number as binary digit string (only for integers defined)
-    my (undef, $x, @r) = ref($_[0]) ? (undef, @_) : objectify(1, @_);
+    my ($class, $x, @r) = ref($_[0]) ? (ref($_[0]), $_[0]) : objectify(1, @_);
 
     carp "Rounding is not supported for ", (caller(0))[3], "()" if @r;
 
-    return $x->bstr() if $x->{sign} !~ /^[+-]$/; # inf, nan etc
+    # Inf and NaN
+
+    if ($x->{sign} ne '+' && $x->{sign} ne '-') {
+        return $x->{sign} unless $x->{sign} eq '+inf';  # -inf, NaN
+        return 'inf';                                   # +inf
+    }
+
+    # Upgrade?
+
+    return $upgrade -> to_hex($x, @r)
+      if defined($upgrade) && !$x -> isa($class);
+
+    # Finite number
+
     return '0' if $x->is_zero();
 
     return $nan if $x->{_es} ne '+';    # how to do 1e-1 in binary?
