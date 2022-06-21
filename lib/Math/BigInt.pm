@@ -580,8 +580,8 @@ sub new {
 
     if (defined(blessed($wanted)) && $wanted -> isa($class)) {
 
-        # We don't copy the accuracy and precision, because a new object should
-        # get them from the global configuration.
+        # Don't copy the accuracy and precision, because a new object should get
+        # them from the global configuration.
 
         $self -> {sign}  = $wanted -> {sign};
         $self -> {value} = $LIB -> _copy($wanted -> {value});
@@ -592,40 +592,48 @@ sub new {
 
     # Shortcut for non-zero scalar integers with no non-zero exponent.
 
-    if ($wanted =~ / ^
-                     ([+-]?)            # optional sign
-                     ([1-9][0-9]*)      # non-zero significand
-                     (\.0*)?            # ... with optional zero fraction
-                     ([Ee][+-]?0+)?     # optional zero exponent
-                     \z
-                   /x)
+    if ($wanted =~
+        / ^
+          ( [+-]? )             # optional sign
+          ( [1-9] [0-9]* )      # non-zero significand
+          ( \.0* )?             # ... with optional zero fraction
+          ( [Ee] [+-]? 0+ )?    # optional zero exponent
+          \z
+        /x)
     {
         my $sgn = $1;
         my $abs = $2;
         $self->{sign} = $sgn || '+';
         $self->{value} = $LIB->_new($abs);
-        $self = $self->round(@r)
-          unless @r >= 2 && !defined($r[0]) && !defined($r[1]);
+        $self = $self->round(@r);
         return $self;
     }
 
     # Handle Infs.
 
-    if ($wanted =~ /^\s*([+-]?)inf(inity)?\s*\z/i) {
+    if ($wanted =~ / ^
+                     \s*
+                     ( [+-]? )
+                     inf (?: inity )?
+                     \s*
+                     \z
+                   /ix)
+    {
         my $sgn = $1 || '+';
-        $self = $class -> binf($sgn);
-        $self = $self->round(@r)
-          unless @r >= 2 && !defined($r[0]) && !defined($r[1]);
-        return $self;
+        return $class -> binf($sgn, @r);
     }
 
     # Handle explicit NaNs (not the ones returned due to invalid input).
 
-    if ($wanted =~ /^\s*([+-]?)nan\s*\z/i) {
-        $self = $class -> bnan(@r);
-        $self = $self->round(@r)
-          unless @r >= 2 && !defined($r[0]) && !defined($r[1]);
-        return $self;
+    if ($wanted =~ / ^
+                     \s*
+                     ( [+-]? )
+                     nan
+                     \s*
+                     \z
+                   /ix)
+    {
+        return $class -> bnan(@r);
     }
 
     my @parts;

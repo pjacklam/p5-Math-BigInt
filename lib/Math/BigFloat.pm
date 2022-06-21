@@ -394,10 +394,13 @@ sub new {
 
     $self = bless {}, $class unless $selfref;
 
-    # The first following ought to work. However, it causes a 'Deep recursion on
-    # subroutine "Math::BigFloat::as_number"' in some tests. Fixme!
+    # Math::BigFloat or subclass
 
-    if (defined(blessed($wanted)) && $wanted -> isa('Math::BigFloat')) {
+    if (defined(blessed($wanted)) && $wanted -> isa($class)) {
+
+        # Don't copy the accuracy and precision, because a new object should get
+        # them from the global configuration.
+
         $self -> {sign} = $wanted -> {sign};
         $self -> {_m}   = $LIB -> _copy($wanted -> {_m});
         $self -> {_es}  = $wanted -> {_es};
@@ -427,37 +430,18 @@ sub new {
         }
     }
 
-    # Handle Infs.
+    # Shortcut for simple forms like '123' that have no trailing zeros. Trailing
+    # zeros would require a non-zero exponent.
 
-    if ($wanted =~ /^\s*([+-]?)inf(inity)?\s*\z/i) {
-        return $downgrade -> new($wanted) if defined $downgrade;
-        my $sgn = $1 || '+';
-        $self = $class -> binf($sgn);
-        $self = $self->round(@r)
-          unless @r >= 2 && !defined($r[0]) && !defined($r[1]);
-        return $self;
-    }
-
-    # Handle explicit NaNs (not the ones returned due to invalid input).
-
-    if ($wanted =~ /^\s*([+-]?)nan\s*\z/i) {
-        return $downgrade -> new($wanted) if defined $downgrade;
-        $self = $class -> bnan(@r);
-        $self = $self->round(@r)
-          unless @r >= 2 && !defined $r[0] && !defined $r[1];
-        return $self;
-    }
-
-    # Shortcut for simple forms like '123' that have no trailing zeros.
-
-    if ($wanted =~ / ^
-                     \s*                        # optional leading whitespace
-                     ( [+-]? )                  # optional sign
-                     0*                         # optional leading zeros
-                     ( [1-9] (?: [0-9]* [1-9] )? )  # significand
-                     \s*                        # optional trailing whitespace
-                     $
-                   /x)
+    if ($wanted =~
+        / ^
+          \s*                           # optional leading whitespace
+          ( [+-]? )                     # optional sign
+          0*                            # optional leading zeros
+          ( [1-9] (?: [0-9]* [1-9] )? ) # significand
+          \s*                           # optional trailing whitespace
+          $
+        /x)
     {
         return $downgrade -> new($1 . $2) if defined $downgrade;
         $self->{sign} = $1 || '+';
@@ -467,6 +451,33 @@ sub new {
         $self = $self->round(@r)
           unless @r >= 2 && !defined $r[0] && !defined $r[1];
         return $self;
+    }
+
+    # Handle Infs.
+
+    if ($wanted =~ / ^
+                     \s*
+                     ( [+-]? )
+                     inf (?: inity )?
+                     \s*
+                     \z
+                   /ix)
+    {
+        my $sgn = $1 || '+';
+        return $class -> binf($sgn, @r);
+    }
+
+    # Handle explicit NaNs (not the ones returned due to invalid input).
+
+    if ($wanted =~ / ^
+                     \s*
+                     ( [+-]? )
+                     nan
+                     \s*
+                     \z
+                   /ix)
+    {
+        return $class -> bnan(@r);
     }
 
     my @parts;
