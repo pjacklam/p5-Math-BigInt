@@ -487,7 +487,7 @@ sub new {
         # have a "0x", "0X", "x", or "X" prefix, cf. CORE::oct().
 
         $wanted =~ /^\s*[+-]?0?[Xx]/ and
-        @parts = $class -> _hex_str_to_lib_parts($wanted)
+        @parts = $class -> _hex_str_to_flt_lib_parts($wanted)
 
           or
 
@@ -495,7 +495,7 @@ sub new {
         # "0o", "0O", "o", "O" prefix, cf. CORE::oct().
 
         $wanted =~ /^\s*[+-]?0?[Oo]/ and
-        @parts = $class -> _oct_str_to_lib_parts($wanted)
+        @parts = $class -> _oct_str_to_flt_lib_parts($wanted)
 
           or
 
@@ -503,7 +503,7 @@ sub new {
         # "0b", "0B", "b", or "B" prefix, cf. CORE::oct().
 
         $wanted =~ /^\s*[+-]?0?[Bb]/ and
-        @parts = $class -> _bin_str_to_lib_parts($wanted)
+        @parts = $class -> _bin_str_to_flt_lib_parts($wanted)
 
           or
 
@@ -511,18 +511,18 @@ sub new {
         # above and octal floating point numbers that don't have any of the
         # "0o", "0O", "o", or "O" prefixes. First see if it is a decimal number.
 
-        @parts = $class -> _dec_str_to_lib_parts($wanted)
+        @parts = $class -> _dec_str_to_flt_lib_parts($wanted)
           or
 
         # See if it is an octal floating point number. The extra check is
-        # included because _oct_str_to_lib_parts() accepts octal numbers that
-        # don't have a prefix (this is needed to make it work with, e.g.,
+        # included because _oct_str_to_flt_lib_parts() accepts octal numbers
+        # that don't have a prefix (this is needed to make it work with, e.g.,
         # from_oct() that don't require a prefix). However, Perl requires a
         # prefix for octal floating point literals. For example, "1p+0" is not
         # valid, but "01p+0" and "0__1p+0" are.
 
         $wanted =~ /^\s*[+-]?0_*\d/ and
-        @parts = $class -> _oct_str_to_lib_parts($wanted))
+        @parts = $class -> _oct_str_to_flt_lib_parts($wanted))
     {
         ($self->{sign}, $self->{_m}, $self->{_es}, $self->{_e}) = @parts;
 
@@ -556,7 +556,7 @@ sub from_dec {
 
     $self = bless {}, $class unless $selfref;
 
-    if (my @parts = $class -> _dec_str_to_lib_parts($str)) {
+    if (my @parts = $class -> _dec_str_to_flt_lib_parts($str)) {
         ($self->{sign}, $self->{_m}, $self->{_es}, $self->{_e}) = @parts;
 
         $self = $self->round(@r)
@@ -586,7 +586,7 @@ sub from_hex {
 
     $self = bless {}, $class unless $selfref;
 
-    if (my @parts = $class -> _hex_str_to_lib_parts($str)) {
+    if (my @parts = $class -> _hex_str_to_flt_lib_parts($str)) {
         ($self->{sign}, $self->{_m}, $self->{_es}, $self->{_e}) = @parts;
 
         $self = $self->round(@r)
@@ -616,7 +616,7 @@ sub from_oct {
 
     $self = bless {}, $class unless $selfref;
 
-    if (my @parts = $class -> _oct_str_to_lib_parts($str)) {
+    if (my @parts = $class -> _oct_str_to_flt_lib_parts($str)) {
         ($self->{sign}, $self->{_m}, $self->{_es}, $self->{_e}) = @parts;
 
         $self = $self->round(@r)
@@ -646,7 +646,7 @@ sub from_bin {
 
     $self = bless {}, $class unless $selfref;
 
-    if (my @parts = $class -> _bin_str_to_lib_parts($str)) {
+    if (my @parts = $class -> _bin_str_to_flt_lib_parts($str)) {
         ($self->{sign}, $self->{_m}, $self->{_es}, $self->{_e}) = @parts;
 
         $self = $self->round(@r)
@@ -4529,27 +4529,13 @@ sub fparts {
 
     $class = $downgrade if defined $downgrade;
 
-    if ($x -> {_es} eq '-') {                   # exponent < 0
-        my $numer_lib = $LIB -> _copy($x -> {_m});
-        my $denom_lib = $LIB -> _1ex($x -> {_e});
-        my $gcd_lib = $LIB -> _gcd($LIB -> _copy($numer_lib), $denom_lib);
-        $numer_lib = $LIB -> _div($numer_lib, $gcd_lib);
-        $denom_lib = $LIB -> _div($denom_lib, $gcd_lib);
-        return ($class -> new($x -> {sign} . $LIB -> _str($numer_lib)),
-                $class -> new($LIB -> _str($denom_lib)));
-    }
-
-    elsif (! $LIB -> _is_zero($x -> {_e})) {    # exponent > 0
-        my $numer_lib = $LIB -> _copy($x -> {_m});
-        $numer_lib = $LIB -> _lsft($numer_lib, $x -> {_e}, 10);
-        return ($class -> new($x -> {sign} . $LIB -> _str($numer_lib)),
-                $class -> bone());
-    }
-
-    else {                                      # exponent = 0
-        return ($class -> new($x -> {sign} . $LIB -> _str($x -> {_m})),
-                $class -> bone());
-    }
+    my @flt_parts = ($x->{sign}, $x->{_m}, $x->{_es}, $x->{_e});
+    my @rat_parts = $class -> _flt_lib_parts_to_rat_lib_parts(@flt_parts);
+    my $num = $class -> new($LIB -> _str($rat_parts[1]));
+    my $den = $class -> new($LIB -> _str($rat_parts[2]));
+    $num = $num -> bneg() if $rat_parts[0] eq "-";
+    return $num unless wantarray;
+    return $num, $den;
 }
 
 # Given "123.4375", returns "1975", since "123.4375" is "1975/16".
@@ -4888,12 +4874,10 @@ sub bfstr {
     if ($x->{_es} eq '+') {
         $str .= $LIB -> _str($x->{_m}) . ("0" x $LIB -> _num($x->{_e}));
     } else {
-        my $numer = $x->{_m};
-        my $denom = $LIB -> _new("1" . ("0" x $LIB -> _num($x->{_e})));
-        my $gcd   = $LIB -> _gcd($LIB -> _copy($numer), $denom);
-        $numer = $LIB -> _div($LIB -> _copy($numer), $gcd);
-        $denom = $LIB -> _div($LIB -> _copy($denom), $gcd);
-        $str .= $LIB -> _str($numer) . "/" . $LIB -> _str($denom);
+        my @flt_parts = ($x->{sign}, $x->{_m}, $x->{_es}, $x->{_e});
+        my @rat_parts = $class -> _flt_lib_parts_to_rat_lib_parts(@flt_parts);
+        $str = $LIB -> _str($rat_parts[1]) . "/" . $LIB -> _str($rat_parts[2]);
+        $str = "-" . $str if $rat_parts[0] eq "-";
     }
 
     return $str;

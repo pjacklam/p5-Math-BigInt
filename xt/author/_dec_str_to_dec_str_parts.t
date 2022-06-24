@@ -16,7 +16,7 @@ while (<DATA>) {
     my ($ss, $sa, $es, $ea);
 
     my $test = q|($ss, $sa, $es, $ea) = |
-             . qq|Math::BigInt -> _dec_str_to_str_parts("$in0")|;
+             . qq|Math::BigInt -> _dec_str_to_dec_str_parts("$in0")|;
 
     eval $test;
     die $@ if $@;       # this should never happen

@@ -13,7 +13,7 @@ sub try {
     my ($in0, $in1, $in2, $in3, $out0, $out1, $out2, $out3) = @_;
 
     my @out;
-    my $test = q|@out = Math::BigInt -> _dec_parts_to_lib_parts|
+    my $test = q|@out = Math::BigInt -> _dec_str_parts_to_flt_lib_parts|
              . qq|("$in0", "$in1", "$in2", "$in3")|;
 
     eval $test;

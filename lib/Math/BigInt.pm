@@ -643,7 +643,7 @@ sub new {
         # have a "0x", "0X", "x", or "X" prefix, cf. CORE::oct().
 
         $wanted =~ /^\s*[+-]?0?[Xx]/ and
-        @parts = $class -> _hex_str_to_lib_parts($wanted)
+        @parts = $class -> _hex_str_to_flt_lib_parts($wanted)
 
           or
 
@@ -651,7 +651,7 @@ sub new {
         # "0o", "0O", "o", "O" prefix, cf. CORE::oct().
 
         $wanted =~ /^\s*[+-]?0?[Oo]/ and
-        @parts = $class -> _oct_str_to_lib_parts($wanted)
+        @parts = $class -> _oct_str_to_flt_lib_parts($wanted)
 
           or
 
@@ -659,7 +659,7 @@ sub new {
         # "0b", "0B", "b", or "B" prefix, cf. CORE::oct().
 
         $wanted =~ /^\s*[+-]?0?[Bb]/ and
-        @parts = $class -> _bin_str_to_lib_parts($wanted)
+        @parts = $class -> _bin_str_to_flt_lib_parts($wanted)
 
           or
 
@@ -667,18 +667,18 @@ sub new {
         # above and octal floating point numbers that don't have any of the
         # "0o", "0O", "o", or "O" prefixes. First see if it is a decimal number.
 
-        @parts = $class -> _dec_str_to_lib_parts($wanted)
+        @parts = $class -> _dec_str_to_flt_lib_parts($wanted)
           or
 
         # See if it is an octal floating point number. The extra check is
-        # included because _oct_str_to_lib_parts() accepts octal numbers that
-        # don't have a prefix (this is needed to make it work with, e.g.,
+        # included because _oct_str_to_flt_lib_parts() accepts octal numbers
+        # that don't have a prefix (this is needed to make it work with, e.g.,
         # from_oct() that don't require a prefix). However, Perl requires a
         # prefix for octal floating point literals. For example, "1p+0" is not
         # valid, but "01p+0" and "0__1p+0" are.
 
         $wanted =~ /^\s*[+-]?0_*\d/ and
-        @parts = $class -> _oct_str_to_lib_parts($wanted))
+        @parts = $class -> _oct_str_to_flt_lib_parts($wanted))
     {
         # The value is an integer iff the exponent is non-negative.
 
@@ -721,7 +721,7 @@ sub from_dec {
 
     $self = $class -> bzero(@r) unless $selfref;
 
-    if (my @parts = $class -> _dec_str_to_lib_parts($str)) {
+    if (my @parts = $class -> _dec_str_to_flt_lib_parts($str)) {
 
         # The value is an integer iff the exponent is non-negative.
 
@@ -757,7 +757,7 @@ sub from_hex {
 
     $self = $class -> bzero(@r) unless $selfref;
 
-    if (my @parts = $class -> _hex_str_to_lib_parts($str)) {
+    if (my @parts = $class -> _hex_str_to_flt_lib_parts($str)) {
 
         # The value is an integer iff the exponent is non-negative.
 
@@ -793,7 +793,7 @@ sub from_oct {
 
     $self = $class -> bzero(@r) unless $selfref;
 
-    if (my @parts = $class -> _oct_str_to_lib_parts($str)) {
+    if (my @parts = $class -> _oct_str_to_flt_lib_parts($str)) {
 
         # The value is an integer iff the exponent is non-negative.
 
@@ -829,7 +829,7 @@ sub from_bin {
 
     $self = $class -> bzero(@r) unless $selfref;
 
-    if (my @parts = $class -> _bin_str_to_lib_parts($str)) {
+    if (my @parts = $class -> _bin_str_to_flt_lib_parts($str)) {
 
         # The value is an integer iff the exponent is non-negative.
 
@@ -5152,7 +5152,7 @@ sub _trim_split_parts {
 #
 #   "10.01e+01"
 
-sub _dec_str_to_str_parts {
+sub _dec_str_to_dec_str_parts {
     my $class = shift;
     my $str   = shift;
 
@@ -5215,7 +5215,7 @@ sub _dec_str_to_str_parts {
 #   "x_1_0"
 #   "_1_0"
 
-sub _hex_str_to_str_parts {
+sub _hex_str_to_hex_str_parts {
     my $class = shift;
     my $str   = shift;
 
@@ -5269,7 +5269,7 @@ sub _hex_str_to_str_parts {
 # the sign of the exponent, and the absolute value of the exponent. The
 # significand is in base 8, and the exponent is in base 2.
 
-sub _oct_str_to_str_parts {
+sub _oct_str_to_oct_str_parts {
     my $class = shift;
     my $str   = shift;
 
@@ -5323,7 +5323,7 @@ sub _oct_str_to_str_parts {
 # the sign of the exponent, and the absolute value of the exponent. The
 # significand is in base 2, and the exponent is in base 2.
 
-sub _bin_str_to_str_parts {
+sub _bin_str_to_bin_str_parts {
     my $class = shift;
     my $str   = shift;
 
@@ -5377,7 +5377,7 @@ sub _bin_str_to_str_parts {
 # libray thingy, the sign of the exponent, and the absolute value of the
 # exponent as a library thingy.
 
-sub _dec_parts_to_lib_parts {
+sub _dec_str_parts_to_flt_lib_parts {
     shift;               # class name
 
     my ($sig_sgn, $sig_str, $exp_sgn, $exp_str) = @_;
@@ -5446,7 +5446,7 @@ sub _dec_parts_to_lib_parts {
 # libray thingy, the sign of the exponent, and the absolute value of the
 # exponent as a library thingy.
 
-sub _bin_parts_to_lib_parts {
+sub _bin_str_parts_to_flt_lib_parts {
     shift;               # class name
 
     my ($sig_sgn, $sig_str, $exp_sgn, $exp_str, $bpc) = @_;
@@ -5563,11 +5563,11 @@ sub _bin_parts_to_lib_parts {
 # as a libray thingy, the sign of the exponent, and the absolute value of the
 # exponent as a library thingy.
 
-sub _hex_str_to_lib_parts {
+sub _hex_str_to_flt_lib_parts {
     my $class = shift;
     my $str   = shift;
-    if (my @parts = $class -> _hex_str_to_str_parts($str)) {
-        return $class -> _bin_parts_to_lib_parts(@parts, 4);  # 4 bits pr. chr
+    if (my @parts = $class -> _hex_str_to_hex_str_parts($str)) {
+        return $class -> _bin_str_parts_to_flt_lib_parts(@parts, 4);  # 4 bits pr. chr
     }
     return;
 }
@@ -5577,11 +5577,11 @@ sub _hex_str_to_lib_parts {
 # libray thingy, the sign of the exponent, and the absolute value of the
 # exponent as a library thingy.
 
-sub _oct_str_to_lib_parts {
+sub _oct_str_to_flt_lib_parts {
     my $class = shift;
     my $str   = shift;
-    if (my @parts = $class -> _oct_str_to_str_parts($str)) {
-        return $class -> _bin_parts_to_lib_parts(@parts, 3);  # 3 bits pr. chr
+    if (my @parts = $class -> _oct_str_to_oct_str_parts($str)) {
+        return $class -> _bin_str_parts_to_flt_lib_parts(@parts, 3);  # 3 bits pr. chr
     }
     return;
 }
@@ -5591,11 +5591,11 @@ sub _oct_str_to_lib_parts {
 # libray thingy, the sign of the exponent, and the absolute value of the
 # exponent as a library thingy.
 
-sub _bin_str_to_lib_parts {
+sub _bin_str_to_flt_lib_parts {
     my $class = shift;
     my $str   = shift;
-    if (my @parts = $class -> _bin_str_to_str_parts($str)) {
-        return $class -> _bin_parts_to_lib_parts(@parts, 1);  # 1 bit pr. chr
+    if (my @parts = $class -> _bin_str_to_bin_str_parts($str)) {
+        return $class -> _bin_str_parts_to_flt_lib_parts(@parts, 1);  # 1 bit pr. chr
     }
     return;
 }
@@ -5604,11 +5604,11 @@ sub _bin_str_to_lib_parts {
 # the significand as library thingy, the sign of the exponent, and the absolute
 # value of the exponent as a a library thingy.
 
-sub _dec_str_to_lib_parts {
+sub _dec_str_to_flt_lib_parts {
     my $class = shift;
     my $str   = shift;
-    if (my @parts = $class -> _dec_str_to_str_parts($str)) {
-        return $class -> _dec_parts_to_lib_parts(@parts);
+    if (my @parts = $class -> _dec_str_to_dec_str_parts($str)) {
+        return $class -> _dec_str_parts_to_flt_lib_parts(@parts);
     }
     return;
 }
@@ -5618,8 +5618,8 @@ sub _dec_str_to_lib_parts {
 sub hex_str_to_dec_flt_str {
     my $class = shift;
     my $str   = shift;
-    if (my @parts = $class -> _hex_str_to_lib_parts($str)) {
-        return $class -> _lib_parts_to_flt_str(@parts);
+    if (my @parts = $class -> _hex_str_to_flt_lib_parts($str)) {
+        return $class -> _flt_lib_parts_to_flt_str(@parts);
     }
     return;
 }
@@ -5629,8 +5629,8 @@ sub hex_str_to_dec_flt_str {
 sub oct_str_to_dec_flt_str {
     my $class = shift;
     my $str   = shift;
-    if (my @parts = $class -> _oct_str_to_lib_parts($str)) {
-        return $class -> _lib_parts_to_flt_str(@parts);
+    if (my @parts = $class -> _oct_str_to_flt_lib_parts($str)) {
+        return $class -> _flt_lib_parts_to_flt_str(@parts);
     }
     return;
 }
@@ -5640,8 +5640,8 @@ sub oct_str_to_dec_flt_str {
 sub bin_str_to_dec_flt_str {
     my $class = shift;
     my $str   = shift;
-    if (my @parts = $class -> _bin_str_to_lib_parts($str)) {
-        return $class -> _lib_parts_to_flt_str(@parts);
+    if (my @parts = $class -> _bin_str_to_flt_lib_parts($str)) {
+        return $class -> _flt_lib_parts_to_flt_str(@parts);
     }
     return;
 }
@@ -5651,8 +5651,8 @@ sub bin_str_to_dec_flt_str {
 sub dec_str_to_dec_flt_str {
     my $class = shift;
     my $str   = shift;
-    if (my @parts = $class -> _dec_str_to_lib_parts($str)) {
-        return $class -> _lib_parts_to_flt_str(@parts);
+    if (my @parts = $class -> _dec_str_to_flt_lib_parts($str)) {
+        return $class -> _flt_lib_parts_to_flt_str(@parts);
     }
     return;
 }
@@ -5662,8 +5662,8 @@ sub dec_str_to_dec_flt_str {
 sub hex_str_to_dec_str {
     my $class = shift;
     my $str   = shift;
-    if (my @parts = $class -> _dec_str_to_lib_parts($str)) {
-        return $class -> _lib_parts_to_dec_str(@parts);
+    if (my @parts = $class -> _dec_str_to_flt_lib_parts($str)) {
+        return $class -> _flt_lib_parts_to_dec_str(@parts);
     }
     return;
 }
@@ -5673,8 +5673,8 @@ sub hex_str_to_dec_str {
 sub oct_str_to_dec_str {
     my $class = shift;
     my $str   = shift;
-    if (my @parts = $class -> _oct_str_to_lib_parts($str)) {
-        return $class -> _lib_parts_to_dec_str(@parts);
+    if (my @parts = $class -> _oct_str_to_flt_lib_parts($str)) {
+        return $class -> _flt_lib_parts_to_dec_str(@parts);
     }
     return;
 }
@@ -5684,8 +5684,8 @@ sub oct_str_to_dec_str {
 sub bin_str_to_dec_str {
     my $class = shift;
     my $str   = shift;
-    if (my @parts = $class -> _bin_str_to_lib_parts($str)) {
-        return $class -> _lib_parts_to_dec_str(@parts);
+    if (my @parts = $class -> _bin_str_to_flt_lib_parts($str)) {
+        return $class -> _flt_lib_parts_to_dec_str(@parts);
     }
     return;
 }
@@ -5695,20 +5695,20 @@ sub bin_str_to_dec_str {
 sub dec_str_to_dec_str {
     my $class = shift;
     my $str   = shift;
-    if (my @parts = $class -> _dec_str_to_lib_parts($str)) {
-        return $class -> _lib_parts_to_dec_str(@parts);
+    if (my @parts = $class -> _dec_str_to_flt_lib_parts($str)) {
+        return $class -> _flt_lib_parts_to_dec_str(@parts);
     }
     return;
 }
 
-sub _lib_parts_to_flt_str {
+sub _flt_lib_parts_to_flt_str {
     my $class = shift;
     my @parts = @_;
     return $parts[0] . $LIB -> _str($parts[1])
       . 'e' . $parts[2] . $LIB -> _str($parts[3]);
 }
 
-sub _lib_parts_to_dec_str {
+sub _flt_lib_parts_to_dec_str {
     my $class = shift;
     my @parts = @_;
 
@@ -5733,6 +5733,49 @@ sub _lib_parts_to_dec_str {
             substr $mant, $mant_len - $expo, 0, '.';
             return $parts[0] . $mant;
         }
+    }
+}
+
+# Takes four arguments, the sign of the significand, the absolute value of the
+# significand as a libray thingy, the sign of the exponent, and the absolute
+# value of the exponent as a library thingy, and returns three parts: the sign
+# of the rational number, the absolute value of the numerator as a libray
+# thingy, and the absolute value of the denominator as a library thingy.
+#
+# For example, to convert data representing the value "+12e-2", then
+#
+#   $sm = "+";
+#   $m  = $LIB -> _new("12");
+#   $se = "-";
+#   $e  = $LIB -> _new("2");
+#   ($sr, $n, $d) = $class -> _flt_lib_parts_to_rat_lib_parts($sm, $m, $se, $e);
+#
+# returns data representing the same value written as the fraction "+3/25"
+#
+#   $sr = "+"
+#   $n  = $LIB -> _new("3");
+#   $d  = $LIB -> _new("12");
+
+sub _flt_lib_parts_to_rat_lib_parts {
+    my $self = shift;
+    my ($msgn, $mabs, $esgn, $eabs) = @_;
+
+    if ($esgn eq '-') {                 # "12e-2" -> "12/100" -> "3/25"
+        my $num_lib = $LIB -> _copy($mabs);
+        my $den_lib = $LIB -> _1ex($LIB -> _num($eabs));
+        my $gcd_lib = $LIB -> _gcd($LIB -> _copy($num_lib), $den_lib);
+        $num_lib = $LIB -> _div($LIB -> _copy($num_lib), $gcd_lib);
+        $den_lib = $LIB -> _div($den_lib, $gcd_lib);
+        return $msgn, $num_lib, $den_lib;
+    }
+
+    elsif (!$LIB -> _is_zero($eabs)) {  # "12e+2" -> "1200" -> "1200/1"
+        return $msgn, $LIB -> _lsft($LIB -> _copy($mabs), $eabs, 10),
+                      $LIB -> _one();
+    }
+
+    else {                              # "12e+0" -> "12" -> "12/1"
+        return $msgn, $mabs, $LIB -> _one();
     }
 }
 
