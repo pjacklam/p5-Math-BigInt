@@ -826,10 +826,12 @@ sub from_ieee754 {
 sub bzero {
     # create/assign '+0'
 
-    # Class::method() -> Class->method()
-    unless (@_ && (ref($_[0]) || $_[0] =~ /^[a-z]\w*(?:::[a-z]\w*)*$/i)) {
+    # Class::method(...) -> Class->method(...)
+    unless (@_ && (defined(blessed($_[0])) && $_[0] -> isa(__PACKAGE__) ||
+                   $_[0] =~ /^[a-z]\w*(?:::[a-z]\w*)*$/i))
+    {
         #carp "Using ", (caller(0))[3], "() as a function is deprecated;",
-        #  " use is as a method instead" if warnings::warnif("deprecated");
+        #  " use is as a method instead";
         unshift @_, __PACKAGE__;
     }
 
@@ -882,10 +884,12 @@ sub bzero {
 sub bone {
     # Create or assign '+1' (or -1 if given sign '-').
 
-    # Class::method() -> Class->method()
-    unless (@_ && (ref($_[0]) || $_[0] =~ /^[a-z]\w*(?:::[a-z]\w*)*$/i)) {
+    # Class::method(...) -> Class->method(...)
+    unless (@_ && (defined(blessed($_[0])) && $_[0] -> isa(__PACKAGE__) ||
+                   $_[0] =~ /^[a-z]\w*(?:::[a-z]\w*)*$/i))
+    {
         #carp "Using ", (caller(0))[3], "() as a function is deprecated;",
-        #  " use is as a method instead" if warnings::warnif("deprecated");
+        #  " use is as a method instead";
         unshift @_, __PACKAGE__;
     }
 
@@ -946,10 +950,12 @@ sub bone {
 sub binf {
     # create/assign a '+inf' or '-inf'
 
-    # Class::method() -> Class->method()
-    unless (@_ && (ref($_[0]) || $_[0] =~ /^[a-z]\w*(?:::[a-z]\w*)*$/i)) {
+    # Class::method(...) -> Class->method(...)
+    unless (@_ && (defined(blessed($_[0])) && $_[0] -> isa(__PACKAGE__) ||
+                   $_[0] =~ /^[a-z]\w*(?:::[a-z]\w*)*$/i))
+    {
         #carp "Using ", (caller(0))[3], "() as a function is deprecated;",
-        #  " use is as a method instead" if warnings::warnif("deprecated");
+        #  " use is as a method instead";
         unshift @_, __PACKAGE__;
     }
 
@@ -1017,10 +1023,12 @@ sub binf {
 sub bnan {
     # create/assign a 'NaN'
 
-    # Class::method() -> Class->method()
-    unless (@_ && (ref($_[0]) || $_[0] =~ /^[a-z]\w*(?:::[a-z]\w*)*$/i)) {
+    # Class::method(...) -> Class->method(...)
+    unless (@_ && (defined(blessed($_[0])) && $_[0] -> isa(__PACKAGE__) ||
+                   $_[0] =~ /^[a-z]\w*(?:::[a-z]\w*)*$/i))
+    {
         #carp "Using ", (caller(0))[3], "() as a function is deprecated;",
-        #  " use is as a method instead" if warnings::warnif("deprecated");
+        #  " use is as a method instead";
         unshift @_, __PACKAGE__;
     }
 
@@ -1079,10 +1087,12 @@ sub bnan {
 
 sub bpi {
 
-    # Class::method() -> Class->method()
-    unless (@_ && (ref($_[0]) || $_[0] =~ /^[a-z]\w*(?:::[a-z]\w*)*$/i)) {
+    # Class::method(...) -> Class->method(...)
+    unless (@_ && (defined(blessed($_[0])) && $_[0] -> isa(__PACKAGE__) ||
+                   $_[0] =~ /^[a-z]\w*(?:::[a-z]\w*)*$/i))
+    {
         #carp "Using ", (caller(0))[3], "() as a function is deprecated;",
-        #  " use is as a method instead" if warnings::warnif("deprecated");
+        #  " use is as a method instead";
         unshift @_, __PACKAGE__;
     }
 
@@ -4207,8 +4217,14 @@ sub bgcd {
     # (BINT or num_str, BINT or num_str) return BINT
     # does not modify arguments, but returns new object
 
-    unshift @_, __PACKAGE__
-      unless ref($_[0]) || $_[0] =~ /^[a-z]\w*(?:::[a-z]\w*)*$/i;
+    # Class::method(...) -> Class->method(...)
+    unless (@_ && (defined(blessed($_[0])) && $_[0] -> isa(__PACKAGE__) ||
+                   $_[0] =~ /^[a-z]\w*(?:::[a-z]\w*)*$/i))
+    {
+        #carp "Using ", (caller(0))[3], "() as a function is deprecated;",
+        #  " use is as a method instead";
+        unshift @_, __PACKAGE__;
+    }
 
     my ($class, @args) = objectify(0, @_);
 
@@ -4240,8 +4256,14 @@ sub blcm {
     # does not modify arguments, but returns new object
     # Least Common Multiple
 
-    unshift @_, __PACKAGE__
-      unless ref($_[0]) || $_[0] =~ /^[a-z]\w*(?:::[a-z]\w*)*$/i;
+    # Class::method(...) -> Class->method(...)
+    unless (@_ && (defined(blessed($_[0])) && $_[0] -> isa(__PACKAGE__) ||
+                   $_[0] =~ /^[a-z]\w*(?:::[a-z]\w*)*$/i))
+    {
+        #carp "Using ", (caller(0))[3], "() as a function is deprecated;",
+        #  " use is as a method instead";
+        unshift @_, __PACKAGE__;
+    }
 
     my ($class, @args) = objectify(0, @_);
 
