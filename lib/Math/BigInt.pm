@@ -965,7 +965,7 @@ sub bzero {
     unless (@_ && (ref($_[0]) || $_[0] =~ /^[a-z]\w*(?:::[a-z]\w*)*$/i)) {
         #carp "Using ", (caller(0))[3], "() as a function is deprecated;",
         #  " use is as a method instead" if warnings::warnif("deprecated");
-        unshift @_, __PACKAGE__
+        unshift @_, __PACKAGE__;
     }
 
     my $self    = shift;
@@ -1013,7 +1013,7 @@ sub bone {
     unless (@_ && (ref($_[0]) || $_[0] =~ /^[a-z]\w*(?:::[a-z]\w*)*$/i)) {
         #carp "Using ", (caller(0))[3], "() as a function is deprecated;",
         #  " use is as a method instead" if warnings::warnif("deprecated");
-        unshift @_, __PACKAGE__
+        unshift @_, __PACKAGE__;
     }
 
     my $self    = shift;
@@ -1068,7 +1068,7 @@ sub binf {
     unless (@_ && (ref($_[0]) || $_[0] =~ /^[a-z]\w*(?:::[a-z]\w*)*$/i)) {
         #carp "Using ", (caller(0))[3], "() as a function is deprecated;",
         #  " use is as a method instead" if warnings::warnif("deprecated");
-        unshift @_, __PACKAGE__
+        unshift @_, __PACKAGE__;
     }
 
     my $self    = shift;
@@ -1131,7 +1131,7 @@ sub bnan {
     unless (@_ && (ref($_[0]) || $_[0] =~ /^[a-z]\w*(?:::[a-z]\w*)*$/i)) {
         #carp "Using ", (caller(0))[3], "() as a function is deprecated;",
         #  " use is as a method instead" if warnings::warnif("deprecated");
-        unshift @_, __PACKAGE__
+        unshift @_, __PACKAGE__;
     }
 
     my $self    = shift;
@@ -1183,7 +1183,7 @@ sub bpi {
     unless (@_ && (ref($_[0]) || $_[0] =~ /^[a-z]\w*(?:::[a-z]\w*)*$/i)) {
         #carp "Using ", (caller(0))[3], "() as a function is deprecated;",
         #  " use is as a method instead" if warnings::warnif("deprecated");
-        unshift @_, __PACKAGE__
+        unshift @_, __PACKAGE__;
     }
 
     # Called as                 Argument list
