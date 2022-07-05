@@ -2189,16 +2189,16 @@ sub bdiv {
 
     # shortcut to not run through _find_round_parameters again
     if (defined $params[0]) {
-        delete $x->{_a};               # clear before round
+        $x->{_a} = undef;               # clear before round
         $x = $x->bround($params[0], $params[2]); # then round accordingly
     } else {
-        delete $x->{_p};                # clear before round
+        $x->{_p} = undef;               # clear before round
         $x = $x->bfround($params[1], $params[2]); # then round accordingly
     }
     if ($fallback) {
         # clear a/p after round, since user did not request it
-        delete $x->{_a};
-        delete $x->{_p};
+        $x->{_a} = undef;
+        $x->{_p} = undef;
     }
 
     if (wantarray) {
@@ -2208,8 +2208,8 @@ sub bdiv {
         }
         if ($fallback) {
             # clear a/p after round, since user did not request it
-            delete $rem->{_a};
-            delete $rem->{_p};
+            $rem->{_a} = undef;
+            $rem->{_p} = undef;
         }
         $x = $downgrade -> new($x -> bdstr(), @r)
           if defined($downgrade) && $x -> is_int();
@@ -2565,8 +2565,8 @@ sub blog {
     if ($done) {
         if ($fallback) {
             # clear a/p after round, since user did not request it
-            delete $x->{_a};
-            delete $x->{_p};
+            $x->{_a} = undef;
+            $x->{_p} = undef;
         }
         return $downgrade -> new($x -> bdstr(), @r)
           if defined($downgrade) && $x->is_int();
@@ -2584,8 +2584,8 @@ sub blog {
     $$pbr = undef;
     # we also need to disable any set A or P on $x (_find_round_parameters took
     # them already into account), since these would interfere, too
-    delete $x->{_a};
-    delete $x->{_p};
+    $x->{_a} = undef;
+    $x->{_p} = undef;
 
     $done = 0;
 
@@ -2626,8 +2626,8 @@ sub blog {
     }
     if ($fallback) {
         # clear a/p after round, since user did not request it
-        delete $x->{_a};
-        delete $x->{_p};
+        $x->{_a} = undef;
+        $x->{_p} = undef;
     }
     # restore globals
     $$abr = $ab;
@@ -2688,8 +2688,8 @@ sub bexp {
     $$pbr = undef;
     # we also need to disable any set A or P on $x (_find_round_parameters took
     # them already into account), since these would interfere, too
-    delete $x->{_a};
-    delete $x->{_p};
+    $x->{_a} = undef;
+    $x->{_p} = undef;
 
     # Disabling upgrading and downgrading is no longer necessary to avoid an
     # infinite recursion, but it avoids unnecessary upgrading and downgrading in
@@ -2810,8 +2810,8 @@ sub bexp {
         }
     } else {
         # else just round the already computed result
-        delete $x->{_a};
-        delete $x->{_p};
+        $x->{_a} = undef;
+        $x->{_p} = undef;
         # shortcut to not run through _find_round_parameters again
         if (defined $params[0]) {
             $x = $x->bround($params[0], $params[2]); # then round accordingly
@@ -2821,8 +2821,8 @@ sub bexp {
     }
     if ($fallback) {
         # clear a/p after round, since user did not request it
-        delete $x->{_a};
-        delete $x->{_p};
+        $x->{_a} = undef;
+        $x->{_p} = undef;
     }
     # restore globals
     $$abr = $ab;
@@ -2910,8 +2910,8 @@ sub bsin {
     $$pbr = undef;
     # we also need to disable any set A or P on $x (_find_round_parameters took
     # them already into account), since these would interfere, too
-    delete $x->{_a};
-    delete $x->{_p};
+    $x->{_a} = undef;
+    $x->{_p} = undef;
 
     # Disabling upgrading and downgrading is no longer necessary to avoid an
     # infinite recursion, but it avoids unnecessary upgrading and downgrading in
@@ -2926,8 +2926,8 @@ sub bsin {
     my $sign = 1;               # start with -=
     my $below = $class->new(6);
     my $factorial = $class->new(4);
-    delete $x->{_a};
-    delete $x->{_p};
+    $x->{_a} = undef;
+    $x->{_p} = undef;
 
     my $limit = $class->new("1E-". ($scale-1));
     while (1) {
@@ -2959,8 +2959,8 @@ sub bsin {
     }
     if ($fallback) {
         # clear a/p after round, since user did not request it
-        delete $x->{_a};
-        delete $x->{_p};
+        $x->{_a} = undef;
+        $x->{_p} = undef;
     }
     # restore globals
     $$abr = $ab;
@@ -3014,8 +3014,8 @@ sub bcos {
     $$pbr = undef;
     # we also need to disable any set A or P on $x (_find_round_parameters took
     # them already into account), since these would interfere, too
-    delete $x->{_a};
-    delete $x->{_p};
+    $x->{_a} = undef;
+    $x->{_p} = undef;
 
     my $over = $x * $x;         # X ^ 2
     my $x2 = $over->copy();     # X ^ 2; difference between terms
@@ -3023,8 +3023,8 @@ sub bcos {
     my $below = $class->new(2);
     my $factorial = $class->new(3);
     $x = $x->bone();
-    delete $x->{_a};
-    delete $x->{_p};
+    $x->{_a} = undef;
+    $x->{_p} = undef;
 
     my $limit = $class->new("1E-". ($scale-1));
     #my $steps = 0;
@@ -3057,8 +3057,8 @@ sub bcos {
     }
     if ($fallback) {
         # clear a/p after round, since user did not request it
-        delete $x->{_a};
-        delete $x->{_p};
+        $x->{_a} = undef;
+        $x->{_p} = undef;
     }
     # restore globals
     $$abr = $ab;
@@ -3167,8 +3167,8 @@ sub batan {
     $$pbr = undef;
     # We also need to disable any set A or P on $x (_find_round_parameters
     # took them already into account), since these would interfere, too
-    delete $x->{_a};
-    delete $x->{_p};
+    $x->{_a} = undef;
+    $x->{_p} = undef;
 
     # Disabling upgrading and downgrading is no longer necessary to avoid an
     # infinite recursion, but it avoids unnecessary upgrading and downgrading in
@@ -3183,8 +3183,8 @@ sub batan {
     my $sign = 1;               # start with -=
     my $below = $class->new(3);
     my $two = $class->new(2);
-    delete $x->{_a};
-    delete $x->{_p};
+    $x->{_a} = undef;
+    $x->{_p} = undef;
 
     my $limit = $class->new("1E-". ($scale-1));
     #my $steps = 0;
@@ -3225,8 +3225,8 @@ sub batan {
     }
     if ($fallback) {
         # Clear a/p after round, since user did not request it.
-        delete $x->{_a};
-        delete $x->{_p};
+        $x->{_a} = undef;
+        $x->{_p} = undef;
     }
 
     # restore globals
@@ -3322,8 +3322,8 @@ sub batan2 {
     $y = $y -> round(@r);
 
     if ($fallback) {
-        delete $y->{_a};
-        delete $y->{_p};
+        $y->{_a} = undef;
+        $y->{_p} = undef;
     }
 
     return $y;
@@ -3380,8 +3380,8 @@ sub bsqrt {
     $$pbr = undef;
     # we also need to disable any set A or P on $x (_find_round_parameters took
     # them already into account), since these would interfere, too
-    delete $x->{_a};
-    delete $x->{_p};
+    $x->{_a} = undef;
+    $x->{_p} = undef;
 
     # Disabling upgrading and downgrading is no longer necessary to avoid an
     # infinite recursion, but it avoids unnecessary upgrading and downgrading in
@@ -3414,8 +3414,8 @@ sub bsqrt {
         }
         if ($fallback) {
             # clear a/p after round, since user did not request it
-            delete $x->{_a};
-            delete $x->{_p};
+            $x->{_a} = undef;
+            $x->{_p} = undef;
         }
         # re-enable A and P, upgrade is taken care of by "local"
         ${"$class\::accuracy"} = $ab;
@@ -3496,8 +3496,8 @@ sub bsqrt {
     }
     if ($fallback) {
         # clear a/p after round, since user did not request it
-        delete $x->{_a};
-        delete $x->{_p};
+        $x->{_a} = undef;
+        $x->{_p} = undef;
     }
     # restore globals
     $$abr = $ab;
@@ -3567,8 +3567,8 @@ sub broot {
     $$pbr = undef;
     # we also need to disable any set A or P on $x (_find_round_parameters took
     # them already into account), since these would interfere, too
-    delete $x->{_a};
-    delete $x->{_p};
+    $x->{_a} = undef;
+    $x->{_p} = undef;
 
     # Disabling upgrading and downgrading is no longer necessary to avoid an
     # infinite recursion, but it avoids unnecessary upgrading and downgrading in
@@ -3623,8 +3623,8 @@ sub broot {
         }
         if ($done == 0) {
             my $u = $class->bone()->bdiv($y, $scale+4);
-            delete $u->{_a};
-            delete $u->{_p};
+            $u->{_a} = undef;
+            $u->{_p} = undef;
             $x = $x->bpow($u, $scale+4);            # el cheapo
         }
     }
@@ -3638,8 +3638,8 @@ sub broot {
     }
     if ($fallback) {
         # clear a/p after round, since user did not request it
-        delete $x->{_a};
-        delete $x->{_p};
+        $x->{_a} = undef;
+        $x->{_p} = undef;
     }
     # restore globals
     $$abr = $ab;
@@ -3995,7 +3995,7 @@ sub bround {
     $m = $m->bround($scale, $mode);     # round mantissa
     $x->{_m} = $m->{value};             # get our mantissa back
     $x->{_a} = $scale;                  # remember rounding
-    delete $x->{_p};                    # and clear P
+    $x->{_p} = undef;                   # and clear P
 
     # bnorm() downgrades if necessary, so no need to check whether to downgrade.
     $x->bnorm();                # del trailing zeros gen. by bround()
@@ -4040,7 +4040,7 @@ sub bfround {
     }
 
     $x->{_p} = $scale;          # remember round in any case
-    delete $x->{_a};            # and clear A
+    $x->{_a} = undef;           # and clear A
     if ($scale < 0) {
         # round right from the '.'
 
@@ -5520,8 +5520,8 @@ sub _log {
 
         last if $next->bacmp($limit) <= 0;
 
-        delete $next->{_a};
-        delete $next->{_p};
+        $next->{_a} = undef;
+        $next->{_p} = undef;
         $x = $x->badd($next);
         # calculate things for the next term
         $over *= $u;
@@ -5792,8 +5792,8 @@ sub _pow {
     $$pbr = undef;
     # we also need to disable any set A or P on $x (_find_round_parameters took
     # them already into account), since these would interfere, too
-    delete $x->{_a};
-    delete $x->{_p};
+    $x->{_a} = undef;
+    $x->{_p} = undef;
 
     # Disabling upgrading and downgrading is no longer necessary to avoid an
     # infinite recursion, but it avoids unnecessary upgrading and downgrading in
@@ -5843,8 +5843,8 @@ sub _pow {
     }
     if ($fallback) {
         # clear a/p after round, since user did not request it
-        delete $x->{_a};
-        delete $x->{_p};
+        $x->{_a} = undef;
+        $x->{_p} = undef;
     }
     # restore globals
     $$abr = $ab;
