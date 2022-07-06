@@ -377,7 +377,7 @@ sub accuracy {
     }
 
     # Return instance variable.
-    return $x->{_a} if ref($x) && (defined($x->{_a}) || defined($x->{_p}));
+    return $x->{_a} if ref($x);
 
     # Return class variable.
     return ${"${class}::accuracy"};
@@ -420,7 +420,7 @@ sub precision {
     }
 
     # Return instance variable.
-    return $x->{_p} if ref($x) && (defined($x->{_a}) || defined($x->{_p}));
+    return $x->{_p} if ref($x);
 
     # Return class variable.
     return ${"${class}::precision"};

@@ -4394,17 +4394,13 @@ sub sparts {
 
     # Finite number.
 
-    my $mant = $x -> copy();
+    my $mant = $class -> new($x);
     $mant->{_es} = '+';
     $mant->{_e}  = $LIB->_zero();
     $mant = $downgrade -> new($mant) if defined $downgrade;
     return $mant unless wantarray;
 
-    my $expo = bless { sign => $x -> {_es},
-                       _m   => $LIB->_copy($x -> {_e}),
-                       _es  => '+',
-                       _e   => $LIB->_zero(),
-                     }, $class;
+    my $expo = $class -> new($x -> {_es} . $LIB->_str($x -> {_e}));
     $expo = $downgrade -> new($expo) if defined $downgrade;
     return ($mant, $expo);
 }
