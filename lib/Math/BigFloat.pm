@@ -3856,16 +3856,18 @@ sub band {
 
     return $x -> bnan(@r) if $x -> is_nan() || $y -> is_nan();
 
-    my $xtmp = Math::BigInt -> new($x -> bint());   # to Math::BigInt
-    $xtmp = $xtmp -> band($y);
+    my $xint = $x -> as_int();          # to Math::BigInt
+    my $yint = $y -> as_int();          # to Math::BigInt
 
-    return $xtmp -> round(@r) if defined $downgrade;
+    $xint = $xint -> band($yint);
 
-    $xtmp = $class -> new($xtmp);                   # back to Math::BigFloat
-    $x -> {sign} = $xtmp -> {sign};
-    $x -> {_m}   = $xtmp -> {_m};
-    $x -> {_es}  = $xtmp -> {_es};
-    $x -> {_e}   = $xtmp -> {_e};
+    return $xint -> round(@r) if defined $downgrade;
+
+    my $xflt = $class -> new($xint);    # back to Math::BigFloat
+    $x -> {sign} = $xflt -> {sign};
+    $x -> {_m}   = $xflt -> {_m};
+    $x -> {_es}  = $xflt -> {_es};
+    $x -> {_e}   = $xflt -> {_e};
 
     return $x -> round(@r);
 }
@@ -3879,16 +3881,18 @@ sub bior {
 
     return $x -> bnan(@r) if $x -> is_nan() || $y -> is_nan();
 
-    my $xtmp = Math::BigInt -> new($x -> bint());   # to Math::BigInt
-    $xtmp = $xtmp -> bior($y);
+    my $xint = $x -> as_int();          # to Math::BigInt
+    my $yint = $y -> as_int();          # to Math::BigInt
 
-    return $xtmp -> round(@r) if defined $downgrade;
+    $xint = $xint -> bior($yint);
 
-    $xtmp = $class -> new($xtmp);                   # back to Math::BigFloat
-    $x -> {sign} = $xtmp -> {sign};
-    $x -> {_m}   = $xtmp -> {_m};
-    $x -> {_es}  = $xtmp -> {_es};
-    $x -> {_e}   = $xtmp -> {_e};
+    return $xint -> round(@r) if defined $downgrade;
+
+    my $xflt = $class -> new($xint);    # back to Math::BigFloat
+    $x -> {sign} = $xflt -> {sign};
+    $x -> {_m}   = $xflt -> {_m};
+    $x -> {_es}  = $xflt -> {_es};
+    $x -> {_e}   = $xflt -> {_e};
 
     return $x -> round(@r);
 }
@@ -3902,16 +3906,18 @@ sub bxor {
 
     return $x -> bnan(@r) if $x -> is_nan() || $y -> is_nan();
 
-    my $xtmp = Math::BigInt -> new($x -> bint());   # to Math::BigInt
-    $xtmp = $xtmp -> bxor($y);
+    my $xint = $x -> as_int();          # to Math::BigInt
+    my $yint = $y -> as_int();          # to Math::BigInt
 
-    return $xtmp -> round(@r) if defined $downgrade;
+    $xint = $xint -> bxor($yint);
 
-    $xtmp = $class -> new($xtmp);                   # back to Math::BigFloat
-    $x -> {sign} = $xtmp -> {sign};
-    $x -> {_m}   = $xtmp -> {_m};
-    $x -> {_es}  = $xtmp -> {_es};
-    $x -> {_e}   = $xtmp -> {_e};
+    return $xint -> round(@r) if defined $downgrade;
+
+    my $xflt = $class -> new($xint);    # back to Math::BigFloat
+    $x -> {sign} = $xflt -> {sign};
+    $x -> {_m}   = $xflt -> {_m};
+    $x -> {_es}  = $xflt -> {_es};
+    $x -> {_e}   = $xflt -> {_e};
 
     return $x -> round(@r);
 }
@@ -3923,16 +3929,16 @@ sub bnot {
 
     return $x -> bnan(@r) if $x -> is_nan();
 
-    my $xtmp = Math::BigInt -> new($x -> bint());   # to Math::BigInt
-    $xtmp = $xtmp -> bnot();
+    my $xint = $x -> as_int();          # to Math::BigInt
+    $xint = $xint -> bnot();
 
-    return $xtmp -> round(@r) if defined $downgrade;
+    return $xint -> round(@r) if defined $downgrade;
 
-    $xtmp = $class -> new($xtmp);                   # back to Math::BigFloat
-    $x -> {sign} = $xtmp -> {sign};
-    $x -> {_m}   = $xtmp -> {_m};
-    $x -> {_es}  = $xtmp -> {_es};
-    $x -> {_e}   = $xtmp -> {_e};
+    my $xflt = $class -> new($xint);    # back to Math::BigFloat
+    $x -> {sign} = $xflt -> {sign};
+    $x -> {_m}   = $xflt -> {_m};
+    $x -> {_es}  = $xflt -> {_es};
+    $x -> {_e}   = $xflt -> {_e};
 
     return $x -> round(@r);
 }
