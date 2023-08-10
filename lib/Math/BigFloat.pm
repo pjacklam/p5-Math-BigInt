@@ -396,7 +396,7 @@ sub new {
 
     # Math::BigFloat or subclass
 
-    if (defined(blessed($wanted)) && $wanted -> isa($class)) {
+    if (defined(blessed($wanted)) && $wanted -> isa('Math::BigFloat')) {
 
         # Don't copy the accuracy and precision, because a new object should get
         # them from the global configuration.
