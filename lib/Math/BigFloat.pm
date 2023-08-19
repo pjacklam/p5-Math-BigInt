@@ -396,7 +396,7 @@ sub new {
 
     # Math::BigFloat or subclass
 
-    if (defined(blessed($wanted)) && $wanted -> isa('Math::BigFloat')) {
+    if (defined(blessed($wanted)) && $wanted -> isa(__PACKAGE__)) {
 
         # Don't copy the accuracy and precision, because a new object should get
         # them from the global configuration.
@@ -2497,7 +2497,7 @@ sub blog {
 
     if (defined $base) {
         $base = $class -> new($base)
-          unless defined(blessed($base)) && $base -> isa($class);
+          unless defined(blessed($base)) && $base -> isa(__PACKAGE__);
         if ($base -> is_nan() || $base -> is_one()) {
             return $x -> bnan(@r);
         } elsif ($base -> is_inf() || $base -> is_zero()) {
@@ -3778,7 +3778,8 @@ sub blsft {
     return $x -> bnan(@r) if $x -> is_nan() || $y -> is_nan();
 
     $b = 2 if !defined $b;
-    $b = $class -> new($b) unless ref($b) && $b -> isa($class);
+    $b = $class -> new($b)
+      unless defined(blessed($b)) && $b -> isa(__PACKAGE__);
     return $x -> bnan(@r) if $b -> is_nan();
 
     # There needs to be more checking for special cases here. Fixme!
@@ -3809,7 +3810,8 @@ sub brsft {
     # There needs to be more checking for special cases here. Fixme!
 
     $b = 2 if !defined $b;
-    $b = $class -> new($b) unless ref($b) && $b -> isa($class);
+    $b = $class -> new($b)
+      unless defined(blessed($b)) && $b -> isa(__PACKAGE__);
     return $x -> bnan(@r) if $b -> is_nan();
 
     # shift by a negative amount?
@@ -4215,12 +4217,14 @@ sub bgcd {
     my ($class, @args) = objectify(0, @_);
 
     my $x = shift @args;
-    $x = ref($x) && $x -> isa($class) ? $x -> copy() : $class -> new($x);
+    $x = defined(blessed($x)) && $x -> isa(__PACKAGE__) ? $x -> copy()
+                                                        : $class -> new($x);
     return $class->bnan() unless $x -> is_int();
 
     while (@args) {
         my $y = shift @args;
-        $y = $class->new($y) unless ref($y) && $y -> isa($class);
+        $y = $class->new($y)
+          unless defined(blessed($y)) && $y -> isa(__PACKAGE__);
         return $class->bnan() unless $y -> is_int();
 
         # greatest common divisor
@@ -4254,12 +4258,14 @@ sub blcm {
     my ($class, @args) = objectify(0, @_);
 
     my $x = shift @args;
-    $x = ref($x) && $x -> isa($class) ? $x -> copy() : $class -> new($x);
+    $x = defined(blessed($x)) && $x -> isa(__PACKAGE__) ? $x -> copy()
+                                                        : $class -> new($x);
     return $class->bnan() if $x->{sign} !~ /^[+-]$/;    # x NaN?
 
     while (@args) {
         my $y = shift @args;
-        $y = $class -> new($y) unless ref($y) && $y -> isa($class);
+        $y = $class -> new($y)
+          unless defined(blessed($y)) && $y -> isa(__PACKAGE__);
         return $x->bnan() unless $y -> is_int();
         my $gcd = $x -> bgcd($y);
         $x = $x -> bdiv($gcd) -> bmul($y);
@@ -4687,7 +4693,7 @@ sub bdstr {
     # Upgrade?
 
     return $upgrade -> bdstr($x, @r)
-      if defined($upgrade) && !$x -> isa($class);
+      if defined($upgrade) && !$x -> isa(__PACKAGE__);
 
     # Finite number
 
@@ -4738,7 +4744,7 @@ sub bsstr {
     # Upgrade?
 
     return $upgrade -> bsstr($x, @r)
-      if defined($upgrade) && !$x -> isa($class);
+      if defined($upgrade) && !$x -> isa(__PACKAGE__);
 
     # Finite number
 
@@ -4763,7 +4769,7 @@ sub bnstr {
     # Upgrade?
 
     return $upgrade -> bnstr($x, @r)
-      if defined($upgrade) && !$x -> isa($class);
+      if defined($upgrade) && !$x -> isa(__PACKAGE__);
 
     # Finite number
 
@@ -4814,7 +4820,7 @@ sub bestr {
     # Upgrade?
 
     return $upgrade -> bestr($x, @r)
-      if defined($upgrade) && !$x -> isa($class);
+      if defined($upgrade) && !$x -> isa(__PACKAGE__);
 
     # Finite number
 
@@ -4869,7 +4875,7 @@ sub bfstr {
     # Upgrade?
 
     return $upgrade -> bfstr($x, @r)
-      if defined($upgrade) && !$x -> isa($class);
+      if defined($upgrade) && !$x -> isa(__PACKAGE__);
 
     # Finite number
 
@@ -4903,7 +4909,7 @@ sub to_hex {
     # Upgrade?
 
     return $upgrade -> to_hex($x, @r)
-      if defined($upgrade) && !$x -> isa($class);
+      if defined($upgrade) && !$x -> isa(__PACKAGE__);
 
     # Finite number
 
@@ -4935,7 +4941,7 @@ sub to_oct {
     # Upgrade?
 
     return $upgrade -> to_hex($x, @r)
-      if defined($upgrade) && !$x -> isa($class);
+      if defined($upgrade) && !$x -> isa(__PACKAGE__);
 
     # Finite number
 
@@ -4967,7 +4973,7 @@ sub to_bin {
     # Upgrade?
 
     return $upgrade -> to_hex($x, @r)
-      if defined($upgrade) && !$x -> isa($class);
+      if defined($upgrade) && !$x -> isa(__PACKAGE__);
 
     # Finite number
 

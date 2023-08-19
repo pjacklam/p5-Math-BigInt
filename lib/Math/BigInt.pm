@@ -579,7 +579,7 @@ sub new {
 
     # Math::BigInt or subclass
 
-    if (defined(blessed($wanted)) && $wanted -> isa($class)) {
+    if (defined(blessed($wanted)) && $wanted -> isa(__PACKAGE__)) {
 
         # Don't copy the accuracy and precision, because a new object should get
         # them from the global configuration.
@@ -934,14 +934,16 @@ sub from_base_num {
     for my $i (0 .. $#$nums) {
         # Make sure we have an object.
         $nums -> [$i] = $class -> new($nums -> [$i])
-          unless ref($nums -> [$i]) && $nums -> [$i] -> isa($class);
+          unless defined(blessed($nums -> [$i]))
+                   && $nums -> [$i] -> isa(__PACKAGE__);
         # Make sure we have a finite, non-negative integer.
         croak "the elements must be finite non-negative integers"
           if $nums -> [$i] -> is_neg() || ! $nums -> [$i] -> is_int();
     }
 
     my $base = shift;
-    $base = $class -> new($base) unless ref($base) && $base -> isa($class);
+    $base = $class -> new($base)
+      unless defined(blessed($base)) && $base -> isa(__PACKAGE__);
 
     my @r = @_;
 
@@ -1447,7 +1449,7 @@ sub bcmp {
     carp "Rounding is not supported for ", (caller(0))[3], "()" if @r;
 
     return $upgrade->bcmp($x, $y)
-      if defined($upgrade) && (!$x->isa($class) || !$y->isa($class));
+      if defined($upgrade) && (!$x->isa(__PACKAGE__) || !$y->isa(__PACKAGE__));
 
     if (($x->{sign} !~ /^[+-]$/) || ($y->{sign} !~ /^[+-]$/)) {
         # handle +-inf and NaN
@@ -1490,7 +1492,7 @@ sub bacmp {
     carp "Rounding is not supported for ", (caller(0))[3], "()" if @r;
 
     return $upgrade->bacmp($x, $y)
-      if defined($upgrade) && (!$x->isa($class) || !$y->isa($class));
+      if defined($upgrade) && (!$x->isa(__PACKAGE__) || !$y->isa(__PACKAGE__));
 
     if (($x->{sign} !~ /^[+-]$/) || ($y->{sign} !~ /^[+-]$/)) {
         # handle +-inf and NaN
@@ -1579,7 +1581,8 @@ sub bneg {
 
     return $x if $x->modify('bneg');
 
-    return $upgrade -> bneg($x, @r) if defined($upgrade) && !$x->isa($class);
+    return $upgrade -> bneg($x, @r)
+      if defined($upgrade) && !$x->isa(__PACKAGE__);
 
     # Don't negate +0 so we always have the normalized form +0. Does nothing for
     # 'NaN'.
@@ -1596,7 +1599,8 @@ sub babs {
 
     return $x if $x->modify('babs');
 
-    return $upgrade -> babs($x, @r) if defined($upgrade) && !$x->isa($class);
+    return $upgrade -> babs($x, @r)
+      if defined($upgrade) && !$x->isa(__PACKAGE__);
 
     $x->{sign} =~ s/^-/+/;
 
@@ -1609,7 +1613,8 @@ sub bsgn {
 
     return $x if $x->modify('bsgn');
 
-    return $upgrade -> bsgn($x, @r) if defined($upgrade) && !$x->isa($class);
+    return $upgrade -> bsgn($x, @r)
+      if defined($upgrade) && !$x->isa(__PACKAGE__);
 
     return $x -> bone("+", @r) if $x -> is_pos();
     return $x -> bone("-", @r) if $x -> is_neg();
@@ -1639,7 +1644,8 @@ sub binc {
 
     return $x->round(@r) if $x -> is_inf() || $x -> is_nan();
 
-    return $upgrade -> binc($x, @r) if defined($upgrade) && !$x -> isa($class);
+    return $upgrade -> binc($x, @r)
+      if defined($upgrade) && !$x -> isa(__PACKAGE__);
 
     if ($x->{sign} eq '+') {
         $x->{value} = $LIB->_inc($x->{value});
@@ -1659,7 +1665,8 @@ sub bdec {
 
     return $x->round(@r) if $x -> is_inf() || $x -> is_nan();
 
-    return $upgrade -> bdec($x, @r) if defined($upgrade) && !$x -> isa($class);;
+    return $upgrade -> bdec($x, @r)
+      if defined($upgrade) && !$x -> isa(__PACKAGE__);;
 
     if ($x->{sign} eq '-') {
         $x->{value} = $LIB->_inc($x->{value});
@@ -1779,7 +1786,7 @@ sub badd {
     $r[3] = $y;                 # no push!
 
     return $upgrade->badd($x, $y, @r)
-      if defined($upgrade) && (!$x->isa($class) || !$y->isa($class));
+      if defined($upgrade) && (!$x->isa(__PACKAGE__) || !$y->isa(__PACKAGE__));
 
     # Inf and NaN handling
     if ($x->{sign} !~ /^[+-]$/ || $y->{sign} !~ /^[+-]$/) {
@@ -1816,7 +1823,7 @@ sub bsub {
     return $x if $x -> modify('bsub');
 
     return $upgrade -> bsub($x, $y, @r)
-      if defined($upgrade) && (!$x->isa($class) || !$y->isa($class));
+      if defined($upgrade) && (!$x->isa(__PACKAGE__) || !$y->isa(__PACKAGE__));
 
     return $x -> round(@r) if $y -> is_zero();
 
@@ -1862,7 +1869,7 @@ sub bmul {
     }
 
     return $upgrade->bmul($x, $y, @r)
-      if defined($upgrade) && (!$x->isa($class) || !$y->isa($class));
+      if defined($upgrade) && (!$x->isa(__PACKAGE__) || !$y->isa(__PACKAGE__));
 
     $r[3] = $y;                 # no push here
 
@@ -1893,8 +1900,9 @@ sub bmuladd {
         $z->{sign} =~ /^[+-]$/)
     {
         return $upgrade->bmuladd($x, $y, $z, @r)
-          if defined($upgrade)
-               && (!$x->isa($class) || !$y->isa($class) || !$z->isa($class));
+          if defined($upgrade) && (!$x->isa(__PACKAGE__) ||
+                                   !$y->isa(__PACKAGE__) ||
+                                   !$z->isa(__PACKAGE__));
 
         # TODO: what if $y and $z have A or P set?
         $r[3] = $z;             # no push here
@@ -2374,7 +2382,8 @@ sub bmod {
     }
 
     return $upgrade -> bmod($x, $y, @r)
-      if defined($upgrade) && (!$x -> isa($class) || !$y -> isa($class));
+      if defined($upgrade) && (!$x -> isa(__PACKAGE__) ||
+                               !$y -> isa(__PACKAGE__));
 
     # Calc new sign and in case $y == +/- 1, return $x.
 
@@ -2425,7 +2434,8 @@ sub btmod {
     }
 
     return $upgrade -> btmod($x, $y, @r)
-      if defined($upgrade) && (!$x -> isa($class) || !$y -> isa($class));
+      if defined($upgrade) && (!$x -> isa(__PACKAGE__) ||
+                               !$y -> isa(__PACKAGE__));
 
     $r[3] = $y;                 # no push!
 
@@ -2473,7 +2483,8 @@ sub bmodinv {
                              $y->is_one('-'));
 
     return $upgrade -> bmodinv($x, $y, @r)
-      if defined($upgrade) && (!$x -> isa($class) || !$y -> isa($class));
+      if defined($upgrade) && (!$x -> isa(__PACKAGE__) ||
+                               !$y -> isa(__PACKAGE__));
 
     # Return NaN if $x = 0, or $x modulo $y is zero. The only valid case when
     # $x = 0 is when $y = 1 or $y = -1, but that was covered above.
@@ -2555,8 +2566,8 @@ sub bmodpow {
     }
 
     return $upgrade -> bmodinv($num, $exp, $mod, @r)
-      if defined($upgrade) && (!$num -> isa($class) ||
-                               !$exp -> isa($class) ||
+      if defined($upgrade) && (!$num -> isa(__PACKAGE__) ||
+                               !$exp -> isa(__PACKAGE__) ||
                                !$mod -> ($class));
 
     # Compute 'a (mod m)', ignoring the signs on 'a' and 'm'. If the resulting
@@ -2683,7 +2694,7 @@ sub bpow {
     # returning zero, not NaN, is that all output is in the open interval (0,1),
     # and truncating that to integer gives zero.
 
-    if ($y->{sign} eq '-' || !$y -> isa($class)) {
+    if ($y->{sign} eq '-' || !$y -> isa(__PACKAGE__)) {
         return $x -> bzero(@r);
     }
 
@@ -2724,7 +2735,7 @@ sub blog {
 
     if (defined $base) {
         $base = $class -> new($base)
-          unless defined(blessed($base)) && $base -> isa($class);
+          unless defined(blessed($base)) && $base -> isa(__PACKAGE__);
         if ($base -> is_nan() || $base -> is_one()) {
             return $x -> bnan(@r);
         } elsif ($base -> is_inf() || $base -> is_zero()) {
@@ -2854,7 +2865,8 @@ sub bnok {
     # At this point, both n and k are real numbers.
 
     return $upgrade -> bnok($n, $k, @r)
-      if defined($upgrade) && (!$n -> isa($class) || !$k -> isa($class));
+      if defined($upgrade) && (!$n -> isa(__PACKAGE__) ||
+                               !$k -> isa(__PACKAGE__));
 
     my $sign = 1;
 
@@ -3173,7 +3185,7 @@ sub bfac {
     return $x->bnan(@r) if $x->{sign} ne '+'; # NaN, <0 => NaN
 
     return $upgrade -> bfac($x, @r)
-      if defined($upgrade) && !$x -> isa($class);
+      if defined($upgrade) && !$x -> isa(__PACKAGE__);
 
     $x->{value} = $LIB->_fac($x->{value});
     $x->round(@r);
@@ -3189,7 +3201,7 @@ sub bdfac {
     return $x->bone(@r) if $x <= 1;
 
     return $upgrade -> bdfac($x, @r)
-      if defined($upgrade) && !$x -> isa($class);
+      if defined($upgrade) && !$x -> isa(__PACKAGE__);
 
     croak("bdfac() requires a newer version of the $LIB library.")
         unless $LIB->can('_dfac');
@@ -3206,7 +3218,8 @@ sub btfac {
 
     return $x->bnan(@r) if $x->is_nan();
 
-    return $upgrade -> btfac($x, @r) if defined($upgrade) && !$x -> isa($class);
+    return $upgrade -> btfac($x, @r)
+      if defined($upgrade) && !$x -> isa(__PACKAGE__);
 
     my $k = $class -> new("3");
     return $x->bnan(@r) if $x <= -$k;
@@ -3231,7 +3244,7 @@ sub bmfac {
     return $x->bnan(@r) if $x->is_nan() || $k->is_nan() || $k < 1 || $x <= -$k;
 
     return $upgrade -> bmfac($x, $k, @r)
-      if defined($upgrade) && !$x -> isa($class);
+      if defined($upgrade) && !$x -> isa(__PACKAGE__);
 
     my $one = $class -> bone();
     return $x->bone(@r) if $x <= $one;
@@ -3253,7 +3266,7 @@ sub bfib {
     return $x if $x->modify('bfib');
 
     return $upgrade -> bfib($x, @r)
-      if defined($upgrade) && !$x -> isa($class);
+      if defined($upgrade) && !$x -> isa(__PACKAGE__);
 
     # List context.
 
@@ -3312,7 +3325,7 @@ sub blucas {
     return $x if $x->modify('blucas');
 
     return $upgrade -> blucas($x, @r)
-      if defined($upgrade) && !$x -> isa($class);
+      if defined($upgrade) && !$x -> isa(__PACKAGE__);
 
     # List context.
 
@@ -3391,9 +3404,9 @@ sub blsft {
     $b = $class -> new($b) unless defined(blessed($b));
 
     #return $upgrade -> blsft($x, $y, $b, @r)
-    #  if defined($upgrade) && (!$x -> isa($class) ||
-    #                           !$y -> isa($class) ||
-    #                           !$b -> isa($class));
+    #  if defined($upgrade) && (!$x -> isa(__PACKAGE__) ||
+    #                           !$y -> isa(__PACKAGE__) ||
+    #                           !$b -> isa(__PACKAGE__));
 
     # shift by a negative amount?
     #return $x -> brsft($y -> copy() -> babs(), $b) if $y -> {sign} =~ /^-/;
@@ -3446,9 +3459,9 @@ sub brsft {
     # include this case in the test.
 
     return $upgrade -> brsft($x, $y, $b, @r)
-      if defined($upgrade) && (!$x -> isa($class) ||
-                               !$y -> isa($class) ||
-                               !$b -> isa($class) ||
+      if defined($upgrade) && (!$x -> isa(__PACKAGE__) ||
+                               !$y -> isa(__PACKAGE__) ||
+                               !$b -> isa(__PACKAGE__) ||
                                $y -> is_pos());
 
     # While some of the libraries support an arbitrarily large base, not all of
@@ -3512,8 +3525,8 @@ sub band {
     return $x if $x->modify('band');
 
     return $upgrade -> band($x, $y, @r)
-      if defined($upgrade) && (!$x -> isa($class) ||
-                               !$y -> isa($class));
+      if defined($upgrade) && (!$x -> isa(__PACKAGE__) ||
+                               !$y -> isa(__PACKAGE__));
 
     $r[3] = $y;                 # no push!
 
@@ -3538,8 +3551,8 @@ sub bior {
     return $x if $x->modify('bior');
 
     return $upgrade -> bior($x, $y, @r)
-      if defined($upgrade) && (!$x -> isa($class) ||
-                               !$y -> isa($class));
+      if defined($upgrade) && (!$x -> isa(__PACKAGE__) ||
+                               !$y -> isa(__PACKAGE__));
 
     $r[3] = $y;                 # no push!
 
@@ -3564,8 +3577,8 @@ sub bxor {
     return $x if $x->modify('bxor');
 
     return $upgrade -> bxor($x, $y, @r)
-      if defined($upgrade) && (!$x -> isa($class) ||
-                               !$y -> isa($class));
+      if defined($upgrade) && (!$x -> isa(__PACKAGE__) ||
+                               !$y -> isa(__PACKAGE__));
 
     $r[3] = $y;                 # no push!
 
@@ -3588,7 +3601,7 @@ sub bnot {
     return $x if $x->modify('bnot');
 
     return $upgrade -> bnot($x, @r)
-      if defined($upgrade) && !$x -> isa($class);
+      if defined($upgrade) && !$x -> isa(__PACKAGE__);
 
     $x -> binc() -> bneg(@r);
 }
@@ -3815,7 +3828,7 @@ sub bfloor {
     my ($class, $x, @r) = ref($_[0]) ? (ref($_[0]), @_) : objectify(1, @_);
 
     return $upgrade -> bfloor($x)
-      if defined($upgrade) && !$x -> isa($class);
+      if defined($upgrade) && !$x -> isa(__PACKAGE__);
 
     $x->round(@r);
 }
@@ -3825,7 +3838,7 @@ sub bceil {
     my ($class, $x, @r) = ref($_[0]) ? (ref($_[0]), @_) : objectify(1, @_);
 
     return $upgrade -> bceil($x)
-      if defined($upgrade) && !$x -> isa($class);
+      if defined($upgrade) && !$x -> isa(__PACKAGE__);
 
     $x->round(@r);
 }
@@ -3835,7 +3848,7 @@ sub bint {
     my ($class, $x, @r) = ref($_[0]) ? (ref($_[0]), @_) : objectify(1, @_);
 
     return $upgrade -> bint($x)
-      if defined($upgrade) && !$x -> isa($class);
+      if defined($upgrade) && !$x -> isa(__PACKAGE__);
 
     $x->round(@r);
 }
@@ -3865,7 +3878,7 @@ sub bgcd {
     if (defined $upgrade) {
         my $do_upgrade = 0;
         for my $arg (@args) {
-            unless ($arg -> isa($class)) {
+            unless ($arg -> isa(__PACKAGE__)) {
                 $do_upgrade = 1;
                 last;
             }
@@ -3874,13 +3887,15 @@ sub bgcd {
     }
 
     my $x = shift @args;
-    $x = ref($x) && $x -> isa($class) ? $x -> copy() : $class -> new($x);
+    $x = defined(blessed($x)) && $x -> isa(__PACKAGE__) ? $x -> copy()
+                                                        : $class -> new($x);
 
     return $class->bnan() if $x->{sign} !~ /^[+-]$/;    # x NaN?
 
     while (@args) {
         my $y = shift @args;
-        $y = $class->new($y) unless ref($y) && $y -> isa($class);
+        $y = $class->new($y)
+          unless defined(blessed($y)) && $y -> isa(__PACKAGE__);
         return $class->bnan() if $y->{sign} !~ /^[+-]$/;    # y NaN?
         $x->{value} = $LIB->_gcd($x->{value}, $y->{value});
         last if $LIB->_is_one($x->{value});
@@ -3910,7 +3925,7 @@ sub blcm {
     if (defined $upgrade) {
         my $do_upgrade = 0;
         for my $arg (@args) {
-            unless ($arg -> isa($class)) {
+            unless ($arg -> isa(__PACKAGE__)) {
                 $do_upgrade = 1;
                 last;
             }
@@ -3919,12 +3934,14 @@ sub blcm {
     }
 
     my $x = shift @args;
-    $x = ref($x) && $x -> isa($class) ? $x -> copy() : $class -> new($x);
+    $x = defined(blessed($x)) && $x -> isa(__PACKAGE__) ? $x -> copy()
+                                                        : $class -> new($x);
     return $class->bnan() if $x->{sign} !~ /^[+-]$/;    # x NaN?
 
     while (@args) {
         my $y = shift @args;
-        $y = $class -> new($y) unless ref($y) && $y -> isa($class);
+        $y = $class -> new($y)
+          unless defined(blessed($y)) && $y -> isa(__PACKAGE__);
         return $x->bnan() if $y->{sign} !~ /^[+-]$/;     # y not integer
         $x -> {value} = $LIB->_lcm($x -> {value}, $y -> {value});
     }
@@ -4001,7 +4018,7 @@ sub exponent {
     # Upgrade?
 
     return $upgrade -> exponent($x, @r)
-      if defined($upgrade) && !$x -> isa($class);
+      if defined($upgrade) && !$x -> isa(__PACKAGE__);
 
     if ($x->{sign} !~ /^[+-]$/) {
         my $s = $x->{sign};
@@ -4023,7 +4040,7 @@ sub mantissa {
     # Upgrade?
 
     return $upgrade -> mantissa($x, @r)
-      if defined($upgrade) && !$x -> isa($class);
+      if defined($upgrade) && !$x -> isa(__PACKAGE__);
 
     if ($x->{sign} !~ /^[+-]$/) {
         # for NaN, +inf, -inf: keep the sign
@@ -4048,7 +4065,7 @@ sub parts {
     # Upgrade?
 
     return $upgrade -> parts($x, @r)
-      if defined($upgrade) && !$x -> isa($class);
+      if defined($upgrade) && !$x -> isa(__PACKAGE__);
 
     ($x->mantissa(@r), $x->exponent(@r));
 }
@@ -4083,7 +4100,7 @@ sub sparts {
     # Upgrade?
 
     return $upgrade -> sparts($x, @r)
-      if defined($upgrade) && !$x -> isa($class);
+      if defined($upgrade) && !$x -> isa(__PACKAGE__);
 
     # Finite number.
 
@@ -4115,7 +4132,7 @@ sub nparts {
     # Upgrade?
 
     return $upgrade -> nparts($x, @r)
-      if defined($upgrade) && !$x -> isa($class);
+      if defined($upgrade) && !$x -> isa(__PACKAGE__);
 
     # Finite number.
 
@@ -4153,7 +4170,7 @@ sub eparts {
     # Upgrade?
 
     return $upgrade -> eparts($x, @r)
-      if defined($upgrade) && !$x -> isa($class);
+      if defined($upgrade) && !$x -> isa(__PACKAGE__);
 
     # Finite number.
 
@@ -4212,7 +4229,7 @@ sub dparts {
     # Upgrade?
 
     return $upgrade -> dparts($x, @r)
-      if defined($upgrade) && !$x -> isa($class);
+      if defined($upgrade) && !$x -> isa(__PACKAGE__);
 
     # Finite number.
 
@@ -4250,7 +4267,7 @@ sub fparts {
     # Upgrade?
 
     return $upgrade -> fparts($x, @r)
-      if defined($upgrade) && !$x -> isa($class);
+      if defined($upgrade) && !$x -> isa(__PACKAGE__);
 
     # N => N/1
 
@@ -4266,7 +4283,7 @@ sub numerator {
     carp "Rounding is not supported for ", (caller(0))[3], "()" if @r;
 
     return $upgrade -> numerator($x, @r)
-      if defined($upgrade) && !$x -> isa($class);
+      if defined($upgrade) && !$x -> isa(__PACKAGE__);
 
     return $x -> copy() -> round(@r);
 }
@@ -4277,7 +4294,7 @@ sub denominator {
     carp "Rounding is not supported for ", (caller(0))[3], "()" if @r;
 
     return $upgrade -> denominator($x, @r)
-      if defined($upgrade) && !$x -> isa($class);
+      if defined($upgrade) && !$x -> isa(__PACKAGE__);
 
     return $x -> is_nan() ? $class -> bnan(@r) : $class -> bone(@r);
 }
@@ -4301,7 +4318,7 @@ sub bstr {
     # Upgrade?
 
     return $upgrade -> bstr($x, @r)
-      if defined($upgrade) && !$x -> isa($class);
+      if defined($upgrade) && !$x -> isa(__PACKAGE__);
 
     # Finite number
 
@@ -4327,7 +4344,7 @@ sub bsstr {
     # Upgrade?
 
     return $upgrade -> bsstr($x, @r)
-      if defined($upgrade) && !$x -> isa($class);
+      if defined($upgrade) && !$x -> isa(__PACKAGE__);
 
     # Finite number
 
@@ -4355,7 +4372,7 @@ sub bnstr {
     # Upgrade?
 
     return $upgrade -> bnstr($x, @r)
-      if defined($upgrade) && !$x -> isa($class);
+      if defined($upgrade) && !$x -> isa(__PACKAGE__);
 
     # Finite number
 
@@ -4389,7 +4406,7 @@ sub bestr {
     # Upgrade?
 
     return $upgrade -> bestr($x, @r)
-      if defined($upgrade) && !$x -> isa($class);
+      if defined($upgrade) && !$x -> isa(__PACKAGE__);
 
     # Finite number
 
@@ -4428,7 +4445,7 @@ sub bdstr {
     # Upgrade?
 
     return $upgrade -> bdstr($x, @r)
-      if defined($upgrade) && !$x -> isa($class);
+      if defined($upgrade) && !$x -> isa(__PACKAGE__);
 
     # Finite number
 
@@ -4453,7 +4470,7 @@ sub bfstr {
     # Upgrade?
 
     return $upgrade -> bfstr($x, @r)
-      if defined($upgrade) && !$x -> isa($class);
+      if defined($upgrade) && !$x -> isa(__PACKAGE__);
 
     # Finite number
 
@@ -4477,7 +4494,7 @@ sub to_hex {
     # Upgrade?
 
     return $upgrade -> to_hex($x, @r)
-      if defined($upgrade) && !$x -> isa($class);
+      if defined($upgrade) && !$x -> isa(__PACKAGE__);
 
     # Finite number
 
@@ -4502,7 +4519,7 @@ sub to_oct {
     # Upgrade?
 
     return $upgrade -> to_oct($x, @r)
-      if defined($upgrade) && !$x -> isa($class);
+      if defined($upgrade) && !$x -> isa(__PACKAGE__);
 
     # Finite number
 
@@ -4527,7 +4544,7 @@ sub to_bin {
     # Upgrade?
 
     return $upgrade -> to_bin($x, @r)
-      if defined($upgrade) && !$x -> isa($class);
+      if defined($upgrade) && !$x -> isa(__PACKAGE__);
 
     # Finite number
 
@@ -4546,7 +4563,7 @@ sub to_bytes {
         if $x -> is_neg() || ! $x -> is_int();
 
     return $upgrade -> to_bytes($x, @r)
-      if defined($upgrade) && !$x -> isa($class);
+      if defined($upgrade) && !$x -> isa(__PACKAGE__);
 
     croak("to_bytes() requires a newer version of the $LIB library.")
         unless $LIB->can('_to_bytes');
@@ -4583,7 +4600,8 @@ sub to_base {
       unless $LIB->can('_to_base');
 
     return $upgrade -> to_base($x, $base, $cs, @r)
-      if defined($upgrade) && (!$x -> isa($class) || !$base -> isa($class));
+      if defined($upgrade) && (!$x -> isa(__PACKAGE__) ||
+                               !$base -> isa(__PACKAGE__));
 
     return $LIB->_to_base($x->{value}, $base -> {value},
                           defined($cs) ? $cs : ());
@@ -4609,7 +4627,8 @@ sub to_base_num {
       unless $LIB->can('_to_base');
 
     return $upgrade -> to_base_num($x, $base, @r)
-      if defined($upgrade) && (!$x -> isa($class) || !$base -> isa($class));
+      if defined($upgrade) && (!$x -> isa(__PACKAGE__) ||
+                               !$base -> isa(__PACKAGE__));
 
     # Get a reference to an array of library thingies, and replace each element
     # with a Math::BigInt object using that thingy.
@@ -4635,7 +4654,7 @@ sub as_hex {
     return $x->bstr() if $x->{sign} !~ /^[+-]$/; # inf, nan etc
 
     return $upgrade -> as_hex($x, @r)
-      if defined($upgrade) && !$x -> isa($class);
+      if defined($upgrade) && !$x -> isa(__PACKAGE__);
 
     my $hex = $LIB->_as_hex($x->{value});
     return $x->{sign} eq '-' ? "-$hex" : $hex;
@@ -4651,7 +4670,7 @@ sub as_oct {
     return $x->bstr() if $x->{sign} !~ /^[+-]$/; # inf, nan etc
 
     return $upgrade -> as_oct($x, @r)
-      if defined($upgrade) && !$x -> isa($class);
+      if defined($upgrade) && !$x -> isa(__PACKAGE__);
 
     my $oct = $LIB->_as_oct($x->{value});
     return $x->{sign} eq '-' ? "-$oct" : $oct;
@@ -4667,7 +4686,7 @@ sub as_bin {
     return $x->bstr() if $x->{sign} !~ /^[+-]$/; # inf, nan etc
 
     return $upgrade -> as_bin($x, @r)
-      if defined($upgrade) && !$x -> isa($class);
+      if defined($upgrade) && !$x -> isa(__PACKAGE__);
 
     my $bin = $LIB->_as_bin($x->{value});
     return $x->{sign} eq '-' ? "-$bin" : $bin;
@@ -4698,7 +4717,7 @@ sub numify {
     }
 
     return $upgrade -> numify($x, @r)
-      if defined($upgrade) && !$x -> isa($class);
+      if defined($upgrade) && !$x -> isa(__PACKAGE__);
 
     my $num = 0 + $LIB->_num($x->{value});
     return $x->{sign} eq '-' ? -$num : $num;
