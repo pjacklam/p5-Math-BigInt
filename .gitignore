@@ -31,6 +31,15 @@ pod2htm*
 *.rej
 *.diff
 
+# compressed files
+
+*.gz
+
+# development stuff
+
+/devel/
+/dev/
+
 # distribution-specific
 
 /Math-BigInt-[0-9]*
