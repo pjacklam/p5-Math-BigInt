@@ -1,3 +1,19 @@
+1.999840 2023-09-18
+
+ * Add methods bblsft() and bbrsft(), which do bitwise left and right shift,
+   respectively. The binary operators for bitwise left and right shift, "<<"
+   and ">>", now call the methods bblsft() and bbrsft(), respectively.
+
+   While this behaviour is consistent with how "<<" and ">>" work on floating
+   point numbers in core Perl, it changes how "<<" and ">>" worked on
+   Math::BigFloat objects. This is a corner case, but any code currently using
+   "<<" and ">>" on Math::BigFloat objects might need to be modified as follows
+
+       $x >>= $y    should be changed to    $x -> brsft($y)
+       $x <<= $y    should be changed to    $x -> blsft($y)
+       $x >>  $y    should be changed to    $x -> copy() -> brsft($y)
+       $x <<  $y    should be changed to    $x -> copy() -> blsft($y)
+
 1.999839 2023-07-14
 
  * Update documentation. Remove/update obsolete URLs.

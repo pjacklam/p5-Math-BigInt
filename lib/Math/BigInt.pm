@@ -58,14 +58,15 @@ use overload
 
   '%'     =>      sub { $_[2] ? ref($_[0]) -> new($_[1]) -> bmod($_[0])
                               : $_[0] -> copy() -> bmod($_[1]); },
+
   '**'    =>      sub { $_[2] ? ref($_[0]) -> new($_[1]) -> bpow($_[0])
                               : $_[0] -> copy() -> bpow($_[1]); },
 
-  '<<'    =>      sub { $_[2] ? ref($_[0]) -> new($_[1]) -> blsft($_[0])
-                              : $_[0] -> copy() -> blsft($_[1]); },
+  '<<'    =>      sub { $_[2] ? ref($_[0]) -> new($_[1]) -> bblsft($_[0])
+                              : $_[0] -> copy() -> bblsft($_[1]); },
 
-  '>>'    =>      sub { $_[2] ? ref($_[0]) -> new($_[1]) -> brsft($_[0])
-                              : $_[0] -> copy() -> brsft($_[1]); },
+  '>>'    =>      sub { $_[2] ? ref($_[0]) -> new($_[1]) -> bbrsft($_[0])
+                              : $_[0] -> copy() -> bbrsft($_[1]); },
 
   # overload key: assign
 
@@ -81,9 +82,9 @@ use overload
 
   '**='   =>      sub { $_[0] -> bpow($_[1]); },
 
-  '<<='   =>      sub { $_[0] -> blsft($_[1]); },
+  '<<='   =>      sub { $_[0] -> bblsft($_[1]); },
 
-  '>>='   =>      sub { $_[0] -> brsft($_[1]); },
+  '>>='   =>      sub { $_[0] -> bbrsft($_[1]); },
 
 #  'x='    =>      sub { },
 
@@ -3376,7 +3377,7 @@ sub blucas {
 
 sub blsft {
     # (BINT or num_str, BINT or num_str) return BINT
-    # compute x << y, base n, y >= 0
+    # compute $x << $y, base $n
 
     my ($class, $x, $y, $b, @r);
 
@@ -3394,41 +3395,61 @@ sub blsft {
     }
 
     return $x if $x -> modify('blsft');
-    return $x -> bnan() if ($x -> {sign} !~ /^[+-]$/ ||
-                            $y -> {sign} !~ /^[+-]$/);
-    return $x -> round(@r) if $y -> is_zero();
-    return $x -> bzero(@r) if $x -> is_zero(); # 0 => 0
 
-    $b = 2 if !defined $b;
-    return $x -> bnan(@r) if $b <= 0 || $y -> {sign} eq '-';
+    $b = 2 unless defined $b;
     $b = $class -> new($b) unless defined(blessed($b));
 
-    #return $upgrade -> blsft($x, $y, $b, @r)
-    #  if defined($upgrade) && (!$x -> isa(__PACKAGE__) ||
-    #                           !$y -> isa(__PACKAGE__) ||
-    #                           !$b -> isa(__PACKAGE__));
+    return $upgrade -> blsft($x, $y, $b, @r)
+      if defined($upgrade) && (!$x -> isa(__PACKAGE__) ||
+                               !$y -> isa(__PACKAGE__) ||
+                               !$b -> isa(__PACKAGE__));
 
-    # shift by a negative amount?
-    #return $x -> brsft($y -> copy() -> babs(), $b) if $y -> {sign} =~ /^-/;
+    return $x -> bnan(@r) if $x -> is_nan() || $y -> is_nan() || $b -> is_nan();
+
+    # blsft($x, -$y, $b) = brsft($x, $y, $b)
+
+    return $x -> brsft($y -> copy() -> bneg(), $b, @r) if $y -> is_neg();
+
+    return $x -> bmul($b -> bpow($y));
+
+    # Base $b = 1 changes nothing, not even when $b = Inf. Shifting zero places
+    # ($y = 0) doesn't change anything either.
+    return $x -> bround(@r) if $b -> is_one("+") || $y -> is_zero();
+
+    # Shifting infinitely far to the left.
+    if ($y -> is_inf("+")) {
+        return $x -> binf("+", @r) if $x -> is_pos();
+        return $x -> binf("-", @r) if $x -> is_neg();
+        return $x -> bnan(@r);                          # Inf * 0 = NaN
+    }
+
+    # At this point we know that $b > 1, so we are essentially computing 0 *
+    # Inf = NaN.
+    return $x -> bnan(@r) if $x -> is_zero() && $y -> is_inf("+");
+
+    # Handle trivial zero case.
+    return $x -> bzero(@r) if $x -> is_zero();
+
+    return $x -> binf("+", @r) if $y -> is_inf("+");
+    return $x -> bzero(@r) if $x -> is_zero();
 
     # While some of the libraries support an arbitrarily large base, not all of
     # them do, so rather than returning an incorrect result in those cases,
     # disallow bases that don't work with all libraries.
 
     my $uintmax = ~0;
-    croak("Base is too large.") if $b > $uintmax;
-
-    $b = $b -> numify();
-
-    return $x -> bnan() if $b <= 0 || $y -> {sign} eq '-';
-
-    $x -> {value} = $LIB -> _lsft($x -> {value}, $y -> {value}, $b);
+    if ($x -> bcmp($uintmax) > 0) {
+        $x = $x -> bmul($b -> bpow($y));
+    } else {
+        $b = $b -> numify();
+        $x -> {value} = $LIB -> _lsft($x -> {value}, $y -> {value}, $b);
+    }
     $x -> round(@r);
 }
 
 sub brsft {
     # (BINT or num_str, BINT or num_str) return BINT
-    # compute x >> y, base n, y >= 0
+    # compute $x >> $y, base $n
 
     my ($class, $x, $y, $b, @r) = (ref($_[0]), @_);
 
@@ -3446,74 +3467,186 @@ sub brsft {
     }
 
     return $x if $x -> modify('brsft');
-    return $x -> bnan(@r)  if $x -> {sign} !~ /^[+-]$/ ||
-                              $y -> {sign} !~ /^[+-]$/;
-    return $x -> round(@r) if $y -> is_zero();
-    return $x -> bzero(@r) if $x -> is_zero(); # 0 => 0
 
-    $b = 2 if !defined $b;
-    return $x -> bnan(@r) if $b <= 0 || $y -> {sign} eq '-';
+    $b = 2 unless defined $b;
     $b = $class -> new($b) unless defined(blessed($b));
-
-    # Shifting right by a positive amount might lead to a non-integer result, so
-    # include this case in the test.
 
     return $upgrade -> brsft($x, $y, $b, @r)
       if defined($upgrade) && (!$x -> isa(__PACKAGE__) ||
                                !$y -> isa(__PACKAGE__) ||
-                               !$b -> isa(__PACKAGE__) ||
-                               $y -> is_pos());
+                               !$b -> isa(__PACKAGE__));
 
-    # While some of the libraries support an arbitrarily large base, not all of
-    # them do, so rather than returning an incorrect result in those cases,
-    # disallow bases that don't work with all libraries.
+    return $x -> bnan(@r) if $x -> is_nan() || $y -> is_nan() || $b -> is_nan();
 
-    my $uintmax = ~0;
-    croak("Base is too large.") if $b > $uintmax;
+    # brsft($x, -$y, $b) = blsft($x, $y, $b)
 
-    $b = $b -> numify();
+    return $x -> blsft($y -> copy() -> bneg(), $b, @r) if $y -> is_neg();
 
-    # this only works for negative numbers when shifting in base 2
-    if (($x -> {sign} eq '-') && ($b == 2)) {
+    return $x -> round(@r) if $y -> is_zero();
+    return $x -> bzero(@r) if $x -> is_zero();
+
+    # Shifting right by a positive amount might lead to a non-integer result.
+
+    return $upgrade -> brsft($x, $y, $b, @r)
+      if defined($upgrade) && $y -> is_pos();
+
+    # This only works for negative numbers when shifting in base 2.
+    if ($x -> is_neg() && $b -> bcmp("2") == 0) {
         return $x -> round(@r) if $x -> is_one('-'); # -1 => -1
-        if (!$y -> is_one()) {
-            # although this is O(N*N) in calc (as_bin!) it is O(N) in Pari et
-            # al but perhaps there is a better emulation for two's complement
-            # shift...
-            # if $y != 1, we must simulate it by doing:
-            # convert to bin, flip all bits, shift, and be done
-            $x = $x -> binc();           # -3 => -2
-            my $bin = $x -> as_bin();
-            $bin =~ s/^-0b//;       # strip '-0b' prefix
-            $bin =~ tr/10/01/;      # flip bits
-            # now shift
-            if ($y >= CORE::length($bin)) {
-                $bin = '0';         # shifting to far right creates -1
-                                    # 0, because later increment makes
-                                    # that 1, attached '-' makes it '-1'
-                                    # because -1 >> x == -1 !
-            } else {
-                $bin =~ s/.{$y}$//; # cut off at the right side
-                $bin = '1' . $bin;  # extend left side by one dummy '1'
-                $bin =~ tr/10/01/;  # flip bits back
-            }
-            my $res = $class -> new('0b' . $bin); # add prefix and convert back
-            $res = $res -> binc();                       # remember to increment
-            $x -> {value} = $res -> {value};      # take over value
-            return $x -> round(@r); # we are done now, magic, isn't?
-        }
-
-        # x < 0, n == 2, y == 1
-        $x = $x -> bdec();           # n == 2, but $y == 1: this fixes it
+        # Although this is O(N*N) in Math::BigInt::Calc->_as_bin(), it is O(N)
+        # in Pari et al., but perhaps there is a better emulation for two's
+        # complement shift ... if $y != 1, we must simulate it by doing:
+        # convert to bin, flip all bits, shift, and be done
+        $x = $x -> binc();                      # -3 => -2
+        my $bin = $x -> to_bin();               # convert to string
+        $bin =~ s/^-//;                         # strip leading minus
+        $bin =~ tr/10/01/;                      # flip bits
+        my $nbits = CORE::length($bin);
+        return $x -> bone("-", @r) if $y >= $nbits;
+        $bin = substr $bin, 0, $nbits - $y;     # keep most significant bits
+        $bin = '1' . $bin;                      # prepend one dummy '1'
+        $bin =~ tr/10/01/;                      # flip bits back
+        my $res = $class -> from_bin($bin);     # convert back from string
+        $res = $res -> binc();                  # remember to increment
+        $x -> {value} = $res -> {value};        # take over value
+        return $x -> round(@r);
     }
 
-    $x -> {value} = $LIB -> _rsft($x -> {value}, $y -> {value}, $b);
-    $x -> round(@r);
+    # While some of the libraries support an arbitrarily large base, not all of
+    # them do, so rather than returning an incorrect result in those cases, use
+    # division.
+
+    my $uintmax = ~0;
+    if ($x -> bcmp($uintmax) > 0 || $x -> is_neg()) {
+        $x = $x -> bdiv($b -> bpow($y));
+    } else {
+        $b = $b -> numify();
+        $x -> {value} = $LIB -> _rsft($x -> {value}, $y -> {value}, $b);
+    }
+
+    return $x -> round(@r);
 }
 
 ###############################################################################
 # Bitwise methods
 ###############################################################################
+
+# Bitwise left shift.
+
+sub bblsft {
+    # We don't call objectify(), because the bitwise methods should not
+    # upgrade/downgrade, even when upgrading/downgrading is enabled.
+
+    my ($class, $x, $y, @r);
+
+    # $x -> bblsft($y)
+
+    if (ref($_[0])) {
+        ($class, $x, $y, @r) = (ref($_[0]), @_);
+        $y = $y -> as_int()
+          if ref($y) && !$y -> isa(__PACKAGE__) && $y -> can('as_int');
+        $y = $class -> new(int($y)) unless ref($y);
+    }
+
+    # $class -> bblsft($x, $y)
+
+    else {
+        ($class, $x, $y, @r) = @_;
+        for ($x, $y) {
+            $_ = $_ -> as_int()
+              if ref($_) && !$_ -> isa(__PACKAGE__) && $_ -> can('as_int');
+            $_ = $class -> new(int($_)) unless ref($_);
+        }
+    }
+
+    return $x if $x -> modify('bblsft');
+
+    return $x -> bnan(@r) if $x -> is_nan() || $y -> is_nan();
+
+    # bblsft($x, -$y) = bbrsft($x, $y)
+
+    return $x -> bbrsft($y -> copy() -> bneg()) if $y -> is_neg();
+
+    # Shifting infinitely far to the left.
+
+    if ($y -> is_inf("+")) {
+        return $x -> binf("+", @r) if $x -> is_pos();
+        return $x -> binf("-", @r) if $x -> is_neg();
+        return $x -> bnan(@r);
+    }
+
+    # These cases change nothing.
+
+    return $x -> round(@r) if $x -> is_zero() || $x -> is_inf() ||
+                              $y -> is_zero();
+
+    $x -> {value} = $LIB -> _lsft($x -> {value}, $y -> {value}, 2);
+    $x -> round(@r);
+}
+
+# Bitwise right shift.
+
+sub bbrsft {
+    # We don't call objectify(), because the bitwise methods should not
+    # upgrade/downgrade, even when upgrading/downgrading is enabled.
+
+    my ($class, $x, $y, @r);
+
+    # $x -> bblsft($y)
+
+    if (ref($_[0])) {
+        ($class, $x, $y, @r) = (ref($_[0]), @_);
+        $y = $y -> as_int()
+          if ref($y) && !$y -> isa(__PACKAGE__) && $y -> can('as_int');
+        $y = $class -> new(int($y)) unless ref($y);
+    }
+
+    # $class -> bblsft($x, $y)
+
+    else {
+        ($class, $x, $y, @r) = @_;
+        for ($x, $y) {
+            $_ = $_ -> as_int()
+              if ref($_) && !$_ -> isa(__PACKAGE__) && $_ -> can('as_int');
+            $_ = $class -> new(int($_)) unless ref($_);
+        }
+    }
+
+    return $x if $x -> modify('bbrsft');
+
+    return $x -> bnan(@r) if $x -> is_nan() || $y -> is_nan();
+
+    # bbrsft($x, -$y) = bblsft($x, $y)
+
+    return $x -> bblsft($y -> copy() -> bneg()) if $y -> is_neg();
+
+    # Shifting infinitely far to the right.
+
+    if ($y -> is_inf("+")) {
+        return $x -> bnan(@r)      if $x -> is_inf();
+        return $x -> bone("-", @r) if $x -> is_neg();
+        return $x -> bzero(@r);
+    }
+
+    # These cases change nothing.
+
+    return $x -> round(@r) if $x -> is_zero() || $x -> is_inf() ||
+                              $y -> is_zero();
+
+    # At this point, $x is either positive or negative, not zero.
+
+    if ($x -> is_pos()) {
+        $x -> {value} = $LIB -> _rsft($x -> {value}, $y -> {value}, 2);
+    } else {
+        my $n = $x -> {value};
+        my $d = $LIB -> _pow($LIB -> _new("2"), $y -> {value});
+        my ($p, $q) = $LIB -> _div($n, $d);
+        $p = $LIB -> _inc($p) unless $LIB -> _is_zero($q);
+        $x -> {value} = $p;
+    }
+
+    $x -> round(@r);
+}
 
 sub band {
     #(BINT or num_str, BINT or num_str) return BINT
@@ -6008,6 +6141,8 @@ Math::BigInt - arbitrary size integer math package
 
   # Bitwise methods
 
+  $x->bblsft($y);         # bitwise left shift
+  $x->bbrsft($y);         # bitwise right shift
   $x->band($y);           # bitwise and
   $x->bior($y);           # bitwise inclusive or
   $x->bxor($y);           # bitwise exclusive or
@@ -7149,27 +7284,69 @@ If $n is -12, the following values, L(0) to L(-12), are returned:
 
 =item brsft()
 
+Right shift.
+
     $x->brsft($n);              # right shift $n places in base 2
     $x->brsft($n, $b);          # right shift $n places in base $b
 
 The latter is equivalent to
 
-    $x -> bdiv($b -> copy() -> bpow($n))
+    $x -> bdiv($b -> copy() -> bpow($n));
 
 =item blsft()
+
+Left shift.
 
     $x->blsft($n);              # left shift $n places in base 2
     $x->blsft($n, $b);          # left shift $n places in base $b
 
 The latter is equivalent to
 
-    $x -> bmul($b -> copy() -> bpow($n))
+    $x -> bmul($b -> copy() -> bpow($n));
 
 =back
 
 =head2 Bitwise methods
 
+For all bitwise methods, the operands are truncated to integers, i.e., rounded
+towards zero, if necessary, before the method is applied. The bitwise methods
+never upgrade, and they always return an integer.
+
 =over
+
+=item bbrsft()
+
+Bitwise right shift. This is equivalent to Perl's C<E<gt>E<gt>> operator.
+
+    $x -> bbrsft($n);           # right shift $n places in base 2
+
+If C<$n> is negative, the shifting is done in the opposite direction, so these
+two are equivalent for all C<$x> and C<$n>
+
+    $y = $x -> bbrsft($n);
+    $y = $x -> bblsft(-$n);
+
+and also equivalent to
+
+    $y = $x -> bdiv(ref($x) -> new(2) -> bpow($n));   # if $n > 0
+    $y = $x -> bmul(ref($x) -> new(2) -> bpow(-$n));  # if $n < 0
+
+=item bblsft()
+
+Bitwise left shift. This is equivalent to Perl's C<E<lt>E<lt>> operator.
+
+    $x -> bblsft($n);           # left shift $n places in base 2
+
+If C<$n> is negative, the shifting is done in the opposite direction, so these
+two are equivalent for all C<$x> and C<$n>
+
+    $y = $x -> bblsft($n);
+    $y = $x -> bbrsft(-$n);
+
+and also equivalent to
+
+    $y = $x -> bmul(ref($x) -> new(2) -> bpow($n));   # if $n > 0
+    $y = $x -> bdiv(ref($x) -> new(2) -> bpow($n));   # if $n < 0
 
 =item band()
 
