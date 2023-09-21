@@ -3862,7 +3862,7 @@ sub bblsft {
     $x -> round(@r);
 }
 
-# Bitwise left shift.
+# Bitwise right shift.
 
 sub bbrsft {
     my ($class, $x, $y, @r) = ref($_[0]) && ref($_[0]) eq ref($_[1])
