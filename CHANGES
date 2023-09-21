@@ -1,3 +1,8 @@
+1.999841 2023-09-21
+
+ * Remove development files that were accidentally included in the
+   distribution.
+
 1.999840 2023-09-18
 
  * Add methods bblsft() and bbrsft(), which do bitwise left and right shift,

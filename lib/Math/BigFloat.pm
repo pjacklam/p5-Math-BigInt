@@ -20,7 +20,7 @@ use Carp          qw< carp croak >;
 use Scalar::Util  qw< blessed >;
 use Math::BigInt  qw< >;
 
-our $VERSION = '1.999840';
+our $VERSION = '1.999841';
 $VERSION =~ tr/_//d;
 
 require Exporter;
