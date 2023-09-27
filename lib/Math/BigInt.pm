@@ -1601,7 +1601,7 @@ sub babs {
     return $x if $x->modify('babs');
 
     return $upgrade -> babs($x, @r)
-      if defined($upgrade) && !$x->isa(__PACKAGE__);
+      if defined($upgrade) && !$x->isa(__PACKAGE__) && !$x -> isa($upgrade);
 
     $x->{sign} =~ s/^-/+/;
 
@@ -1615,7 +1615,7 @@ sub bsgn {
     return $x if $x->modify('bsgn');
 
     return $upgrade -> bsgn($x, @r)
-      if defined($upgrade) && !$x->isa(__PACKAGE__);
+      if defined($upgrade) && !$x->isa(__PACKAGE__) && !$x -> isa($upgrade);
 
     return $x -> bone("+", @r) if $x -> is_pos();
     return $x -> bone("-", @r) if $x -> is_neg();
