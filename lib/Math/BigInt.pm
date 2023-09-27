@@ -325,7 +325,9 @@ sub div_scale {
     if (@_) {                           # setter
         my $ds = shift;
         croak("The value for 'div_scale' must be defined") unless defined $ds;
-        croak("The value for 'div_scale' must be positive") unless $ds > 0;
+        # It is not documented what div_scale <= 0 means, but Astro::Units sets
+        # div_scale to 0 and fails its tests if this is not supported.
+        #croak("The value for 'div_scale' must be positive") unless $ds > 0;
         $ds = $ds -> numify() if defined(blessed($ds));
         no strict 'refs';
         ${"${class}::div_scale"} = $ds;
