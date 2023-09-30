@@ -3453,7 +3453,7 @@ sub brsft {
     # (BINT or num_str, BINT or num_str) return BINT
     # compute $x >> $y, base $n
 
-    my ($class, $x, $y, $b, @r) = (ref($_[0]), @_);
+    my ($class, $x, $y, $b, @r);
 
     # Objectify the base only when it is defined, since an undefined base, as
     # in $x->blsft(3) or $x->blog(3, undef) means use the default base 2.
@@ -3470,27 +3470,103 @@ sub brsft {
 
     return $x if $x -> modify('brsft');
 
+    # The default base is 2.
+
     $b = 2 unless defined $b;
     $b = $class -> new($b) unless defined(blessed($b));
+
+    # Handle "foreign" objects.
 
     return $upgrade -> brsft($x, $y, $b, @r)
       if defined($upgrade) && (!$x -> isa(__PACKAGE__) ||
                                !$y -> isa(__PACKAGE__) ||
                                !$b -> isa(__PACKAGE__));
 
-    return $x -> bnan(@r) if $x -> is_nan() || $y -> is_nan() || $b -> is_nan();
+    # Handle NaN cases.
+
+    return $x -> bnan(@r)
+      if $x -> is_nan() || $y -> is_nan() || $b -> is_nan();
 
     # brsft($x, -$y, $b) = blsft($x, $y, $b)
 
     return $x -> blsft($y -> copy() -> bneg(), $b, @r) if $y -> is_neg();
 
-    return $x -> round(@r) if $y -> is_zero();
-    return $x -> bzero(@r) if $x -> is_zero();
+    # Now handle all cases where at least one operand is ±Inf or the result
+    # will be ±Inf or NaN.
 
-    # Shifting right by a positive amount might lead to a non-integer result.
+    if ($b -> is_inf()) {
+        return $x -> bnan(@r) if $x -> is_inf() || $y -> is_zero();
+        if ($b -> is_inf("+")) {
+            if ($x -> is_negative()) {
+                return $x -> bone("-", @r);
+            } else {
+                return $x -> bzero(@r);
+            }
+        } else {
+            if ($x -> is_negative()) {
+                return $y -> is_odd() ? $x -> bzero(@r)
+                                      : $x -> bone("-", @r);
+            } elsif ($x -> is_positive()) {
+                return $y -> is_odd() ? $x -> bone("-", @r)
+                                      : $x -> bzero(@r);
+            } else {
+                return $x -> bzero(@r);
+            }
+        }
+    }
 
-    return $upgrade -> brsft($x, $y, $b, @r)
-      if defined($upgrade) && $y -> is_pos();
+    if ($b -> is_zero()) {
+        return $x -> round(@r) if $y -> is_zero();
+        return $x -> bnan(@r)  if $x -> is_zero();
+        return $x -> is_negative() ? $x -> binf("-", @r)
+                                   : $x -> binf("+", @r);
+    }
+
+    if ($y -> is_inf("+")) {
+        if ($b -> is_one("-")) {
+            return $x -> bnan(@r);
+        } elsif ($b -> is_one("+")) {
+            return $x -> round(@r);
+        } else {
+            return $x -> bnan(@r) if $x -> is_inf();
+            return $x -> is_negative() ? $x -> bone("-", @r)
+                                       : $x -> bzero(@r);
+        }
+    }
+
+    if ($x -> is_inf()) {
+        if ($b -> is_negative()) {
+            if ($x -> is_inf("-")) {
+                if ($y -> is_even()) {
+                    return $x -> round(@r);
+                } else {
+                    return $x -> binf("+", @r);
+                }
+            } else {
+                if ($y -> is_even()) {
+                    return $x -> round(@r);
+                } else {
+                    return $x -> binf("-", @r);
+                }
+            }
+        } else {
+            return $x -> round(@r);
+        }
+    }
+
+    # At this point, we know that both the input and the output is finite.
+    # Handle some trivial cases.
+
+    return $x -> round(@r) if $x -> is_zero() || $y -> is_zero()
+                              || $b -> is_one("+")
+                              || $b -> is_one("-") && $y -> is_even();
+
+    return $x -> bneg(@r) if $b -> is_one("-") && $y -> is_odd();
+
+    # We know that $y is positive. Shifting right by a positive amount might
+    # lead to a non-integer result.
+
+    return $upgrade -> brsft($x, $y, $b, @r) if defined($upgrade);
 
     # This only works for negative numbers when shifting in base 2.
     if ($x -> is_neg() && $b -> bcmp("2") == 0) {
@@ -3519,7 +3595,7 @@ sub brsft {
     # division.
 
     my $uintmax = ~0;
-    if ($x -> bcmp($uintmax) > 0 || $x -> is_neg()) {
+    if ($x -> bcmp($uintmax) > 0 || $x -> is_neg() || $b -> is_negative()) {
         $x = $x -> bdiv($b -> bpow($y));
     } else {
         $b = $b -> numify();
