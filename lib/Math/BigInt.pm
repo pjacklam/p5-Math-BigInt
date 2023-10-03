@@ -3398,42 +3398,92 @@ sub blsft {
 
     return $x if $x -> modify('blsft');
 
+    # The default base is 2.
+
     $b = 2 unless defined $b;
     $b = $class -> new($b) unless defined(blessed($b));
+
+    # Handle "foreign" objects.
 
     return $upgrade -> blsft($x, $y, $b, @r)
       if defined($upgrade) && (!$x -> isa(__PACKAGE__) ||
                                !$y -> isa(__PACKAGE__) ||
                                !$b -> isa(__PACKAGE__));
 
-    return $x -> bnan(@r) if $x -> is_nan() || $y -> is_nan() || $b -> is_nan();
+    # Handle NaN cases.
+
+    return $x -> bnan(@r)
+      if $x -> is_nan() || $y -> is_nan() || $b -> is_nan();
 
     # blsft($x, -$y, $b) = brsft($x, $y, $b)
 
     return $x -> brsft($y -> copy() -> bneg(), $b, @r) if $y -> is_neg();
 
-    return $x -> bmul($b -> bpow($y));
+    # Now handle all cases where at least one operand is ±Inf or the result
+    # will be ±Inf or NaN.
 
-    # Base $b = 1 changes nothing, not even when $b = Inf. Shifting zero places
-    # ($y = 0) doesn't change anything either.
-    return $x -> bround(@r) if $b -> is_one("+") || $y -> is_zero();
-
-    # Shifting infinitely far to the left.
     if ($y -> is_inf("+")) {
-        return $x -> binf("+", @r) if $x -> is_pos();
-        return $x -> binf("-", @r) if $x -> is_neg();
-        return $x -> bnan(@r);                          # Inf * 0 = NaN
+       if ($b -> is_one("-")) {
+            return $x -> bnan(@r);
+        } elsif ($b -> is_one("+")) {
+            return $x -> round(@r);
+        } elsif ($b -> is_zero()) {
+            return $x -> bnan(@r) if $x -> is_inf();
+            return $x -> bzero(@r);
+        } else {
+            return $x -> binf("-", @r) if $x -> is_negative();
+            return $x -> binf("+", @r) if $x -> is_positive();
+            return $x -> bnan(@r);
+        }
     }
 
-    # At this point we know that $b > 1, so we are essentially computing 0 *
-    # Inf = NaN.
-    return $x -> bnan(@r) if $x -> is_zero() && $y -> is_inf("+");
+    if ($b -> is_inf()) {
+        return $x -> bnan(@r) if $x -> is_zero() || $y -> is_zero();
+        if ($b -> is_inf("-")) {
+            return $x -> binf("+", @r)
+              if ($x -> is_negative() && $y -> is_odd() ||
+                  $x -> is_positive() && $y -> is_even());
+            return $x -> binf("-", @r);
+       } else {
+           return $x -> binf("-", @r) if $x -> is_negative();
+           return $x -> binf("+", @r);
+        }
+    }
 
-    # Handle trivial zero case.
-    return $x -> bzero(@r) if $x -> is_zero();
+    if ($b -> is_zero()) {
+        return $x -> round(@r) if $y -> is_zero();
+        return $x -> bnan(@r)  if $x -> is_inf();
+        return $x -> bzero(@r);
+    }
 
-    return $x -> binf("+", @r) if $y -> is_inf("+");
-    return $x -> bzero(@r) if $x -> is_zero();
+    if ($x -> is_inf()) {
+        if ($b -> is_negative()) {
+            if ($x -> is_inf("-")) {
+                if ($y -> is_even()) {
+                    return $x -> round(@r);
+                } else {
+                    return $x -> binf("+", @r);
+                }
+            } else {
+                if ($y -> is_even()) {
+                    return $x -> round(@r);
+                } else {
+                    return $x -> binf("-", @r);
+                }
+            }
+        } else {
+            return $x -> round(@r);
+        }
+    }
+
+    # At this point, we know that both the input and the output is finite.
+    # Handle some trivial cases.
+
+    return $x -> round(@r) if $x -> is_zero() || $y -> is_zero()
+                              || $b -> is_one("+")
+                              || $b -> is_one("-") && $y -> is_even();
+
+    return $x -> bneg(@r) if $b -> is_one("-") && $y -> is_odd();
 
     # While some of the libraries support an arbitrarily large base, not all of
     # them do, so rather than returning an incorrect result in those cases,
@@ -3443,8 +3493,14 @@ sub blsft {
     if ($x -> bcmp($uintmax) > 0) {
         $x = $x -> bmul($b -> bpow($y));
     } else {
+        my $neg = 0;
+        if ($b -> is_negative()) {
+            $neg = 1 if $y -> is_odd();
+            $b = $b -> babs();
+        }
         $b = $b -> numify();
         $x -> {value} = $LIB -> _lsft($x -> {value}, $y -> {value}, $b);
+        $x -> {sign} =~ tr/+-/-+/ if $neg;
     }
     $x -> round(@r);
 }
