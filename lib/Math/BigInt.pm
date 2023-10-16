@@ -236,7 +236,7 @@ my $nan = 'NaN';                        # constants for easier life
 my $DEFAULT_LIB = 'Math::BigInt::Calc';
 my $LIB;
 
-# Has import() been called yet? Needed to make "require" work.
+# Has import() been called yet? This variable is needed to make "require" work.
 
 my $IMPORT = 0;
 
@@ -714,6 +714,10 @@ sub from_dec {
     my $selfref = ref $self;
     my $class   = $selfref || $self;
 
+    # Make "require" work.
+
+    $class -> import() if $IMPORT == 0;
+
     # Don't modify constant (read-only) objects.
 
     return $self if $selfref && $self->modify('from_dec');
@@ -749,6 +753,10 @@ sub from_hex {
     my $self    = shift;
     my $selfref = ref $self;
     my $class   = $selfref || $self;
+
+    # Make "require" work.
+
+    $class -> import() if $IMPORT == 0;
 
     # Don't modify constant (read-only) objects.
 
@@ -786,6 +794,10 @@ sub from_oct {
     my $selfref = ref $self;
     my $class   = $selfref || $self;
 
+    # Make "require" work.
+
+    $class -> import() if $IMPORT == 0;
+
     # Don't modify constant (read-only) objects.
 
     return $self if $selfref && $self->modify('from_oct');
@@ -821,6 +833,10 @@ sub from_bin {
     my $self    = shift;
     my $selfref = ref $self;
     my $class   = $selfref || $self;
+
+    # Make "require" work.
+
+    $class -> import() if $IMPORT == 0;
 
     # Don't modify constant (read-only) objects.
 
@@ -858,6 +874,10 @@ sub from_bytes {
     my $selfref = ref $self;
     my $class   = $selfref || $self;
 
+    # Make "require" work.
+
+    $class -> import() if $IMPORT == 0;
+
     # Don't modify constant (read-only) objects.
 
     return $self if $selfref && $self->modify('from_bytes');
@@ -880,6 +900,10 @@ sub from_base {
     my $self    = shift;
     my $selfref = ref $self;
     my $class   = $selfref || $self;
+
+    # Make "require" work.
+
+    $class -> import() if $IMPORT == 0;
 
     # Don't modify constant (read-only) objects.
 
@@ -924,6 +948,10 @@ sub from_base_num {
     my $self    = shift;
     my $selfref = ref $self;
     my $class   = $selfref || $self;
+
+    # Make "require" work.
+
+    $class -> import() if $IMPORT == 0;
 
     # Don't modify constant (read-only) objects.
 
@@ -980,7 +1008,9 @@ sub bzero {
     my $selfref = ref $self;
     my $class   = $selfref || $self;
 
-    $self->import() if $IMPORT == 0;            # make require work
+    # Make "require" work.
+
+    $class -> import() if $IMPORT == 0;
 
     # Don't modify constant (read-only) objects.
 
@@ -1030,7 +1060,9 @@ sub bone {
     my $selfref = ref $self;
     my $class   = $selfref || $self;
 
-    $self->import() if $IMPORT == 0;            # make require work
+    # Make "require" work.
+
+    $class -> import() if $IMPORT == 0;
 
     # Don't modify constant (read-only) objects.
 
@@ -1094,7 +1126,9 @@ sub binf {
         }
     }
 
-    $self->import() if $IMPORT == 0;            # make require work
+    # Make "require" work.
+
+    $class -> import() if $IMPORT == 0;
 
     # Don't modify constant (read-only) objects.
 
@@ -1159,7 +1193,9 @@ sub bnan {
         }
     }
 
-    $self->import() if $IMPORT == 0;            # make require work
+    # Make "require" work.
+
+    $class -> import() if $IMPORT == 0;
 
     # Don't modify constant (read-only) objects.
 
@@ -1224,6 +1260,10 @@ sub bpi {
     my $selfref = ref $self;
     my $class   = $selfref || $self;
     my @r       = @_;                   # rounding paramters
+
+    # Make "require" work.
+
+    $class -> import() if $IMPORT == 0;
 
     if ($selfref) {                     # bpi() called as an instance method
         return $self if $self -> modify('bpi');

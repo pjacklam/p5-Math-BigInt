@@ -227,7 +227,9 @@ $_trap_inf = 0;
 # constant for easier life
 my $nan = 'NaN';
 
-my $IMPORT = 0; # was import() called yet? used to make require work
+# Has import() been called yet? This variable is needed to make "require" work.
+
+my $IMPORT = 0;
 
 # some digits of accuracy for blog(undef, 10); which we use in blog() for speed
 my $LOG_10 =
@@ -317,6 +319,10 @@ sub AUTOLOAD {
     sub _method_alias { exists $methods{$_[0]||''}; }
     sub _method_hand_up { exists $hand_ups{$_[0]||''}; }
 }
+
+# Compare the following function with @ISA above. This inheritance mess needs a
+# clean up. When doing so, also consider the BEGIN block and the AUTOLOAD code.
+# Fixme!
 
 sub isa {
     my ($self, $class) = @_;
@@ -545,6 +551,10 @@ sub from_dec {
     my $selfref = ref $self;
     my $class   = $selfref || $self;
 
+    # Make "require" work.
+
+    $class -> import() if $IMPORT == 0;
+
     # Don't modify constant (read-only) objects.
 
     return $self if $selfref && $self->modify('from_dec');
@@ -574,6 +584,10 @@ sub from_hex {
     my $self    = shift;
     my $selfref = ref $self;
     my $class   = $selfref || $self;
+
+    # Make "require" work.
+
+    $class -> import() if $IMPORT == 0;
 
     # Don't modify constant (read-only) objects.
 
@@ -605,6 +619,10 @@ sub from_oct {
     my $selfref = ref $self;
     my $class   = $selfref || $self;
 
+    # Make "require" work.
+
+    $class -> import() if $IMPORT == 0;
+
     # Don't modify constant (read-only) objects.
 
     return $self if $selfref && $self->modify('from_oct');
@@ -635,6 +653,10 @@ sub from_bin {
     my $selfref = ref $self;
     my $class   = $selfref || $self;
 
+    # Make "require" work.
+
+    $class -> import() if $IMPORT == 0;
+
     # Don't modify constant (read-only) objects.
 
     return $self if $selfref && $self->modify('from_bin');
@@ -664,6 +686,10 @@ sub from_ieee754 {
     my $self    = shift;
     my $selfref = ref $self;
     my $class   = $selfref || $self;
+
+    # Make "require" work.
+
+    $class -> import() if $IMPORT == 0;
 
     # Don't modify constant (read-only) objects.
 
@@ -839,7 +865,9 @@ sub bzero {
     my $selfref = ref $self;
     my $class   = $selfref || $self;
 
-    $self->import() if $IMPORT == 0;            # make require work
+    # Make "require" work.
+
+    $class -> import() if $IMPORT == 0;
 
     # Don't modify constant (read-only) objects.
 
@@ -897,7 +925,9 @@ sub bone {
     my $selfref = ref $self;
     my $class   = $selfref || $self;
 
-    $self->import() if $IMPORT == 0;            # make require work
+    # Make "require" work.
+
+    $class -> import() if $IMPORT == 0;
 
     # Don't modify constant (read-only) objects.
 
@@ -970,7 +1000,9 @@ sub binf {
         }
     }
 
-    $self->import() if $IMPORT == 0;            # make require work
+    # Make "require" work.
+
+    $class -> import() if $IMPORT == 0;
 
     # Don't modify constant (read-only) objects.
 
@@ -1043,7 +1075,9 @@ sub bnan {
         }
     }
 
-    $self->import() if $IMPORT == 0;            # make require work
+    # Make "require" work.
+
+    $class -> import() if $IMPORT == 0;
 
     # Don't modify constant (read-only) objects.
 
@@ -1118,6 +1152,10 @@ sub bpi {
     my $selfref = ref $self;
     my $class   = $selfref || $self;
     my @r       = @_;                   # rounding paramters
+
+    # Make "require" work.
+
+    $class -> import() if $IMPORT == 0;
 
     if ($selfref) {                     # bpi() called as an instance method
         return $self if $self -> modify('bpi');
@@ -3832,64 +3870,80 @@ sub brsft {
 # Bitwise left shift.
 
 sub bblsft {
-    my ($class, $x, $y, @r) = ref($_[0]) && ref($_[0]) eq ref($_[1])
-                            ? (ref($_[0]), @_)
-                            : objectify(2, @_);
+    # We don't call objectify(), because the bitwise methods should not
+    # upgrade/downgrade, even when upgrading/downgrading is enabled.
+
+    my ($class, $x, $y, @r) = ref($_[0]) ? (ref($_[0]), @_) : @_;
 
     my $xint = Math::BigInt -> bblsft($x, $y, @r);
 
-    # disable downgrading
+    # Temporarily disable downgrading.
 
     my $dng = $class -> downgrade();
     $class -> downgrade(undef);
 
-    # convert to Math::BigFloat without downgrading
+    # convert to our class without downgrading.
 
     my $xflt = $class -> new($xint);
 
-    # reset downgrading
+    # Reset downgrading.
 
     $class -> downgrade($dng);
 
-    $x -> {sign} = $xflt -> {sign};
-    $x -> {_m}   = $xflt -> {_m};
-    $x -> {_es}  = $xflt -> {_es};
-    $x -> {_e}   = $xflt -> {_e};
+    # If we are called as a class method, the first operand might not be an
+    # object of this class, so check.
 
-    # now we might downgrade
+    if (defined(blessed($x)) && $x -> isa(__PACKAGE__)) {
+        $x -> {sign} = $xflt -> {sign};
+        $x -> {_m}   = $xflt -> {_m};
+        $x -> {_es}  = $xflt -> {_es};
+        $x -> {_e}   = $xflt -> {_e};
+    } else {
+        $x = $xflt;
+    }
+
+    # Now we might downgrade.
 
     return $downgrade -> new($x) if defined($downgrade);
     $x -> round(@r);
 }
 
-# Bitwise left shift.
+# Bitwise right shift.
 
 sub bbrsft {
-    my ($class, $x, $y, @r) = ref($_[0]) && ref($_[0]) eq ref($_[1])
-                            ? (ref($_[0]), @_)
-                            : objectify(2, @_);
+    # We don't call objectify(), because the bitwise methods should not
+    # upgrade/downgrade, even when upgrading/downgrading is enabled.
+
+    my ($class, $x, $y, @r) = ref($_[0]) ? (ref($_[0]), @_) : @_;
 
     my $xint = Math::BigInt -> bbrsft($x, $y, @r);
 
-    # disable downgrading
+    # Temporarily disable downgrading.
 
     my $dng = $class -> downgrade();
     $class -> downgrade(undef);
 
-    # convert to Math::BigFloat without downgrading
+    # Convert to our class without downgrading.
 
     my $xflt = $class -> new($xint);
 
-    # reset downgrading
+    # Reset downgrading.
 
     $class -> downgrade($dng);
 
-    $x -> {sign} = $xflt -> {sign};
-    $x -> {_m}   = $xflt -> {_m};
-    $x -> {_es}  = $xflt -> {_es};
-    $x -> {_e}   = $xflt -> {_e};
+    # If we are called as a class method, the first operand might not be an
+    # object of this class, so check.
 
-    # now we might downgrade
+    if (defined(blessed($x)) && $x -> isa(__PACKAGE__)) {
+        $x -> {sign} = $xflt -> {sign};
+        $x -> {_m}   = $xflt -> {_m};
+        $x -> {_es}  = $xflt -> {_es};
+        $x -> {_e}   = $xflt -> {_e};
+    } else {
+        $x = $xflt;
+    }
+
+    # Now we might downgrade.
 
     return $downgrade -> new($x) if defined($downgrade);
     $x -> round(@r);
@@ -5006,7 +5060,7 @@ sub to_oct {
 
     # Upgrade?
 
-    return $upgrade -> to_hex($x, @r)
+    return $upgrade -> to_oct($x, @r)
       if defined($upgrade) && !$x -> isa(__PACKAGE__);
 
     # Finite number
@@ -5038,7 +5092,7 @@ sub to_bin {
 
     # Upgrade?
 
-    return $upgrade -> to_hex($x, @r)
+    return $upgrade -> to_bin($x, @r)
       if defined($upgrade) && !$x -> isa(__PACKAGE__);
 
     # Finite number
