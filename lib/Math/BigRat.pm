@@ -50,11 +50,11 @@ use overload
   '**'    =>      sub { $_[2] ? ref($_[0]) -> new($_[1]) -> bpow($_[0])
                               : $_[0] -> copy() -> bpow($_[1]); },
 
-  '<<'    =>      sub { $_[2] ? ref($_[0]) -> new($_[1]) -> blsft($_[0])
-                              : $_[0] -> copy() -> blsft($_[1]); },
+  '<<'    =>      sub { $_[2] ? ref($_[0]) -> new($_[1]) -> bblsft($_[0])
+                              : $_[0] -> copy() -> bblsft($_[1]); },
 
-  '>>'    =>      sub { $_[2] ? ref($_[0]) -> new($_[1]) -> brsft($_[0])
-                              : $_[0] -> copy() -> brsft($_[1]); },
+  '>>'    =>      sub { $_[2] ? ref($_[0]) -> new($_[1]) -> bbrsft($_[0])
+                              : $_[0] -> copy() -> bbrsft($_[1]); },
 
   # overload key: assign
 
@@ -70,9 +70,9 @@ use overload
 
   '**='   =>      sub { $_[0] -> bpow($_[1]); },
 
-  '<<='   =>      sub { $_[0] -> blsft($_[1]); },
+  '<<='   =>      sub { $_[0] -> bblsft($_[1]); },
 
-  '>>='   =>      sub { $_[0] -> brsft($_[1]); },
+  '>>='   =>      sub { $_[0] -> bbrsft($_[1]); },
 
 #  'x='    =>      sub { },
 
@@ -1922,6 +1922,90 @@ sub brsft {
     # the following call to bdiv() will return either quotient (scalar context)
     # or quotient and remainder (list context).
     $x -> bdiv($b -> bpow($y));
+}
+
+###############################################################################
+# Bitwise methods
+###############################################################################
+
+# Bitwise left shift.
+
+sub bblsft {
+    # We don't call objectify(), because the bitwise methods should not
+    # upgrade/downgrade, even when upgrading/downgrading is enabled.
+
+    my ($class, $x, $y, @r) = ref($_[0]) ? (ref($_[0]), @_) : @_;
+
+    my $xint = Math::BigInt -> bblsft($x, $y, @r);
+
+    # Temporarily disable downgrading.
+
+    my $dng = $class -> downgrade();
+    $class -> downgrade(undef);
+
+    # Convert to our class without downgrading.
+
+    my $xrat = $class -> new($xint);
+
+    # Reset downgrading.
+
+    $class -> downgrade($dng);
+
+    # If we are called as a class method, the first operand might not be an
+    # object of this class, so check.
+
+    if (defined(blessed($x)) && $x -> isa(__PACKAGE__)) {
+        $x -> {sign} = $xrat -> {sign};
+        $x -> {_n}   = $xrat -> {_n};
+        $x -> {_d}   = $xrat -> {_d};
+    } else {
+        $x = $xrat;
+    }
+
+    # Now we might downgrade.
+
+    return $downgrade -> new($x) if defined($downgrade);
+    $x -> round(@r);
+}
+
+# Bitwise right shift.
+
+sub bbrsft {
+    # We don't call objectify(), because the bitwise methods should not
+    # upgrade/downgrade, even when upgrading/downgrading is enabled.
+
+    my ($class, $x, $y, @r) = ref($_[0]) ? (ref($_[0]), @_) : @_;
+
+    my $xint = Math::BigInt -> bbrsft($x, $y, @r);
+
+    # Temporarily disable downgrading.
+
+    my $dng = $class -> downgrade();
+    $class -> downgrade(undef);
+
+    # Convert to our class without downgrading.
+
+    my $xrat = $class -> new($xint);
+
+    # Reset downgrading.
+
+    $class -> downgrade($dng);
+
+    # If we are called as a class method, the first operand might not be an
+    # object of this class, so check.
+
+    if (defined(blessed($x)) && $x -> isa(__PACKAGE__)) {
+        $x -> {sign} = $xrat -> {sign};
+        $x -> {_n}   = $xrat -> {_n};
+        $x -> {_d}   = $xrat -> {_d};
+    } else {
+        $x = $xrat;
+    }
+
+    # Now we might downgrade.
+
+    return $downgrade -> new($x) if defined($downgrade);
+    $x -> round(@r);
 }
 
 sub band {
