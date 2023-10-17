@@ -6714,16 +6714,6 @@ See the respective low-level library documentation for further details.
 
 See L<Math::BigInt> for more details about using a different low-level library.
 
-=head2 Using Math::BigInt::Lite
-
-For backwards compatibility reasons it is still possible to
-request a different storage class for use with Math::BigFloat:
-
-    use Math::BigFloat with => 'Math::BigInt::Lite';
-
-However, this request is ignored, as the current code now uses the low-level
-math library for directly storing the number parts.
-
 =head1 EXPORTS
 
 C<Math::BigFloat> exports nothing by default, but can export the C<bpi()>
@@ -6732,21 +6722,6 @@ method:
     use Math::BigFloat qw/bpi/;
 
     print bpi(10), "\n";
-
-=head1 CAVEATS
-
-Do not try to be clever to insert some operations in between switching
-libraries:
-
-    require Math::BigFloat;
-    my $matter = Math::BigFloat->bone() + 4;    # load BigInt and Calc
-    Math::BigFloat->import( lib => 'Pari' );    # load Pari, too
-    my $anti_matter = Math::BigFloat->bone()+4; # now use Pari
-
-This will create objects with numbers stored in two different backend libraries,
-and B<VERY BAD THINGS> will happen when you use these together:
-
-    my $flash_and_bang = $matter + $anti_matter;    # Don't do this!
 
 =over
 
@@ -6876,10 +6851,12 @@ the same terms as Perl itself.
 
 =head1 SEE ALSO
 
-L<Math::BigInt> and L<Math::BigInt> as well as the backends
-L<Math::BigInt::FastCalc>, L<Math::BigInt::GMP>, and L<Math::BigInt::Pari>.
+L<Math::BigInt> and L<Math::BigRat> as well as the backend libraries
+L<Math::BigInt::FastCalc>, L<Math::BigInt::GMP>, and L<Math::BigInt::Pari>,
+L<Math::BigInt::GMPz>, and L<Math::BigInt::BitVect>.
 
-The pragmas L<bignum>, L<bigint> and L<bigrat>.
+The pragmas L<bigint>, L<bigfloat>, and L<bigrat> might also be of interest. In
+addition there is the L<bignum> pragma which does upgrading and downgrading.
 
 =head1 AUTHORS
 

@@ -3269,9 +3269,8 @@ Binary floating point literals:
 =head1 BUGS
 
 Please report any bugs or feature requests to
-C<bug-math-bigrat at rt.cpan.org>, or through the web interface at
-L<https://rt.cpan.org/Ticket/Create.html?Queue=Math-BigRat>
-(requires login).
+C<bug-math-bigint at rt.cpan.org>, or through the web interface at
+L<https://rt.cpan.org/Ticket/Create.html?Queue=Math-BigInt> (requires login).
 We will be notified, and then you'll automatically be notified of progress on
 your bug as I make changes.
 
@@ -3279,7 +3278,7 @@ your bug as I make changes.
 
 You can find documentation for this module with the perldoc command.
 
-    perldoc Math::BigRat
+    perldoc Math::BigInt
 
 You can also look for information at:
 
@@ -3287,23 +3286,19 @@ You can also look for information at:
 
 =item * GitHub
 
-L<https://github.com/pjacklam/p5-Math-BigRat>
+L<https://github.com/pjacklam/p5-Math-BigInt>
 
 =item * RT: CPAN's request tracker
 
-L<https://rt.cpan.org/Dist/Display.html?Name=Math-BigRat>
+L<https://rt.cpan.org/Dist/Display.html?Name=Math-BigInt>
 
 =item * MetaCPAN
 
-L<https://metacpan.org/release/Math-BigRat>
+L<https://metacpan.org/release/Math-BigInt>
 
 =item * CPAN Testers Matrix
 
-L<http://matrix.cpantesters.org/?dist=Math-BigRat>
-
-=item * CPAN Ratings
-
-L<https://cpanratings.perl.org/dist/Math-BigRat>
+L<http://matrix.cpantesters.org/?dist=Math-BigInt>
 
 =back
 
@@ -3314,8 +3309,12 @@ the same terms as Perl itself.
 
 =head1 SEE ALSO
 
-L<bigrat>, L<Math::BigFloat> and L<Math::BigInt> as well as the backends
-L<Math::BigInt::FastCalc>, L<Math::BigInt::GMP>, and L<Math::BigInt::Pari>.
+L<Math::BigInt> and L<Math::BigFloat> as well as the backend libraries
+L<Math::BigInt::FastCalc>, L<Math::BigInt::GMP>, and L<Math::BigInt::Pari>,
+L<Math::BigInt::GMPz>, and L<Math::BigInt::BitVect>.
+
+The pragmas L<bigint>, L<bigfloat>, and L<bigrat> might also be of interest. In
+addition there is the L<bignum> pragma which does upgrading and downgrading.
 
 =head1 AUTHORS
 
