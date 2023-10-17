@@ -1,5 +1,9 @@
 # -*- mode: perl; -*-
 
+# Test
+# - Math::BigInt -> bbrsft() with and without upgrading to Math::BigFloat
+# - Math::BigFloat -> bbrsft() with and without downgrading to Math::BigInt
+
 use strict;
 use warnings;
 
@@ -138,7 +142,7 @@ for my $upg (undef, "Math::BigFloat") {
 
                     my $zref = $dng ? "Math::BigInt" : $xref;
 
-                    # test "$x -> brsft($y)", which modifies $x
+                    # test "$x -> bbrsft($y)", which modifies $x
 
                     note "\n";
                     note "Math::BigInt -> upgrade(", defined($upg) ? "\"$upg\"" : "undef", ");",
