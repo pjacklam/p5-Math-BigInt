@@ -1377,6 +1377,41 @@ sub as_float {
     return $y;
 }
 
+sub as_rat {
+    # return copy as a Math::BigRat representation of this Math::BigFloat
+    my ($class, $x, @r) = ref($_[0]) ? (ref($_[0]), @_) : objectify(1, @_);
+    carp "Rounding is not supported for ", (caller(0))[3], "()" if @r;
+
+    return $x -> copy() if $x -> isa("Math::BigRat");
+
+    # disable upgrading and downgrading
+
+    require Math::BigRat;
+    my $upg = Math::BigRat -> upgrade();
+    my $dng = Math::BigRat -> downgrade();
+    Math::BigRat -> upgrade(undef);
+    Math::BigRat -> downgrade(undef);
+
+    my $y;
+    if ($x -> is_inf()) {
+        $y = Math::BigRat -> binf($x -> sign());
+    } elsif ($x -> is_nan()) {
+        $y = Math::BigRat -> bnan();
+    } else {
+        my @flt_parts = ($x->{sign}, $x->{_m}, $x->{_es}, $x->{_e});
+        my @rat_parts = $class -> _flt_lib_parts_to_rat_lib_parts(@flt_parts);
+        $y = Math::BigRat -> new($rat_parts[0] . $LIB -> _str($rat_parts[1])
+                                         . '/' . $LIB -> _str($rat_parts[2]));
+    }
+
+    # reset upgrading and downgrading
+
+    Math::BigRat -> upgrade($upg);
+    Math::BigRat -> downgrade($dng);
+
+    return $y;
+}
+
 ###############################################################################
 # Boolean methods
 ###############################################################################
