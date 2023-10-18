@@ -2375,6 +2375,54 @@ sub as_float {
     return $y;
 }
 
+sub to_hex {
+    my ($class, $x) = ref($_[0]) ? (undef, $_[0]) : objectify(1, @_);
+
+    # Inf and NaN
+
+    if ($x->{sign} ne '+' && $x->{sign} ne '-') {
+        return $x->{sign} unless $x->{sign} eq '+inf';  # -inf, NaN
+        return 'inf';                                   # +inf
+    }
+
+    return $nan unless $x->is_int();
+
+    my $str = $LIB->_to_hex($x->{_n});
+    return $x->{sign} eq "-" ? "-$str" : $str;
+}
+
+sub to_oct {
+    my ($class, $x) = ref($_[0]) ? (undef, $_[0]) : objectify(1, @_);
+
+    # Inf and NaN
+
+    if ($x->{sign} ne '+' && $x->{sign} ne '-') {
+        return $x->{sign} unless $x->{sign} eq '+inf';  # -inf, NaN
+        return 'inf';                                   # +inf
+    }
+
+    return $nan unless $x->is_int();
+
+    my $str = $LIB->_to_oct($x->{_n});
+    return $x->{sign} eq "-" ? "-$str" : $str;
+}
+
+sub to_bin {
+    my ($class, $x) = ref($_[0]) ? (undef, $_[0]) : objectify(1, @_);
+
+    # Inf and NaN
+
+    if ($x->{sign} ne '+' && $x->{sign} ne '-') {
+        return $x->{sign} unless $x->{sign} eq '+inf';  # -inf, NaN
+        return 'inf';                                   # +inf
+    }
+
+    return $nan unless $x->is_int();
+
+    my $str = $LIB->_to_bin($x->{_n});
+    return $x->{sign} eq "-" ? "-$str" : $str;
+}
+
 sub as_bin {
     my ($class, $x) = ref($_[0]) ? (undef, $_[0]) : objectify(1, @_);
 
