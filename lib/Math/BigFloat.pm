@@ -1367,7 +1367,7 @@ sub as_float {
     Math::BigFloat -> upgrade(undef);
     Math::BigFloat -> downgrade(undef);
 
-    my $y = Math::BigFloat -> new($x);
+    my $y = Math::BigFloat -> copy($x);
 
     # reset upgrading and downgrading
 
