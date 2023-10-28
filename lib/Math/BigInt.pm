@@ -1642,8 +1642,12 @@ sub babs {
 
     return $x if $x->modify('babs');
 
-    return $upgrade -> babs($x, @r)
-      if defined($upgrade) && !$x->isa(__PACKAGE__) && !$x -> isa($upgrade);
+    # This call to the upgrade class must either be commented out or the method
+    # must be implemented in the upgrade class(es) to avoid infinite recursion.
+    # It doesn't help to check whether $x isa $upgrade, because there might be
+    # several levels of upgrading. Also see the test file t/upgrade2.t
+    #return $upgrade -> babs($x, @r)
+    #  if defined($upgrade) && !$x->isa(__PACKAGE__);
 
     $x->{sign} =~ s/^-/+/;
 
@@ -1656,8 +1660,12 @@ sub bsgn {
 
     return $x if $x->modify('bsgn');
 
-    return $upgrade -> bsgn($x, @r)
-      if defined($upgrade) && !$x->isa(__PACKAGE__) && !$x -> isa($upgrade);
+    # This call to the upgrade class must either be commented out or the method
+    # must be implemented in the upgrade class(es) to avoid infinite recursion.
+    # It doesn't help to check whether $x isa $upgrade, because there might be
+    # several levels of upgrading. Also see the test file t/upgrade2.t
+    #return $upgrade -> bsgn($x, @r)
+    #  if defined($upgrade) && !$x->isa(__PACKAGE__);
 
     return $x -> bone("+", @r) if $x -> is_pos();
     return $x -> bone("-", @r) if $x -> is_neg();
