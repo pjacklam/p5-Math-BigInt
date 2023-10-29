@@ -1,12 +1,12 @@
-1.999843 2023-10-13
+2.000000 2023-10-29
 
- * Merge the Math-BigRat distribution into the Math-BigIn distribution. This
+ * Merge the Math-BigRat distribution into the Math-BigInt distribution. This
    merge eliminates the problems that users have experienced when incompatible
    versions of the two distributions have been installed. This fixes CPAN RT
    #143228.
 
- * Add method from_dec() to Math::BigRat to make it more consistent with
-   Math::BigInt and Math::BigFloat.
+ * Add method from_dec() to Math::BigRat to make Math::BigRat more consistent
+   with Math::BigInt and Math::BigFloat.
 
 * To be consistent with Math::BigInt and Math::BigFloat, make it possible to
   use "require" with Math::BigRat, e.g.,
@@ -18,12 +18,20 @@
    and add tests to verify that "require" works for Math::BigInt, Math::BigRat,
    and Math::BigFloat.
 
- * Add methods bblsft() and bbrsft() to make Math::BigRat consistent with
-   Math::BigInt and Math::BigFloat. These methods do bitwise left and right
-   shift, respectively.
+ * Add methods bblsft() and bbrsft() to Math::BigRat to make Math::BigRat
+   consistent with Math::BigInt and Math::BigFloat. These methods do bitwise
+   left and right shift, respectively.
 
  * Fix bug in to_oct() and to_bin() in Math::BigFloat. They called to_hex()
    when upgrading, but should have called to_oct() and to_bin(), respectively.
+
+ * Add to_hex(), to_oct(), to_bin() to Math::BigRat.
+
+ * Add new method binv() to Math::BigInt, Math::BigFloat, and Math::BigRat.
+
+ * Improve as_float() and as_rat().
+
+ * POD updates.
 
 1.999842 2023-09-27
 
