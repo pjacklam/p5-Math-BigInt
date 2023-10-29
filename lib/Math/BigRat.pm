@@ -1235,14 +1235,13 @@ sub binc {
 }
 
 sub binv {
-    my $x = shift;
-    my @r = @_;
+    my ($class, $x, @r) = ref($_[0]) ? (ref($_[0]), $_[0]) : objectify(1, @_);
 
-    return $x if $x->modify('binv');
+    return $x if $x -> modify('binv');
 
-    return $x              if $x -> is_nan();
-    return $x -> bzero()   if $x -> is_inf();
-    return $x -> binf("+") if $x -> is_zero();
+    return $x -> round(@r)     if $x -> is_nan();
+    return $x -> bzero(@r)     if $x -> is_inf();
+    return $x -> binf("+", @r) if $x -> is_zero();
 
     ($x -> {_n}, $x -> {_d}) = ($x -> {_d}, $x -> {_n});
     $x -> round(@r);

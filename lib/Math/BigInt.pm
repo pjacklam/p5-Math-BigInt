@@ -2756,6 +2756,20 @@ sub bpow {
     $x -> round(@r);
 }
 
+sub binv {
+    my ($class, $x, @r) = ref($_[0]) ? (ref($_[0]), $_[0]) : objectify(1, @_);
+
+    return $x if $x -> modify('binv');
+
+    return $x -> binf("+", @r)  if $x -> is_zero();
+    return $x -> bzero(@r)      if $x -> is_inf();
+    return $x -> bnan(@r)       if $x -> is_nan();
+    return $x -> round(@r)      if $x -> is_one("+") || $x -> is_one("-");
+
+    return $upgrade -> binv($x, @r) if defined $upgrade;
+    $x -> bzero(@r);
+}
+
 sub blog {
     # Return the logarithm of the operand. If a second operand is defined, that
     # value is used as the base, otherwise the base is assumed to be Euler's
@@ -6296,6 +6310,7 @@ Math::BigInt - arbitrary size integer math package
   $x->btmod($y);          # modulus (truncated)
   $x->bmodinv($mod);      # modular multiplicative inverse
   $x->bmodpow($y,$mod);   # modular exponentiation (($x ** $y) % $mod)
+  $x->binv()              # inverse (1/$x)
   $x->bpow($y);           # power of arguments (x ** y)
   $x->blog();             # logarithm of $x to base e (Euler's number)
   $x->blog($base);        # logarithm of $x to base $base (e.g., base 2)
@@ -7102,6 +7117,12 @@ compatibility.
 Multiply $x by $y, and then add $z to the result,
 
 This method was added in v1.87 of Math::BigInt (June 2007).
+
+=item binv()
+
+    $x->binv();
+
+Invert the value of $x, i.e., compute 1/$x.
 
 =item bdiv()
 

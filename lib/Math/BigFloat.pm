@@ -2540,6 +2540,23 @@ sub bpow {
     return $x;
 }
 
+sub binv {
+    my ($class, $x, @r) = ref($_[0]) ? (ref($_[0]), @_) : objectify(1, @_);
+
+    return $x if $x->modify('binv');
+
+    my $inv = $class -> bdiv($class -> bone(), $x, @r);
+
+    return $downgrade -> new($inv, @r) if defined($downgrade)
+      && ($inv -> is_int() || $inv -> is_inf() || $inv -> is_nan());
+
+    for my $key (qw/ sign _m _es _e /) {
+        $x -> {$key} = $inv -> {$key};
+    }
+
+    $x;
+}
+
 sub blog {
     # Return the logarithm of the operand. If a second operand is defined, that
     # value is used as the base, otherwise the base is assumed to be Euler's
@@ -6420,6 +6437,12 @@ This method was added in v1.87 of Math::BigInt (June 2007).
 Multiply $x by $y, and then add $z to the result.
 
 This method was added in v1.87 of Math::BigInt (June 2007).
+
+=item binv()
+
+    $x->binv();
+
+Invert the value of $x, i.e., compute 1/$x.
 
 =item bdiv()
 
