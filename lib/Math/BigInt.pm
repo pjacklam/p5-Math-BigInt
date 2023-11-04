@@ -325,10 +325,17 @@ sub div_scale {
     if (@_) {                           # setter
         my $ds = shift;
         croak("The value for 'div_scale' must be defined") unless defined $ds;
+        $ds = $ds -> can('numify') ? $ds -> numify() : 0 + "$ds" if ref($ds);
+        # also croak on non-numerical
+        croak "div_scale must be a number, not '$ds'"
+          unless $ds =~/^[+-]?(?:\d+(?:\.\d*)?|\.\d+)(?:[Ee][+-]?\d+)?\z/;
+        croak "div_scale must be an integer, not '$ds'"
+          if $ds != int $ds;
         # It is not documented what div_scale <= 0 means, but Astro::Units sets
-        # div_scale to 0 and fails its tests if this is not supported.
-        #croak("The value for 'div_scale' must be positive") unless $ds > 0;
-        $ds = $ds -> numify() if defined(blessed($ds));
+        # div_scale to 0 and fails its tests if this is not supported. So we
+        # silently support div_scale = 0.
+        croak "div_scale must be positive, not '$ds'"
+          if $ds < 0;
         no strict 'refs';
         ${"${class}::div_scale"} = $ds;
     }
@@ -5277,6 +5284,13 @@ sub import {
 
         if ($param eq 'round_mode') {
             $class -> round_mode(shift);
+            next;
+        }
+
+        # Fall-back accuracy.
+
+        if ($param eq 'div_scale') {
+            $class -> div_scale(shift);
             next;
         }
 

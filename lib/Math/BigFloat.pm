@@ -5551,6 +5551,13 @@ sub import {
             next;
         }
 
+        # Fall-back accuracy.
+
+        if ($param eq 'div_scale') {
+            $class -> div_scale(shift);
+            next;
+        }
+
         # Backend library.
 
         if ($param =~ /^(lib|try|only)\z/) {
