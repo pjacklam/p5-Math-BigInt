@@ -3219,15 +3219,23 @@ sub bsqrt {
     # calculate square root of $x
     my ($class, $x, @r) = ref($_[0]) ? (ref($_[0]), @_) : objectify(1, @_);
 
-    return $x if $x->modify('bsqrt');
+    return $x if $x -> modify('bsqrt');
 
-    return $x->bnan(@r)  if $x->{sign} !~ /^\+/;    # -x or -inf or NaN => NaN
-    return $x->round(@r) if $x->{sign} eq '+inf';   # sqrt(+inf) == inf
+    return $x -> bnan(@r)  if $x -> is_nan();
+    return $x -> round(@r) if $x -> is_zero() || $x -> is_inf("+");
 
-    return $upgrade->bsqrt($x, @r) if defined $upgrade;
+    if ($upgrade) {
+        $x = $upgrade -> bsqrt($x, @r);
+        $x = $x -> as_int() if $x -> is_int();
+        return $x;
+    }
 
-    $x->{value} = $LIB->_sqrt($x->{value});
-    $x->round(@r);
+    return $x -> bnan(@r) if $x -> is_neg();
+
+    require Math::BigFloat;
+    my $tmp = Math::BigFloat -> bsqrt($x, @r) -> as_int();
+    $x->{value} = $tmp->{value};
+    return $x -> round(@r);
 }
 
 sub broot {
