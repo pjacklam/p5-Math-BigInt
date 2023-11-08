@@ -1039,8 +1039,10 @@ sub bzero {
     # instance with the class variables.
 
     if (@r) {
-        croak "can't specify both accuracy and precision"
-          if @r >= 2 && defined($r[0]) && defined($r[1]);
+        if (@r >= 2 && defined($r[0]) && defined($r[1])) {
+            carp "can't specify both accuracy and precision";
+            return $self -> bnan();
+        }
         $self->{_a} = $_[0];
         $self->{_p} = $_[1];
     } elsif (!$selfref) {
@@ -1098,8 +1100,10 @@ sub bone {
     # instance with the class variables.
 
     if (@r) {
-        croak "can't specify both accuracy and precision"
-          if @r >= 2 && defined($r[0]) && defined($r[1]);
+        if (@r >= 2 && defined($r[0]) && defined($r[1])) {
+            carp "can't specify both accuracy and precision";
+            return $self -> bnan();
+        }
         $self->{_a} = $_[0];
         $self->{_p} = $_[1];
     } elsif (!$selfref) {
@@ -1165,8 +1169,10 @@ sub binf {
     # instance with the class variables.
 
     if (@r) {
-        croak "can't specify both accuracy and precision"
-          if @r >= 2 && defined($r[0]) && defined($r[1]);
+        if (@r >= 2 && defined($r[0]) && defined($r[1])) {
+            carp "can't specify both accuracy and precision";
+            return $self -> bnan();
+        }
         $self->{_a} = $_[0];
         $self->{_p} = $_[1];
     } elsif (!$selfref) {
@@ -1222,8 +1228,10 @@ sub bnan {
     # instance with the class variables.
 
     if (@r) {
-        croak "can't specify both accuracy and precision"
-          if @r >= 2 && defined($r[0]) && defined($r[1]);
+        if (@r >= 2 && defined($r[0]) && defined($r[1])) {
+            carp "can't specify both accuracy and precision";
+            return $self -> bnan();
+        }
         $self->{_a} = $_[0];
         $self->{_p} = $_[1];
     } elsif (!$selfref) {

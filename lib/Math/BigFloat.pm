@@ -895,8 +895,10 @@ sub bzero {
     #return $self -> round(@r);  # this should work, but doesnt; fixme!
 
     if (@r) {
-        croak "can't specify both accuracy and precision"
-          if @r >= 2 && defined($r[0]) && defined($r[1]);
+        if (@r >= 2 && defined($r[0]) && defined($r[1])) {
+            carp "can't specify both accuracy and precision";
+            return $self -> bnan();
+        }
         $self->{_a} = $r[0];
         $self->{_p} = $r[1];
     } else {
@@ -963,8 +965,10 @@ sub bone {
     #return $self -> round(@r);  # this should work, but doesnt; fixme!
 
     if (@r) {
-        croak "can't specify both accuracy and precision"
-          if @r >= 2 && defined($r[0]) && defined($r[1]);
+        if (@r >= 2 && defined($r[0]) && defined($r[1])) {
+            carp "can't specify both accuracy and precision";
+            return $self -> bnan();
+        }
         $self->{_a} = $_[0];
         $self->{_p} = $_[1];
     } else {
@@ -1038,8 +1042,10 @@ sub binf {
     #return $self -> round(@r);  # this should work, but doesnt; fixme!
 
     if (@r) {
-        croak "can't specify both accuracy and precision"
-          if @r >= 2 && defined($r[0]) && defined($r[1]);
+        if (@r >= 2 && defined($r[0]) && defined($r[1])) {
+            carp "can't specify both accuracy and precision";
+            return $self -> bnan();
+        }
         $self->{_a} = $r[0];
         $self->{_p} = $r[1];
     } else {
@@ -1105,8 +1111,10 @@ sub bnan {
     #return $self -> round(@r);  # this should work, but doesnt; fixme!
 
     if (@r) {
-        croak "can't specify both accuracy and precision"
-          if @r >= 2 && defined($r[0]) && defined($r[1]);
+        if (@r >= 2 && defined($r[0]) && defined($r[1])) {
+            carp "can't specify both accuracy and precision";
+            return $self -> bnan();
+        }
         $self->{_a} = $r[0];
         $self->{_p} = $r[1];
     } else {
