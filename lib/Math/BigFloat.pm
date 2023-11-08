@@ -258,6 +258,8 @@ sub STORE {
 }
 
 BEGIN {
+    *objectify = \&Math::BigInt::objectify;
+
     # when someone sets $rnd_mode, we catch this and check the value to see
     # whether it is valid or not.
     $rnd_mode   = 'even';
@@ -761,7 +763,7 @@ sub from_ieee754 {
 
         # The maximum exponent, minimum exponent, and exponent bias.
 
-        my $emax = Math::BigFloat -> new(2) -> bpow($w - 1) -> bdec();
+        my $emax = $class -> new(2) -> bpow($w - 1) -> bdec();
         my $emin = 1 - $emax;
         my $bias = $emax;
 
@@ -1353,7 +1355,7 @@ sub as_int {
         $y = Math::BigInt->new($x->{sign} . $LIB->_str($y));
     }
 
-    # reset upgrading and downgrading
+    # restore upgrading and downgrading
 
     Math::BigInt -> upgrade($upg);
     Math::BigInt -> downgrade($dng);
@@ -1377,7 +1379,7 @@ sub as_float {
 
     my $y = Math::BigFloat -> copy($x);
 
-    # reset upgrading and downgrading
+    # restore upgrading and downgrading
 
     Math::BigFloat -> upgrade($upg);
     Math::BigFloat -> downgrade($dng);
@@ -1412,7 +1414,7 @@ sub as_rat {
                                          . '/' . $LIB -> _str($rat_parts[2]));
     }
 
-    # reset upgrading and downgrading
+    # restore upgrading and downgrading
 
     Math::BigRat -> upgrade($upg);
     Math::BigRat -> downgrade($dng);
@@ -2643,17 +2645,26 @@ sub blog {
         $scale = abs($params[0] || $params[1]) + 4; # take whatever is defined
     }
 
-    # when user set globals, they would interfere with our calculation, so
-    # disable them and later re-enable them
-    no strict 'refs';
-    my $abr = "$class\::accuracy";
-    my $ab = $$abr;
-    $$abr = undef;
-    my $pbr = "$class\::precision";
-    my $pb = $$pbr;
-    $$pbr = undef;
-    # we also need to disable any set A or P on $x (_find_round_parameters took
-    # them already into account), since these would interfere, too
+    # When user set globals, they would interfere with our calculation, so
+    # disable them and later re-enable them.
+
+    my $ab = $class -> accuracy();
+    my $pb = $class -> precision();
+    $class -> accuracy(undef);
+    $class -> precision(undef);
+
+    # Disabling upgrading and downgrading is no longer necessary to avoid an
+    # infinite recursion, but it avoids unnecessary upgrading and downgrading in
+    # the intermediate computations.
+
+    my $upg = $class -> upgrade();
+    my $dng = $class -> downgrade();
+    $class -> upgrade(undef);
+    $class -> downgrade(undef);
+
+    # We also need to disable any set A or P on $x (_find_round_parameters took
+    # them already into account), since these would interfere, too.
+
     $x->{_a} = undef;
     $x->{_p} = undef;
 
@@ -2699,9 +2710,13 @@ sub blog {
         $x->{_a} = undef;
         $x->{_p} = undef;
     }
-    # restore globals
-    $$abr = $ab;
-    $$pbr = $pb;
+
+    # Restore globals.
+
+    $class -> accuracy($ab);
+    $class -> precision($pb);
+    $class -> upgrade($upg);
+    $class -> downgrade($dng);
 
     return $downgrade -> new($x -> bdstr(), @r)
       if defined($downgrade) && $x -> is_int();
@@ -2747,28 +2762,28 @@ sub bexp {
         $class = ref($x);
     }
 
-    # when user set globals, they would interfere with our calculation, so
-    # disable them and later re-enable them
-    no strict 'refs';
-    my $abr = "$class\::accuracy";
-    my $ab = $$abr;
-    $$abr = undef;
-    my $pbr = "$class\::precision";
-    my $pb = $$pbr;
-    $$pbr = undef;
-    # we also need to disable any set A or P on $x (_find_round_parameters took
-    # them already into account), since these would interfere, too
-    $x->{_a} = undef;
-    $x->{_p} = undef;
+    # When user set globals, they would interfere with our calculation, so
+    # disable them and later re-enable them.
+
+    my $ab = $class -> accuracy();
+    my $pb = $class -> precision();
+    $class -> accuracy(undef);
+    $class -> precision(undef);
 
     # Disabling upgrading and downgrading is no longer necessary to avoid an
     # infinite recursion, but it avoids unnecessary upgrading and downgrading in
     # the intermediate computations.
 
-    # Temporarily disable downgrading
+    my $upg = $class -> upgrade();
+    my $dng = $class -> downgrade();
+    $class -> upgrade(undef);
+    $class -> downgrade(undef);
 
-    my $dng = Math::BigFloat -> downgrade();
-    Math::BigFloat -> downgrade(undef);
+    # We also need to disable any set A or P on $x (_find_round_parameters took
+    # them already into account), since these would interfere, too.
+
+    $x->{_a} = undef;
+    $x->{_p} = undef;
 
     my $x_org = $x->copy();
 
@@ -2898,13 +2913,12 @@ sub bexp {
         $x->{_p} = undef;
     }
 
-    # Restore globals
-    $$abr = $ab;
-    $$pbr = $pb;
+    # Restore globals.
 
-    # Restore downgrading.
-
-    Math::BigFloat -> downgrade($dng);
+    $class -> accuracy($ab);
+    $class -> precision($pb);
+    $class -> upgrade($upg);
+    $class -> downgrade($dng);
 
     return $downgrade -> new($x -> bdstr(), @r)
       if defined($downgrade) && $x -> is_int();
@@ -2977,26 +2991,28 @@ sub bsin {
         $scale = abs($params[0] || $params[1]) + 4; # take whatever is defined
     }
 
-    # when user set globals, they would interfere with our calculation, so
+    # When user set globals, they would interfere with our calculation, so
     # disable them and later re-enable them
-    no strict 'refs';
-    my $abr = "$class\::accuracy";
-    my $ab = $$abr;
-    $$abr = undef;
-    my $pbr = "$class\::precision";
-    my $pb = $$pbr;
-    $$pbr = undef;
-    # we also need to disable any set A or P on $x (_find_round_parameters took
-    # them already into account), since these would interfere, too
-    $x->{_a} = undef;
-    $x->{_p} = undef;
+
+    my $ab = $class -> accuracy();
+    my $pb = $class -> precision();
+    $class -> accuracy(undef);
+    $class -> precision(undef);
 
     # Disabling upgrading and downgrading is no longer necessary to avoid an
     # infinite recursion, but it avoids unnecessary upgrading and downgrading in
     # the intermediate computations.
 
-    local $Math::BigInt::upgrade = undef;
-    local $Math::BigFloat::downgrade = undef;
+    my $upg = $class -> upgrade();
+    my $dng = $class -> downgrade();
+    $class -> upgrade(undef);
+    $class -> downgrade(undef);
+
+    # We also need to disable any set A or P on $x (_find_round_parameters took
+    # them already into account), since these would interfere, too.
+
+    $x->{_a} = undef;
+    $x->{_p} = undef;
 
     my $over = $x * $x;         # X ^ 2
     my $x2 = $over->copy();     # X ^ 2; difference between terms
@@ -3041,8 +3057,11 @@ sub bsin {
         $x->{_p} = undef;
     }
     # restore globals
-    $$abr = $ab;
-    $$pbr = $pb;
+
+    $class -> accuracy($ab);
+    $class -> precision($pb);
+    $class -> upgrade($upg);
+    $class -> downgrade($dng);
 
     return $downgrade -> new($x -> bdstr(), @r)
       if defined($downgrade) && $x -> is_int();
@@ -3081,17 +3100,26 @@ sub bcos {
         $scale = abs($params[0] || $params[1]) + 4; # take whatever is defined
     }
 
-    # when user set globals, they would interfere with our calculation, so
-    # disable them and later re-enable them
-    no strict 'refs';
-    my $abr = "$class\::accuracy";
-    my $ab = $$abr;
-    $$abr = undef;
-    my $pbr = "$class\::precision";
-    my $pb = $$pbr;
-    $$pbr = undef;
-    # we also need to disable any set A or P on $x (_find_round_parameters took
-    # them already into account), since these would interfere, too
+    # When user set globals, they would interfere with our calculation, so
+    # disable them and later re-enable them.
+
+    my $ab = $class -> accuracy();
+    my $pb = $class -> precision();
+    $class -> accuracy(undef);
+    $class -> precision(undef);
+
+    # Disabling upgrading and downgrading is no longer necessary to avoid an
+    # infinite recursion, but it avoids unnecessary upgrading and downgrading in
+    # the intermediate computations.
+
+    my $upg = $class -> upgrade();
+    my $dng = $class -> downgrade();
+    $class -> upgrade(undef);
+    $class -> downgrade(undef);
+
+    # We also need to disable any set A or P on $x (_find_round_parameters took
+    # them already into account), since these would interfere, too.
+
     $x->{_a} = undef;
     $x->{_p} = undef;
 
@@ -3138,9 +3166,13 @@ sub bcos {
         $x->{_a} = undef;
         $x->{_p} = undef;
     }
-    # restore globals
-    $$abr = $ab;
-    $$pbr = $pb;
+
+    # Restore globals.
+
+    $class -> accuracy($ab);
+    $class -> precision($pb);
+    $class -> upgrade($upg);
+    $class -> downgrade($dng);
 
     return $downgrade -> new($x -> bdstr(), @r)
       if defined($downgrade) && $x -> is_int();
@@ -3236,24 +3268,26 @@ sub batan {
 
     # When user set globals, they would interfere with our calculation, so
     # disable them and later re-enable them.
-    no strict 'refs';
-    my $abr = "$class\::accuracy";
-    my $ab = $$abr;
-    $$abr = undef;
-    my $pbr = "$class\::precision";
-    my $pb = $$pbr;
-    $$pbr = undef;
-    # We also need to disable any set A or P on $x (_find_round_parameters
-    # took them already into account), since these would interfere, too
-    $x->{_a} = undef;
-    $x->{_p} = undef;
+
+    my $ab = $class -> accuracy();
+    my $pb = $class -> precision();
+    $class -> accuracy(undef);
+    $class -> precision(undef);
 
     # Disabling upgrading and downgrading is no longer necessary to avoid an
     # infinite recursion, but it avoids unnecessary upgrading and downgrading in
     # the intermediate computations.
 
-    local $Math::BigInt::upgrade = undef;
-    local $Math::BigFloat::downgrade = undef;
+    my $upg = $class -> upgrade();
+    my $dng = $class -> downgrade();
+    $class -> upgrade(undef);
+    $class -> downgrade(undef);
+
+    # We also need to disable any set A or P on $x (_find_round_parameters took
+    # them already into account), since these would interfere, too.
+
+    $x->{_a} = undef;
+    $x->{_p} = undef;
 
     my $over = $x * $x;   # X ^ 2
     my $x2 = $over->copy();  # X ^ 2; difference between terms
@@ -3307,9 +3341,12 @@ sub batan {
         $x->{_p} = undef;
     }
 
-    # restore globals
-    $$abr = $ab;
-    $$pbr = $pb;
+    # restore globals.
+
+    $class -> accuracy($ab);
+    $class -> precision($pb);
+    $class -> upgrade($upg);
+    $class -> downgrade($dng);
 
     return $downgrade -> new($x -> bdstr(), @r)
       if defined($downgrade) && ($x -> is_int() || $x -> is_inf());
@@ -3538,26 +3575,28 @@ sub broot {
         $scale = abs($params[0] || $params[1]) + 4; # take whatever is defined
     }
 
-    # when user set globals, they would interfere with our calculation, so
-    # disable them and later re-enable them
-    no strict 'refs';
-    my $abr = "$class\::accuracy";
-    my $ab = $$abr;
-    $$abr = undef;
-    my $pbr = "$class\::precision";
-    my $pb = $$pbr;
-    $$pbr = undef;
-    # we also need to disable any set A or P on $x (_find_round_parameters took
-    # them already into account), since these would interfere, too
-    $x->{_a} = undef;
-    $x->{_p} = undef;
+    # When user set globals, they would interfere with our calculation, so
+    # disable them and later re-enable them.
+
+    my $ab = $class -> accuracy();
+    my $pb = $class -> precision();
+    $class -> accuracy(undef);
+    $class -> precision(undef);
 
     # Disabling upgrading and downgrading is no longer necessary to avoid an
     # infinite recursion, but it avoids unnecessary upgrading and downgrading in
     # the intermediate computations.
 
-    local $Math::BigInt::upgrade = undef;
-    local $Math::BigFloat::downgrade = undef;
+    my $upg = $class -> upgrade();
+    my $dng = $class -> downgrade();
+    $class -> upgrade(undef);
+    $class -> downgrade(undef);
+
+    # We also need to disable any set A or P on $x (_find_round_parameters took
+    # them already into account), since these would interfere, too.
+
+    $x->{_a} = undef;
+    $x->{_p} = undef;
 
     # remember sign and make $x positive, since -4 ** (1/2) => -2
     my $sign = 0;
@@ -3623,9 +3662,13 @@ sub broot {
         $x->{_a} = undef;
         $x->{_p} = undef;
     }
-    # restore globals
-    $$abr = $ab;
-    $$pbr = $pb;
+
+    # Restore globals.
+
+    $class -> accuracy($ab);
+    $class -> precision($pb);
+    $class -> upgrade($upg);
+    $class -> downgrade($dng);
 
     return $downgrade -> new($x -> bdstr(), @r)
       if defined($downgrade) && ($x -> is_int() || $x -> is_inf());
@@ -5399,9 +5442,9 @@ sub numify {
 sub import {
     my $class = shift;
     $IMPORT++;                  # remember we did import()
-
-    my @import = ('objectify');
     my @a;                      # unrecognized arguments
+
+    my @import = ();
 
     while (@_) {
         my $param = shift;
@@ -5494,10 +5537,11 @@ sub import {
 
     Math::BigInt -> import(@import);
 
-    # find out which one was actually loaded
+    # find out which library was actually loaded
     $LIB = Math::BigInt -> config('lib');
 
-    $class->export_to_level(1, $class, @a); # export wanted functions
+    $class -> SUPER::import(@a);                        # for subclasses
+    $class -> export_to_level(1, $class, @a) if @a;     # need this, too
 }
 
 sub _len_to_steps {
@@ -5647,8 +5691,10 @@ sub _log_10 {
 
     # No upgrading or downgrading in the intermediate computations.
 
-    local $Math::BigInt::upgrade = undef;
-    local $Math::BigFloat::downgrade = undef;
+    my $upg = $class -> upgrade();
+    my $dng = $class -> downgrade();
+    $class -> upgrade(undef);
+    $class -> downgrade(undef);
 
     # disable the shortcut for 10, since we need log(10) and this would recurse
     # infinitely deep
@@ -5803,6 +5849,11 @@ sub _log_10 {
     $x = $x->badd($l_10) if defined $l_10; # correct it by ln(10)
     $x = $x->badd($l_2) if defined $l_2;   # and maybe by ln(2)
 
+    # Restore globals
+
+    $class -> upgrade($upg);
+    $class -> downgrade($dng);
+
     # all done, $x contains now the result
     $x;
 }
@@ -5846,26 +5897,28 @@ sub _pow {
         $scale = abs($params[0] || $params[1]) + 4; # take whatever is defined
     }
 
-    # when user set globals, they would interfere with our calculation, so
-    # disable them and later re-enable them
-    no strict 'refs';
-    my $abr = "$class\::accuracy";
-    my $ab = $$abr;
-    $$abr = undef;
-    my $pbr = "$class\::precision";
-    my $pb = $$pbr;
-    $$pbr = undef;
-    # we also need to disable any set A or P on $x (_find_round_parameters took
-    # them already into account), since these would interfere, too
-    $x->{_a} = undef;
-    $x->{_p} = undef;
+    # When user set globals, they would interfere with our calculation, so
+    # disable them and later re-enable them.
+
+    my $ab = $class -> accuracy();
+    my $pb = $class -> precision();
+    $class -> accuracy(undef);
+    $class -> precision(undef);
 
     # Disabling upgrading and downgrading is no longer necessary to avoid an
     # infinite recursion, but it avoids unnecessary upgrading and downgrading in
     # the intermediate computations.
 
-    local $Math::BigInt::upgrade = undef;
-    local $Math::BigFloat::downgrade = undef;
+    my $upg = $class -> upgrade();
+    my $dng = $class -> downgrade();
+    $class -> upgrade(undef);
+    $class -> downgrade(undef);
+
+    # We also need to disable any set A or P on $x (_find_round_parameters took
+    # them already into account), since these would interfere, too.
+
+    $x->{_a} = undef;
+    $x->{_p} = undef;
 
     my ($limit, $v, $u, $below, $factor, $next, $over);
 
@@ -5911,9 +5964,14 @@ sub _pow {
         $x->{_a} = undef;
         $x->{_p} = undef;
     }
-    # restore globals
-    $$abr = $ab;
-    $$pbr = $pb;
+
+    # Restore globals.
+
+    $class -> accuracy($ab);
+    $class -> precision($pb);
+    $class -> upgrade($upg);
+    $class -> downgrade($dng);
+
     $x;
 }
 
