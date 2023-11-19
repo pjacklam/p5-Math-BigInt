@@ -5212,7 +5212,7 @@ sub objectify {
         elsif ($class -> isa('Math::BigFloat')) {
             if ($a[$i] -> can('as_float')) {
                 $a[$i] = $a[$i] -> as_float();
-                $recheck = $1;
+                $recheck = 1;
             }
         }
 
