@@ -5145,8 +5145,6 @@ sub objectify {
     $count ||= @a;
     unshift @a, $class;
 
-    no strict 'refs';
-
     # What we upgrade to, if anything. Note that we need the whole upgrade
     # chain, since there might be multiple levels of upgrading. E.g., class A
     # upgrades to class B, which upgrades to class C. Delay getting the chain
@@ -5158,11 +5156,8 @@ sub objectify {
     # Disable downgrading, because Math::BigFloat -> foo('1.0', '2.0') needs
     # floats.
 
-    my $down;
-    if (defined ${"${class}::downgrade"}) {
-        $down = ${"${class}::downgrade"};
-        ${"${class}::downgrade"} = undef;
-    }
+    my $dng = $class -> downgrade();
+    $class -> downgrade(undef);
 
   ARG: for my $i (1 .. $count) {
 
@@ -5243,9 +5238,9 @@ sub objectify {
         $a[$i] = $class -> new($a[$i]);
     }
 
-    # Reset the downgrading.
+    # Restore the downgrading.
 
-    ${"${class}::downgrade"} = $down;
+    $class -> downgrade($dng);
 
     return @a;
 }
