@@ -5159,9 +5159,9 @@ sub objectify {
     # floats.
 
     my $down;
-    if (defined ${"$a[0]::downgrade"}) {
-        $down = ${"$a[0]::downgrade"};
-        ${"$a[0]::downgrade"} = undef;
+    if (defined ${"${class}::downgrade"}) {
+        $down = ${"${class}::downgrade"};
+        ${"${class}::downgrade"} = undef;
     }
 
   ARG: for my $i (1 .. $count) {
@@ -5171,13 +5171,13 @@ sub objectify {
         # Perl scalars are fed to the appropriate constructor.
 
         unless ($ref) {
-            $a[$i] = $a[0] -> new($a[$i]);
+            $a[$i] = $class -> new($a[$i]);
             next;
         }
 
         # If it is an object of the right class, all is fine.
 
-        next if $ref -> isa($a[0]);
+        next if $ref -> isa($class);
 
         # Upgrading is OK, so skip further tests if the argument is upgraded,
         # but first get the whole upgrade chain if we haven't got it yet.
@@ -5204,7 +5204,7 @@ sub objectify {
 
         my $recheck = 0;
 
-        if ($a[0] -> isa('Math::BigInt')) {
+        if ($class -> isa('Math::BigInt')) {
             if ($a[$i] -> can('as_int')) {
                 $a[$i] = $a[$i] -> as_int();
                 $recheck = 1;
@@ -5214,7 +5214,7 @@ sub objectify {
             }
         }
 
-        elsif ($a[0] -> isa('Math::BigFloat')) {
+        elsif ($class -> isa('Math::BigFloat')) {
             if ($a[$i] -> can('as_float')) {
                 $a[$i] = $a[$i] -> as_float();
                 $recheck = $1;
@@ -5229,23 +5229,23 @@ sub objectify {
             # Perl scalars are fed to the appropriate constructor.
 
             unless ($ref) {
-                $a[$i] = $a[0] -> new($a[$i]);
+                $a[$i] = $class -> new($a[$i]);
                 next;
             }
 
             # If it is an object of the right class, all is fine.
 
-            next if $ref -> isa($a[0]);
+            next if $ref -> isa($class);
         }
 
         # Last resort.
 
-        $a[$i] = $a[0] -> new($a[$i]);
+        $a[$i] = $class -> new($a[$i]);
     }
 
     # Reset the downgrading.
 
-    ${"$a[0]::downgrade"} = $down;
+    ${"${class}::downgrade"} = $down;
 
     return @a;
 }
