@@ -1333,21 +1333,24 @@ sub as_int {
     my ($class, $x, @r) = ref($_[0]) ? (ref($_[0]), @_) : objectify(1, @_);
     carp "Rounding is not supported for ", (caller(0))[3], "()" if @r;
 
-    # If called as an instance method, and the instance class is something we
-    # upgrade to, $x might not be a Math::BigInt, so don't just call copy().
-
     return $x -> copy() if $x -> isa("Math::BigInt");
 
-    # disable upgrading and downgrading
+    # Disable upgrading and downgrading.
 
     my $upg = Math::BigInt -> upgrade();
     my $dng = Math::BigInt -> downgrade();
     Math::BigInt -> upgrade(undef);
     Math::BigInt -> downgrade(undef);
 
+    # Copy the value.
+
     my $y = Math::BigInt -> new($x);
 
-    # reset upgrading and downgrading
+    # Copy the remaining instance variables.
+
+    ($y->{_a}, $y->{_p}) = ($x->{_a}, $x->{_p});
+
+    # Restore upgrading and downgrading
 
     Math::BigInt -> upgrade($upg);
     Math::BigInt -> downgrade($dng);
@@ -1359,7 +1362,7 @@ sub as_float {
     my ($class, $x, @r) = ref($_[0]) ? (ref($_[0]), @_) : objectify(1, @_);
     carp "Rounding is not supported for ", (caller(0))[3], "()" if @r;
 
-    # disable upgrading and downgrading
+    # Disable upgrading and downgrading.
 
     require Math::BigFloat;
     my $upg = Math::BigFloat -> upgrade();
@@ -1367,9 +1370,15 @@ sub as_float {
     Math::BigFloat -> upgrade(undef);
     Math::BigFloat -> downgrade(undef);
 
+    # Copy the value.
+
     my $y = Math::BigFloat -> new($x);
 
-    # reset upgrading and downgrading
+    # Copy the remaining instance variables.
+
+    ($y->{_a}, $y->{_p}) = ($x->{_a}, $x->{_p});
+
+    # Restore upgrading and downgrading..
 
     Math::BigFloat -> upgrade($upg);
     Math::BigFloat -> downgrade($dng);
@@ -1381,7 +1390,7 @@ sub as_rat {
     my ($class, $x, @r) = ref($_[0]) ? (ref($_[0]), @_) : objectify(1, @_);
     carp "Rounding is not supported for ", (caller(0))[3], "()" if @r;
 
-    # disable upgrading and downgrading
+    # Disable upgrading and downgrading.
 
     require Math::BigRat;
     my $upg = Math::BigRat -> upgrade();
@@ -1391,7 +1400,11 @@ sub as_rat {
 
     my $y = Math::BigRat -> new($x);
 
-    # reset upgrading and downgrading
+    # Copy the remaining instance variables.
+
+    ($y->{_a}, $y->{_p}) = ($x->{_a}, $x->{_p});
+
+    # Restore upgrading and downgrading.
 
     Math::BigRat -> upgrade($upg);
     Math::BigRat -> downgrade($dng);
