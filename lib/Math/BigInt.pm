@@ -23,7 +23,7 @@ use warnings;
 use Carp          qw< carp croak >;
 use Scalar::Util  qw< blessed refaddr >;
 
-our $VERSION = '2.001000';
+our $VERSION = '2.001001';
 $VERSION =~ tr/_//d;
 
 require Exporter;
