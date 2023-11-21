@@ -3257,9 +3257,7 @@ sub bsqrt {
 
     return $x -> bnan(@r) if $x -> is_neg();
 
-    require Math::BigFloat;
-    my $tmp = Math::BigFloat -> bsqrt($x, @r) -> as_int();
-    $x->{value} = $tmp->{value};
+    $x->{value} = $LIB -> _sqrt($x->{value});
     return $x -> round(@r);
 }
 
