@@ -3083,36 +3083,53 @@ sub bsin {
     # Calculate a sinus of x.
     my ($class, $x, @r) = ref($_[0]) ? (ref($_[0]), @_) : objectify(1, @_);
 
-    # taylor:      x^3   x^5   x^7   x^9
-    #    sin = x - --- + --- - --- + --- ...
-    #               3!    5!    7!    9!
+    # First we apply range reduction to x. This is because if x is large, the
+    # Taylor series converges slowly and requires higher accuracy in the
+    # intermediate computation. The Taylor series is:
+    #
+    #                 x^3   x^5   x^7   x^9
+    #    sin(x) = x - --- + --- - --- + --- ...
+    #                  3!    5!    7!    9!
 
-    return $x if $x->modify('bsin');
+    return $x if $x -> modify('bsin');
 
-    return $x -> bzero(@r) if $x->is_zero();
-    return $x -> bnan(@r)  if $x->is_nan() || $x->is_inf();
+    return $x -> bzero(@r) if $x -> is_zero();
+    return $x -> bnan(@r)  if $x -> is_nan() || $x -> is_inf();
 
-    # we need to limit the accuracy to protect against overflow
+    # Get the rounding parameters, if any.
+
     my $fallback = 0;
     my ($scale, @params);
-    ($x, @params) = $x->_find_round_parameters(@r);
+    ($x, @params) = $x -> _find_round_parameters(@r);
 
-    # error in _find_round_parameters?
-    return $x->bnan(@r) if $x->is_nan();
+    # Error in _find_round_parameters?
 
-    # no rounding at all, so must use fallback
-    if (scalar @params == 0) {
-        # simulate old behaviour
-        $params[0] = $class->div_scale(); # and round to it as accuracy
-        $params[1] = undef;               # disable P
-        $scale = $params[0]+4;            # at least four more for proper round
-        $params[2] = $r[2];               # round mode by caller or undef
-        $fallback = 1;                    # to clear a/p afterwards
+    return $x -> bnan(@r) if $x -> is_nan();
+
+    # If no rounding parameters are given, use fallback.
+
+    if (!@params) {
+        $params[0] = $class -> div_scale();     # fallback accuracy
+        $params[1] = undef;                     # no precision
+        $params[2] = $r[2];                     # rounding mode
+        $scale = $params[0];
+        $fallback = 1;                          # to clear a/p afterwards
     } else {
-        # the 4 below is empirical, and there might be cases where it is not
-        # enough...
-        $scale = abs($params[0] || $params[1]) + 4; # take whatever is defined
+        if (defined($params[0])) {
+            $scale = $params[0];
+        } else {
+            # We perform the computations below using accuracy only, not
+            # precision, so when precision is given, we need to "convert" this
+            # to accuracy.
+            $scale = 1 - $params[1];
+        }
     }
+
+    # Add more digits to the scale if the magnitude of $x is large.
+
+    my ($m, $e) = $x -> nparts();
+    $scale += $e if $x >= 10;
+    $scale = 4 if $scale < 4;
 
     # When user set globals, they would interfere with our calculation, so
     # disable them and later re-enable them
@@ -3137,57 +3154,114 @@ sub bsin {
     $x->{_a} = undef;
     $x->{_p} = undef;
 
-    my $over = $x * $x;         # X ^ 2
-    my $x2 = $over->copy();     # X ^ 2; difference between terms
-    $over = $over->bmul($x);    # X ^ 3 as starting value
-    my $sign = 1;               # start with -=
-    my $below = $class->new(6);
-    my $factorial = $class->new(4);
-    $x->{_a} = undef;
-    $x->{_p} = undef;
+    my $sin_prev;       # the previous approximation of sin(x)
+    my $sin;            # the current approximation of sin(x)
 
-    my $limit = $class->new("1E-". ($scale-1));
     while (1) {
-        # we calculate the next term, and add it to the last
-        # when the next term is below our limit, it won't affect the outcome
-        # anymore, so we stop:
-        my $next = $over->copy()->bdiv($below, $scale);
-        last if $next->bacmp($limit) <= 0;
 
-        if ($sign == 0) {
-            $x = $x->badd($next);
-        } else {
-            $x = $x->bsub($next);
+        # Compute constants to the current scale.
+
+        my $pi     = $class -> bpi($scale);         # 𝜋
+        my $twopi  = $pi -> copy() -> bmul("2");    # 2𝜋
+        my $halfpi = $pi -> copy() -> bmul("0.5");  # 𝜋/2
+
+        # Use the fact that sin(-x) = -sin(x) to reduce the range to the
+        # interval to [0,∞).
+
+        my $xsgn = $x < 0 ? -1 : 1;
+        my $x = $x -> copy() -> babs();
+
+        # Use the fact that sin(2𝜋x) = sin(x) to reduce the range to the
+        # interval to [0, 2𝜋).
+
+        $x = $x -> bmod($twopi, $scale);
+
+        # Use the fact that sin(x+𝜋) = -sin(x) to reduce the range to the
+        # interval to [0,𝜋).
+
+        if ($x -> bcmp($pi) > 0) {
+            $xsgn = -$xsgn;
+            $x = $x -> bsub($pi);
         }
-        $sign = 1-$sign;        # alternate
-        # calculate things for the next term
-        $over = $over->bmul($x2);                       # $x*$x
-        $below = $below->bmul($factorial);              # n*(n+1)
-        $factorial = $factorial->binc();
-        $below = $below -> bmul($factorial);              # n*(n+1)
-        $factorial = $factorial->binc();
+
+        # Use the fact that sin(𝜋-x) = sin(x) to reduce the range to the
+        # interval [0,𝜋/2).
+
+        if ($x -> bcmp($halfpi) > 0) {
+            $x = $x -> bsub($pi) -> bneg();     # 𝜋 - x
+        }
+
+        my $tol = $class -> new("1E-". ($scale-1));
+
+        my $xsq  = $x -> copy() -> bmul($x, $scale) -> bneg();
+        my $term = $x -> copy();
+        my $fac  = $class -> bone();
+        my $n    = $class -> bone();
+
+        $sin = $x -> copy();    # initialize sin(x) to the first term
+
+        while (1) {
+            $n -> binc();
+            $fac = $n -> copy();
+            $n -> binc();
+            $fac -> bmul($n);
+
+            $term -> bmul($xsq, $scale) -> bdiv($fac, $scale);
+
+            $sin -> badd($term, $scale);
+            last if $term -> copy() -> babs() -> bcmp($tol) < 0;
+        }
+
+        $sin -> bneg() if $xsgn < 0;
+
+        # Rounding parameters given as arguments currently don't override
+        # instance variables, so accuracy (which is set in the computations
+        # above) must be undefined before rounding. Fixme.
+
+        $sin->{_a} = undef;
+        $sin -> round(@params);
+
+        # Compare the current approximation of sin(x) with the previous one,
+        # and if they are identical, we're done.
+
+        if (defined $sin_prev) {
+            last if $sin -> bcmp($sin_prev) == 0;
+        }
+
+        # If the current approximation of sin(x) is different from the previous
+        # approximation, double the scale (accuracy) and retry.
+
+        $sin_prev = $sin;
+        $scale *= 2;
     }
 
-    # shortcut to not run through _find_round_parameters again
-    if (defined $params[0]) {
-        $x = $x->bround($params[0], $params[2]); # then round accordingly
-    } else {
-        $x = $x->bfround($params[1], $params[2]); # then round accordingly
-    }
+    # Assign the result to the invocand.
+
+    %$x = %$sin;
+
     if ($fallback) {
         # clear a/p after round, since user did not request it
         $x->{_a} = undef;
         $x->{_p} = undef;
     }
-    # restore globals
+
+    # Restore globals.
 
     $class -> accuracy($ab);
     $class -> precision($pb);
     $class -> upgrade($upg);
     $class -> downgrade($dng);
 
-    return $downgrade -> new($x -> bdstr(), @r)
-      if defined($downgrade) && $x -> is_int();
+    # If downgrading, remember to preserve the relevant instance parameters.
+    # There should be a more elegant way to do this. Fixme.
+
+    if ($downgrade && $x -> is_int()) {
+        @r = ($x->{_a}, $x->{_r});
+        my $tmp = $downgrade -> new($x, @r);
+        %$x = %$tmp;
+        return bless $x, $downgrade;
+    }
+
     $x;
 }
 
