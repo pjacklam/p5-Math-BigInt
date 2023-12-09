@@ -1,3 +1,7 @@
+2.002001 2023-12-09
+
+ * Fix CPAN RT #150523
+
 2.002000 2023-12-02
 
  * Fix bug in Math::BigFloat method bsin(). It can now handle any argument to
