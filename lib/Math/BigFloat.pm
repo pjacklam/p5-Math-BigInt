@@ -2728,10 +2728,15 @@ sub blog {
         $x->{_p} = undef;
     }
 
-    # Restore globals.
+    # Restore globals. We need to do it like this, because setting one
+    # undefines the other.
 
-    $class -> accuracy($ab);
-    $class -> precision($pb);
+    if (defined $ab) {
+        $class -> accuracy($ab);
+    } else {
+        $class -> precision($pb);
+    }
+
     $class -> upgrade($upg);
     $class -> downgrade($dng);
 
@@ -3028,10 +3033,15 @@ sub bexp {
         $x->{_p} = undef;
     }
 
-    # Restore globals.
+    # Restore globals. We need to do it like this, because setting one
+    # undefines the other.
 
-    $class -> accuracy($ab);
-    $class -> precision($pb);
+    if (defined $ab) {
+        $class -> accuracy($ab);
+    } else {
+        $class -> precision($pb);
+    }
+
     $class -> upgrade($upg);
     $class -> downgrade($dng);
 
@@ -3245,10 +3255,15 @@ sub bsin {
         $x->{_p} = undef;
     }
 
-    # Restore globals.
+    # Restore globals. We need to do it like this, because setting one
+    # undefines the other.
 
-    $class -> accuracy($ab);
-    $class -> precision($pb);
+    if (defined $ab) {
+        $class -> accuracy($ab);
+    } else {
+        $class -> precision($pb);
+    }
+
     $class -> upgrade($upg);
     $class -> downgrade($dng);
 
@@ -3364,10 +3379,15 @@ sub bcos {
         $x->{_p} = undef;
     }
 
-    # Restore globals.
+    # Restore globals. We need to do it like this, because setting one
+    # undefines the other.
 
-    $class -> accuracy($ab);
-    $class -> precision($pb);
+    if (defined $ab) {
+        $class -> accuracy($ab);
+    } else {
+        $class -> precision($pb);
+    }
+
     $class -> upgrade($upg);
     $class -> downgrade($dng);
 
@@ -3538,10 +3558,15 @@ sub batan {
         $x->{_p} = undef;
     }
 
-    # restore globals.
+    # Restore globals. We need to do it like this, because setting one
+    # undefines the other.
 
-    $class -> accuracy($ab);
-    $class -> precision($pb);
+    if (defined $ab) {
+        $class -> accuracy($ab);
+    } else {
+        $class -> precision($pb);
+    }
+
     $class -> upgrade($upg);
     $class -> downgrade($dng);
 
@@ -3860,10 +3885,15 @@ sub broot {
         $x->{_p} = undef;
     }
 
-    # Restore globals.
+    # Restore globals. We need to do it like this, because setting one
+    # undefines the other.
 
-    $class -> accuracy($ab);
-    $class -> precision($pb);
+    if (defined $ab) {
+        $class -> accuracy($ab);
+    } else {
+        $class -> precision($pb);
+    }
+
     $class -> upgrade($upg);
     $class -> downgrade($dng);
 
@@ -6162,10 +6192,15 @@ sub _pow {
         $x->{_p} = undef;
     }
 
-    # Restore globals.
+    # Restore globals. We need to do it like this, because setting one
+    # undefines the other.
 
-    $class -> accuracy($ab);
-    $class -> precision($pb);
+    if (defined $ab) {
+        $class -> accuracy($ab);
+    } else {
+        $class -> precision($pb);
+    }
+
     $class -> upgrade($upg);
     $class -> downgrade($dng);
 
