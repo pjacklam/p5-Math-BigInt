@@ -298,17 +298,28 @@ sub upgrade {
     my $self = shift;
     my $class = ref($self) || $self || __PACKAGE__;
 
-    no strict 'refs';
-
     # setter/mutator
 
     if (@_) {
-        return ${"${class}::upgrade"} = $_[0];
+        my $u = shift;
+        if (ref($self) && exists $self -> {upgrade}) {
+            $self -> {upgrade} = $u;
+        } else {
+            no strict 'refs';
+            ${"${class}::upgrade"} = $u;
+        }
     }
 
     # getter/accessor
 
-    ${"${class}::upgrade"};
+    else {
+        if (ref($self) && exists $self -> {upgrade}) {
+            return $self -> {upgrade};
+        } else {
+            no strict 'refs';
+            return ${"${class}::upgrade"};
+        }
+    }
 }
 
 sub downgrade {
