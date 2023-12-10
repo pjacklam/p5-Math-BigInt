@@ -8,10 +8,11 @@ package Math::BigInt;
 #
 
 # The following hash values are used:
-#   value: unsigned int with actual value (as a Math::BigInt::Calc or similar)
-#   sign : +, -, NaN, +inf, -inf
-#   _a   : accuracy
-#   _p   : precision
+#
+#          sign : "+", "-", "+inf", "-inf", or "NaN"
+#         value : unsigned int with actual value ($LIB thingy)
+#      accuracy : accuracy (scalar)
+#            _p : precision (scalar)
 
 # Remember not to take shortcuts ala $xs = $x->{value}; $LIB->foo($xs); since
 # underlying lib might change the reference!
@@ -383,7 +384,7 @@ sub accuracy {
         if (ref($x)) {
             # Set instance variable.
             $x = $x->bround($a) if defined $a;
-            $x->{_a} = $a;      # set/overwrite, even if not rounded
+            $x->{accuracy} = $a;      # set/overwrite, even if not rounded
             $x->{_p} = undef;   # clear P
             # Why return class variable here? Fixme!
             $a = ${"${class}::accuracy"} unless defined $a;
@@ -399,7 +400,7 @@ sub accuracy {
     # getter/accessor
 
     # Return instance variable.
-    return $x->{_a} if ref($x);
+    return $x->{accuracy} if ref($x);
 
     # Return class variable.
     return ${"${class}::accuracy"};
@@ -427,7 +428,7 @@ sub precision {
             # Set instance variable.
             $x = $x->bfround($p) if defined $p;
             $x->{_p} = $p;      # set/overwrite, even if not rounded
-            $x->{_a} = undef;   # clear A
+            $x->{accuracy} = undef;   # clear A
             # Why return class variable here? Fixme!
             $p = ${"${class}::precision"} unless defined $p;
         } else {
@@ -516,7 +517,7 @@ sub _scale_a {
     # used by bround() and bfround(), may return undef for scale (means no op)
     my ($x, $scale, $mode) = @_;
 
-    $scale = $x->{_a} unless defined $scale;
+    $scale = $x->{accuracy} unless defined $scale;
 
     no strict 'refs';
     my $class = ref($x);
@@ -1055,10 +1056,10 @@ sub bzero {
             carp "can't specify both accuracy and precision";
             return $self -> bnan();
         }
-        $self->{_a} = $_[0];
+        $self->{accuracy} = $_[0];
         $self->{_p} = $_[1];
     } elsif (!$selfref) {
-        $self->{_a} = $class -> accuracy();
+        $self->{accuracy} = $class -> accuracy();
         $self->{_p} = $class -> precision();
     }
 
@@ -1116,10 +1117,10 @@ sub bone {
             carp "can't specify both accuracy and precision";
             return $self -> bnan();
         }
-        $self->{_a} = $_[0];
+        $self->{accuracy} = $_[0];
         $self->{_p} = $_[1];
     } elsif (!$selfref) {
-        $self->{_a} = $class -> accuracy();
+        $self->{accuracy} = $class -> accuracy();
         $self->{_p} = $class -> precision();
     }
 
@@ -1185,10 +1186,10 @@ sub binf {
             carp "can't specify both accuracy and precision";
             return $self -> bnan();
         }
-        $self->{_a} = $_[0];
+        $self->{accuracy} = $_[0];
         $self->{_p} = $_[1];
     } elsif (!$selfref) {
-        $self->{_a} = $class -> accuracy();
+        $self->{accuracy} = $class -> accuracy();
         $self->{_p} = $class -> precision();
     }
 
@@ -1244,10 +1245,10 @@ sub bnan {
             carp "can't specify both accuracy and precision";
             return $self -> bnan();
         }
-        $self->{_a} = $_[0];
+        $self->{accuracy} = $_[0];
         $self->{_p} = $_[1];
     } elsif (!$selfref) {
-        $self->{_a} = $class -> accuracy();
+        $self->{accuracy} = $class -> accuracy();
         $self->{_p} = $class -> precision();
     }
 
@@ -1323,7 +1324,7 @@ sub copy {
 
     $copy->{sign}  = $x->{sign};
     $copy->{value} = $LIB->_copy($x->{value});
-    $copy->{_a}    = $x->{_a} if exists $x->{_a};
+    $copy->{accuracy}    = $x->{accuracy} if exists $x->{accuracy};
     $copy->{_p}    = $x->{_p} if exists $x->{_p};
 
     return $copy;
@@ -1348,7 +1349,7 @@ sub as_int {
 
     # Copy the remaining instance variables.
 
-    ($y->{_a}, $y->{_p}) = ($x->{_a}, $x->{_p});
+    ($y->{accuracy}, $y->{_p}) = ($x->{accuracy}, $x->{_p});
 
     # Restore upgrading and downgrading
 
@@ -1376,7 +1377,7 @@ sub as_float {
 
     # Copy the remaining instance variables.
 
-    ($y->{_a}, $y->{_p}) = ($x->{_a}, $x->{_p});
+    ($y->{accuracy}, $y->{_p}) = ($x->{accuracy}, $x->{_p});
 
     # Restore upgrading and downgrading..
 
@@ -1402,7 +1403,7 @@ sub as_rat {
 
     # Copy the remaining instance variables.
 
-    ($y->{_a}, $y->{_p}) = ($x->{_a}, $x->{_p});
+    ($y->{accuracy}, $y->{_p}) = ($x->{accuracy}, $x->{_p});
 
     # Restore upgrading and downgrading.
 
@@ -2279,7 +2280,7 @@ sub bdiv {
             }
             $rem -> {sign} = $ysign;
         }
-        $rem -> {_a} = $x -> {_a};
+        $rem -> {accuracy} = $x -> {accuracy};
         $rem -> {_p} = $x -> {_p};
         $rem = $rem -> round(@r);
         return ($x, $rem);
@@ -2423,7 +2424,7 @@ sub btdiv {
     if (wantarray) {
         $rem -> {sign} = $xsign;
         $rem -> {sign} = '+' if $LIB -> _is_zero($rem -> {value});
-        $rem -> {_a} = $x -> {_a};
+        $rem -> {accuracy} = $x -> {accuracy};
         $rem -> {_p} = $x -> {_p};
         $rem = $rem -> round(@r);
         return ($x, $rem);
@@ -4010,7 +4011,7 @@ sub round {
     # $x->round(undef, undef) signals no rounding
 
     if (@args >= 2 && @args <= 3 && !defined($args[0]) && !defined($args[1])) {
-        $self->{_a} = undef;
+        $self->{accuracy} = undef;
         $self->{_p} = undef;
         return $self;
     }
@@ -4036,8 +4037,8 @@ sub round {
     if (!defined $a) {
         foreach ($self, @args) {
             # take the defined one, or if both defined, the one that is smaller
-            $a = $_->{_a}
-              if (defined $_->{_a}) && (!defined $a || $_->{_a} < $a);
+            $a = $_->{accuracy}
+              if (defined $_->{accuracy}) && (!defined $a || $_->{accuracy} < $a);
         }
     }
     if (!defined $p) {
@@ -4075,7 +4076,7 @@ sub round {
     # now round, by calling either bround or bfround:
     if (defined $a) {
         $self = $self->bround(int($a), $r)
-          if !defined $self->{_a} || $self->{_a} >= $a;
+          if !defined $self->{accuracy} || $self->{accuracy} >= $a;
     } else {                  # both can't be undefined due to early out
         $self = $self->bfround(int($p), $r)
           if !defined $self->{_p} || $self->{_p} <= $p;
@@ -4098,7 +4099,7 @@ sub bround {
     return $x if !defined $scale || $x->modify('bround'); # no-op
 
     if ($x->is_zero() || $scale == 0) {
-        $x->{_a} = $scale if !defined $x->{_a} || $x->{_a} > $scale; # 3 > 2
+        $x->{accuracy} = $scale if !defined $x->{accuracy} || $x->{accuracy} > $scale; # 3 > 2
         return $x;
     }
     return $x if $x->{sign} !~ /^[+-]$/; # inf, NaN
@@ -4112,7 +4113,7 @@ sub bround {
 
     # scale < 0, but > -len (not >=!)
     if (($scale < 0 && $scale < -$len-1) || ($scale >= $len)) {
-        $x->{_a} = $scale if !defined $x->{_a} || $x->{_a} > $scale; # 3 > 2
+        $x->{accuracy} = $scale if !defined $x->{accuracy} || $x->{accuracy} > $scale; # 3 > 2
         return $x;
     }
 
@@ -4180,10 +4181,10 @@ sub bround {
     }
     $x->{value} = $LIB->_new($xs) if $put_back == 1; # put back, if needed
 
-    $x->{_a} = $scale if $scale >= 0;
+    $x->{accuracy} = $scale if $scale >= 0;
     if ($scale < 0) {
-        $x->{_a} = $len+$scale;
-        $x->{_a} = 0 if $scale < -$len;
+        $x->{accuracy} = $len+$scale;
+        $x->{accuracy} = 0 if $scale < -$len;
     }
     $x;
 }
@@ -4201,7 +4202,7 @@ sub bfround {
     # no-op for Math::BigInt objects if $n <= 0
     $x = $x->bround($x->length()-$scale, $mode) if $scale > 0;
 
-    $x->{_a} = undef;
+    $x->{accuracy} = undef;
     $x->{_p} = $scale;          # store new _p
     $x;
 }
@@ -5526,8 +5527,8 @@ sub _find_round_parameters {
     if (!defined $a) {
         foreach ($self, @args) {
             # take the defined one, or if both defined, the one that is smaller
-            $a = $_->{_a}
-              if (defined $_->{_a}) && (!defined $a || $_->{_a} < $a);
+            $a = $_->{accuracy}
+              if (defined $_->{accuracy}) && (!defined $a || $_->{accuracy} < $a);
         }
     }
     if (!defined $p) {

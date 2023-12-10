@@ -3,11 +3,12 @@
 #
 
 # The following hash values are used:
-#   sign : +,-,NaN,+inf,-inf
-#   _d   : denominator
-#   _n   : numerator (value = _n/_d)
-#   _a   : accuracy
-#   _p   : precision
+#          sign : "+", "-", "+inf", "-inf", or "NaN"
+#            _d : denominator
+#            _n : numerator (value = _n/_d)
+#      accuracy : accuracy
+#            _p : precision
+#
 # You should not look at the innards of a BigRat - use the methods for this.
 
 package Math::BigRat;
@@ -571,10 +572,10 @@ sub copy {
     $copy->{sign} = $self->{sign};
     $copy->{_d} = $LIB->_copy($self->{_d});
     $copy->{_n} = $LIB->_copy($self->{_n});
-    $copy->{_a} = $self->{_a} if defined $self->{_a};
+    $copy->{accuracy} = $self->{accuracy} if defined $self->{accuracy};
     $copy->{_p} = $self->{_p} if defined $self->{_p};
 
-    #($copy, $copy->{_a}, $copy->{_p})
+    #($copy, $copy->{accuracy}, $copy->{_p})
     #  = $copy->_find_round_parameters(@_);
 
     return $copy;
@@ -601,7 +602,7 @@ sub bnan {
     $self -> {_n}   = $LIB -> _zero();
     $self -> {_d}   = $LIB -> _one();
 
-    ($self, $self->{_a}, $self->{_p})
+    ($self, $self->{accuracy}, $self->{_p})
       = $self->_find_round_parameters(@_);
 
     return $self;
@@ -631,7 +632,7 @@ sub binf {
     $self -> {_n}   = $LIB -> _zero();
     $self -> {_d}   = $LIB -> _one();
 
-    ($self, $self->{_a}, $self->{_p})
+    ($self, $self->{accuracy}, $self->{_p})
       = $self->_find_round_parameters(@_);
 
     return $self;
@@ -656,7 +657,7 @@ sub bone {
     $self -> {_n}   = $LIB -> _one();
     $self -> {_d}   = $LIB -> _one();
 
-    ($self, $self->{_a}, $self->{_p})
+    ($self, $self->{accuracy}, $self->{_p})
       = $self->_find_round_parameters(@_);
 
     return $self;
@@ -678,7 +679,7 @@ sub bzero {
     $self -> {_n}   = $LIB -> _zero();
     $self -> {_d}   = $LIB -> _one();
 
-    ($self, $self->{_a}, $self->{_p})
+    ($self, $self->{accuracy}, $self->{_p})
       = $self->_find_round_parameters(@_);
 
     return $self;
@@ -1727,7 +1728,7 @@ sub bexp {
         $x->bpow($x_org, @params);
     } else {
         # else just round the already computed result
-        delete $x->{_a}; delete $x->{_p};
+        delete $x->{accuracy}; delete $x->{_p};
         # shortcut to not run through _find_round_parameters again
         if (defined $params[0]) {
             $x->bround($params[0], $params[2]); # then round accordingly
@@ -1737,7 +1738,7 @@ sub bexp {
     }
     if ($fallback) {
         # clear a/p after round, since user did not request it
-        delete $x->{_a}; delete $x->{_p};
+        delete $x->{accuracy}; delete $x->{_p};
     }
 
     $x;
@@ -2336,7 +2337,7 @@ sub as_int {
 
     # Copy the remaining instance variables.
 
-    ($y->{_a}, $y->{_p}) = ($x->{_a}, $x->{_p});
+    ($y->{accuracy}, $y->{_p}) = ($x->{accuracy}, $x->{_p});
 
     # Restore upgrading and downgrading.
 
@@ -2365,7 +2366,7 @@ sub as_rat {
 
     # Copy the remaining instance variables.
 
-    ($y->{_a}, $y->{_p}) = ($x->{_a}, $x->{_p});
+    ($y->{accuracy}, $y->{_p}) = ($x->{accuracy}, $x->{_p});
 
     # Restore upgrading and downgrading
 
@@ -2406,7 +2407,7 @@ sub as_float {
 
     # Copy the remaining instance variables.
 
-    ($y->{_a}, $y->{_p}) = ($x->{_a}, $x->{_p});
+    ($y->{accuracy}, $y->{_p}) = ($x->{accuracy}, $x->{_p});
 
     # Restore upgrading and downgrading.
 

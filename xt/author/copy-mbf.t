@@ -61,7 +61,7 @@ subtest '$y = $x -> copy()' => sub {
 
     # accuracy and precision
 
-    is($y->{_a}, $x->{_a}, 'accuracy');
+    is($y->{accuracy}, $x->{accuracy}, 'accuracy');
     is($y->{_p}, $x->{_p}, 'precision');
 };
 
@@ -113,6 +113,6 @@ subtest 'Math::BigFloat -> copy($x)' => sub {
 
     # accuracy and precision
 
-    is($y->{_a}, $x->{_a}, 'accuracy');
+    is($y->{accuracy}, $x->{accuracy}, 'accuracy');
     is($y->{_p}, $x->{_p}, 'precision');
 };

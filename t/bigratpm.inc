@@ -159,22 +159,22 @@ is($x, 1200, qq|\$x = Math::BigInt->new(1200); \$y = $CLASS->new(\$x); $x|);
 
 $x = $CLASS->new(2);
 $x->bzero();
-is($x->{_a}, undef, qq|\$x = $CLASS->new(2); \$x->bzero(); \$x->{_a}|);
+is($x->{accuracy}, undef, qq|\$x = $CLASS->new(2); \$x->bzero(); \$x->{accuracy}|);
 is($x->{_p}, undef, qq|\$x = $CLASS->new(2); \$x->bzero(); \$x->{_p}|);
 
 $x = $CLASS->new(2);
 $x->binf();
-is($x->{_a}, undef, qq|\$x = $CLASS->new(2); \$x->binf(); \$x->{_a}|);
+is($x->{accuracy}, undef, qq|\$x = $CLASS->new(2); \$x->binf(); \$x->{accuracy}|);
 is($x->{_p}, undef, qq|\$x = $CLASS->new(2); \$x->binf(); \$x->{_p}|);
 
 $x = $CLASS->new(2);
 $x->bone();
-is($x->{_a}, undef, qq|\$x = $CLASS->new(2); \$x->bone(); \$x->{_a}|);
+is($x->{accuracy}, undef, qq|\$x = $CLASS->new(2); \$x->bone(); \$x->{accuracy}|);
 is($x->{_p}, undef, qq|\$x = $CLASS->new(2); \$x->bone(); \$x->{_p}|);
 
 $x = $CLASS->new(2);
 $x->bnan();
-is($x->{_a}, undef, qq|\$x = $CLASS->new(2); \$x->bnan(); \$x->{_a}|);
+is($x->{accuracy}, undef, qq|\$x = $CLASS->new(2); \$x->bnan(); \$x->{accuracy}|);
 is($x->{_p}, undef, qq|\$x = $CLASS->new(2); \$x->bnan(); \$x->{_p}|);
 
 __DATA__

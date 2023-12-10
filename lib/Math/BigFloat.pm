@@ -5,12 +5,13 @@ package Math::BigFloat;
 #
 
 # The following hash values are used internally:
-# sign  : "+", "-", "+inf", "-inf", or "NaN" if not a number
-#   _m  : mantissa ($LIB thingy)
-#   _es : sign of _e
-#   _e  : exponent ($LIB thingy)
-#   _a  : accuracy
-#   _p  : precision
+#
+#          sign : "+", "-", "+inf", "-inf", or "NaN"
+#            _m : absolute value of mantissa ($LIB thingy)
+#           _es : sign of exponent ("+" or "-")
+#            _e : absolute value of exponent ($LIB thingy)
+#      accuracy : accuracy (scalar)
+#            _p : precision (scalar)
 
 use 5.006001;
 use strict;
@@ -901,11 +902,11 @@ sub bzero {
             carp "can't specify both accuracy and precision";
             return $self -> bnan();
         }
-        $self->{_a} = $r[0];
+        $self->{accuracy} = $r[0];
         $self->{_p} = $r[1];
     } else {
         unless($selfref) {
-            $self->{_a} = $class -> accuracy();
+            $self->{accuracy} = $class -> accuracy();
             $self->{_p} = $class -> precision();
         }
     }
@@ -971,11 +972,11 @@ sub bone {
             carp "can't specify both accuracy and precision";
             return $self -> bnan();
         }
-        $self->{_a} = $_[0];
+        $self->{accuracy} = $_[0];
         $self->{_p} = $_[1];
     } else {
         unless($selfref) {
-            $self->{_a} = $class -> accuracy();
+            $self->{accuracy} = $class -> accuracy();
             $self->{_p} = $class -> precision();
         }
     }
@@ -1048,11 +1049,11 @@ sub binf {
             carp "can't specify both accuracy and precision";
             return $self -> bnan();
         }
-        $self->{_a} = $r[0];
+        $self->{accuracy} = $r[0];
         $self->{_p} = $r[1];
     } else {
         unless($selfref) {
-            $self->{_a} = $class -> accuracy();
+            $self->{accuracy} = $class -> accuracy();
             $self->{_p} = $class -> precision();
         }
     }
@@ -1117,11 +1118,11 @@ sub bnan {
             carp "can't specify both accuracy and precision";
             return $self -> bnan();
         }
-        $self->{_a} = $r[0];
+        $self->{accuracy} = $r[0];
         $self->{_p} = $r[1];
     } else {
         unless($selfref) {
-            $self->{_a} = $class -> accuracy();
+            $self->{accuracy} = $class -> accuracy();
             $self->{_p} = $class -> precision();
         }
     }
@@ -1292,7 +1293,7 @@ EOF
         $pi -> precision($r[1]);
     }
 
-    for my $key (qw/ sign _m _es _e _a _p /) {
+    for my $key (qw/ sign _m _es _e accuracy _p /) {
         $self -> {$key} = $pi -> {$key};
     }
 
@@ -1319,7 +1320,7 @@ sub copy {
     $copy->{_es}  = $x->{_es};
     $copy->{_m}   = $LIB->_copy($x->{_m});
     $copy->{_e}   = $LIB->_copy($x->{_e});
-    $copy->{_a}   = $x->{_a} if exists $x->{_a};
+    $copy->{accuracy}   = $x->{accuracy} if exists $x->{accuracy};
     $copy->{_p}   = $x->{_p} if exists $x->{_p};
 
     return $copy;
@@ -1359,7 +1360,7 @@ sub as_int {
 
     # Copy the remaining instance variables.
 
-    ($y->{_a}, $y->{_p}) = ($x->{_a}, $x->{_p});
+    ($y->{accuracy}, $y->{_p}) = ($x->{accuracy}, $x->{_p});
 
     # Restore upgrading and downgrading.
 
@@ -1388,7 +1389,7 @@ sub as_float {
 
     # Copy the remaining instance variables.
 
-    ($y->{_a}, $y->{_p}) = ($x->{_a}, $x->{_p});
+    ($y->{accuracy}, $y->{_p}) = ($x->{accuracy}, $x->{_p});
 
     # Restore upgrading and downgrading.
 
@@ -1429,7 +1430,7 @@ sub as_rat {
 
     # Copy the remaining instance variables.
 
-    ($y->{_a}, $y->{_p}) = ($x->{_a}, $x->{_p});
+    ($y->{accuracy}, $y->{_p}) = ($x->{accuracy}, $x->{_p});
 
     # Restore upgrading and downgrading.
 
@@ -2289,7 +2290,7 @@ sub bdiv {
 
     # shortcut to not run through _find_round_parameters again
     if (defined $params[0]) {
-        $x->{_a} = undef;               # clear before round
+        $x->{accuracy} = undef;               # clear before round
         $x = $x->bround($params[0], $params[2]); # then round accordingly
     } else {
         $x->{_p} = undef;               # clear before round
@@ -2297,7 +2298,7 @@ sub bdiv {
     }
     if ($fallback) {
         # clear a/p after round, since user did not request it
-        $x->{_a} = undef;
+        $x->{accuracy} = undef;
         $x->{_p} = undef;
     }
 
@@ -2308,7 +2309,7 @@ sub bdiv {
         }
         if ($fallback) {
             # clear a/p after round, since user did not request it
-            $rem->{_a} = undef;
+            $rem->{accuracy} = undef;
             $rem->{_p} = undef;
         }
         $x = $downgrade -> new($x -> bdstr(), @r)
@@ -2682,7 +2683,7 @@ sub blog {
     # We also need to disable any set A or P on $x (_find_round_parameters took
     # them already into account), since these would interfere, too.
 
-    $x->{_a} = undef;
+    $x->{accuracy} = undef;
     $x->{_p} = undef;
 
     my $done = 0;
@@ -2724,7 +2725,7 @@ sub blog {
     }
     if ($fallback) {
         # clear a/p after round, since user did not request it
-        $x->{_a} = undef;
+        $x->{accuracy} = undef;
         $x->{_p} = undef;
     }
 
@@ -2822,7 +2823,7 @@ sub bexp {
     # We also need to disable any set A or P on $x (_find_round_parameters took
     # them already into account), since these would interfere, too.
 
-    $x->{_a} = undef;
+    $x->{accuracy} = undef;
     $x->{_p} = undef;
 
     my $x_orig = $x -> copy();
@@ -2926,7 +2927,7 @@ sub bexp {
 
         # else just round the already computed result
 
-        $x->{_a} = undef;
+        $x->{accuracy} = undef;
         $x->{_p} = undef;
 
         # shortcut to not run through _find_round_parameters again
@@ -3023,13 +3024,13 @@ sub bexp {
         # instance variables, so accuracy (which is set in the computations
         # above) must be undefined before rounding. Fixme.
 
-        $x->{_a} = undef;
+        $x->{accuracy} = undef;
         $x -> round(@params);
     }
 
     if ($fallback) {
         # clear a/p after round, since user did not request it
-        $x->{_a} = undef;
+        $x->{accuracy} = undef;
         $x->{_p} = undef;
     }
 
@@ -3049,7 +3050,7 @@ sub bexp {
     # There should be a more elegant way to do this. Fixme.
 
     if ($downgrade && $x -> is_int()) {
-        @r = ($x->{_a}, $x->{_r});
+        @r = ($x->{accuracy}, $x->{_r});
         my $tmp = $downgrade -> new($x, @r);
         %$x = %$tmp;
         return bless $x, $downgrade;
@@ -3161,7 +3162,7 @@ sub bsin {
     # We also need to disable any set A or P on $x (_find_round_parameters took
     # them already into account), since these would interfere, too.
 
-    $x->{_a} = undef;
+    $x->{accuracy} = undef;
     $x->{_p} = undef;
 
     my $sin_prev;       # the previous approximation of sin(x)
@@ -3228,7 +3229,7 @@ sub bsin {
         # instance variables, so accuracy (which is set in the computations
         # above) must be undefined before rounding. Fixme.
 
-        $sin->{_a} = undef;
+        $sin->{accuracy} = undef;
         $sin -> round(@params);
 
         # Compare the current approximation of sin(x) with the previous one,
@@ -3251,7 +3252,7 @@ sub bsin {
 
     if ($fallback) {
         # clear a/p after round, since user did not request it
-        $x->{_a} = undef;
+        $x->{accuracy} = undef;
         $x->{_p} = undef;
     }
 
@@ -3271,7 +3272,7 @@ sub bsin {
     # There should be a more elegant way to do this. Fixme.
 
     if ($downgrade && $x -> is_int()) {
-        @r = ($x->{_a}, $x->{_r});
+        @r = ($x->{accuracy}, $x->{_r});
         my $tmp = $downgrade -> new($x, @r);
         %$x = %$tmp;
         return bless $x, $downgrade;
@@ -3332,7 +3333,7 @@ sub bcos {
     # We also need to disable any set A or P on $x (_find_round_parameters took
     # them already into account), since these would interfere, too.
 
-    $x->{_a} = undef;
+    $x->{accuracy} = undef;
     $x->{_p} = undef;
 
     my $over = $x * $x;         # X ^ 2
@@ -3341,7 +3342,7 @@ sub bcos {
     my $below = $class->new(2);
     my $factorial = $class->new(3);
     $x = $x->bone();
-    $x->{_a} = undef;
+    $x->{accuracy} = undef;
     $x->{_p} = undef;
 
     my $limit = $class->new("1E-". ($scale-1));
@@ -3375,7 +3376,7 @@ sub bcos {
     }
     if ($fallback) {
         # clear a/p after round, since user did not request it
-        $x->{_a} = undef;
+        $x->{accuracy} = undef;
         $x->{_p} = undef;
     }
 
@@ -3503,7 +3504,7 @@ sub batan {
     # We also need to disable any set A or P on $x (_find_round_parameters took
     # them already into account), since these would interfere, too.
 
-    $x->{_a} = undef;
+    $x->{accuracy} = undef;
     $x->{_p} = undef;
 
     my $over = $x * $x;   # X ^ 2
@@ -3512,7 +3513,7 @@ sub batan {
     my $sign = 1;               # start with -=
     my $below = $class->new(3);
     my $two = $class->new(2);
-    $x->{_a} = undef;
+    $x->{accuracy} = undef;
     $x->{_p} = undef;
 
     my $limit = $class->new("1E-". ($scale-1));
@@ -3554,7 +3555,7 @@ sub batan {
     }
     if ($fallback) {
         # Clear a/p after round, since user did not request it.
-        $x->{_a} = undef;
+        $x->{accuracy} = undef;
         $x->{_p} = undef;
     }
 
@@ -3659,7 +3660,7 @@ sub batan2 {
     $y = $y -> round(@r);
 
     if ($fallback) {
-        $y->{_a} = undef;
+        $y->{accuracy} = undef;
         $y->{_p} = undef;
     }
 
@@ -3740,7 +3741,7 @@ sub bsqrt {
 
     if ($fallback) {
         # clear a/p after round, since user did not request it
-        $x->{_a} = undef;
+        $x->{accuracy} = undef;
         $x->{_p} = undef;
     }
 
@@ -3817,7 +3818,7 @@ sub broot {
     # We also need to disable any set A or P on $x (_find_round_parameters took
     # them already into account), since these would interfere, too.
 
-    $x->{_a} = undef;
+    $x->{accuracy} = undef;
     $x->{_p} = undef;
 
     # remember sign and make $x positive, since -4 ** (1/2) => -2
@@ -3866,7 +3867,7 @@ sub broot {
         }
         if ($done == 0) {
             my $u = $class->bone()->bdiv($y, $scale+4);
-            $u->{_a} = undef;
+            $u->{accuracy} = undef;
             $u->{_p} = undef;
             $x = $x->bpow($u, $scale+4);            # el cheapo
         }
@@ -3881,7 +3882,7 @@ sub broot {
     }
     if ($fallback) {
         # clear a/p after round, since user did not request it
-        $x->{_a} = undef;
+        $x->{accuracy} = undef;
         $x->{_p} = undef;
     }
 
@@ -4301,12 +4302,12 @@ sub bround {
         return $x;
     }
 
-    # Scale is now either $x->{_a}, $accuracy, or the input argument. Test
+    # Scale is now either $x->{accuracy}, $accuracy, or the input argument. Test
     # whether $x already has lower accuracy, do nothing in this case but do
     # round if the accuracy is the same, since a math operation might want to
     # round a number with A=5 to 5 digits afterwards again
 
-    if (defined $x->{_a} && $x->{_a} < $scale) {
+    if (defined $x->{accuracy} && $x->{accuracy} < $scale) {
         return $downgrade -> new($x) if defined($downgrade)
           && ($x->is_int() || $x->is_inf() || $x->is_nan());
         return $x;
@@ -4325,7 +4326,7 @@ sub bround {
     # 1: never round a 0
     # 2: if we should keep more digits than the mantissa has, do nothing
     if ($x->is_zero() || $LIB->_len($x->{_m}) <= $scale) {
-        $x->{_a} = $scale if !defined $x->{_a} || $x->{_a} > $scale;
+        $x->{accuracy} = $scale if !defined $x->{accuracy} || $x->{accuracy} > $scale;
         return $downgrade -> new($x) if defined($downgrade)
           && ($x->is_int() || $x->is_inf() || $x->is_nan());
         return $x;
@@ -4336,7 +4337,7 @@ sub bround {
 
     $m = $m->bround($scale, $mode);     # round mantissa
     $x->{_m} = $m->{value};             # get our mantissa back
-    $x->{_a} = $scale;                  # remember rounding
+    $x->{accuracy} = $scale;                  # remember rounding
     $x->{_p} = undef;                   # and clear P
 
     # bnorm() downgrades if necessary, so no need to check whether to downgrade.
@@ -4382,7 +4383,7 @@ sub bfround {
     }
 
     $x->{_p} = $scale;          # remember round in any case
-    $x->{_a} = undef;           # and clear A
+    $x->{accuracy} = undef;           # and clear A
     if ($scale < 0) {
         # round right from the '.'
 
@@ -5017,10 +5018,10 @@ sub bstr {
 
     $es = '-'.$es if $x->{sign} eq '-';
     # if set accuracy or precision, pad with zeros on the right side
-    if ((defined $x->{_a}) && ($not_zero)) {
+    if ((defined $x->{accuracy}) && ($not_zero)) {
         # 123400 => 6, 0.1234 => 4, 0.001234 => 4
-        my $zeros = $x->{_a} - $cad; # cad == 0 => 12340
-        $zeros = $x->{_a} - $len if $cad != $len;
+        my $zeros = $x->{accuracy} - $cad; # cad == 0 => 12340
+        $zeros = $x->{accuracy} - $len if $cad != $len;
         $es .= $dot.'0' x $zeros if $zeros > 0;
     } elsif ((($x->{_p} || 0) < 0)) {
         # 123400 => 6, 0.1234 => 4, 0.001234 => 6
@@ -5857,7 +5858,7 @@ sub _log {
         my $next = $numer -> copy() -> bround($scaleup)
           -> bdiv($denom -> copy() -> bmul($factor) -> bround($scaleup), $scaleup);
 
-        $next->{_a} = undef;
+        $next->{accuracy} = undef;
         $next->{_p} = undef;
         my $x_prev = $x -> copy();
         $x = $x -> badd($next);
@@ -6144,7 +6145,7 @@ sub _pow {
     # We also need to disable any set A or P on $x (_find_round_parameters took
     # them already into account), since these would interfere, too.
 
-    $x->{_a} = undef;
+    $x->{accuracy} = undef;
     $x->{_p} = undef;
 
     my ($limit, $v, $u, $below, $factor, $next, $over);
@@ -6188,7 +6189,7 @@ sub _pow {
     }
     if ($fallback) {
         # clear a/p after round, since user did not request it
-        $x->{_a} = undef;
+        $x->{accuracy} = undef;
         $x->{_p} = undef;
     }
 

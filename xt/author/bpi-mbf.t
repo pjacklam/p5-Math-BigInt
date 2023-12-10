@@ -23,7 +23,7 @@ subtest "Called as class method without argument.", sub {
 
     isa_ok($x, 'Math::BigFloat');
     is($x,         $pi -> {40}, "'$test' gives correct output");
-    is($x -> {_a}, undef,       "'$test' gives correct accuracy");
+    is($x -> {accuracy}, undef,       "'$test' gives correct accuracy");
     is($x -> {_p}, undef,       "'$test' gives correct precision");
 };
 
@@ -38,7 +38,7 @@ subtest "Called as class method with scalar argument.", sub {
 
     isa_ok($x, 'Math::BigFloat');
     is($x,         $pi -> {16}, "'$test' gives correct output");
-    is($x -> {_a}, 16,          "'$test' gives correct accuracy");
+    is($x -> {accuracy}, 16,          "'$test' gives correct accuracy");
     is($x -> {_p}, undef,       "'$test' gives correct precision");
 };
 
@@ -54,7 +54,7 @@ subtest "Called as class method with class argument.", sub {
 
     isa_ok($x, 'Math::BigFloat');
     is($x,         $pi -> {16}, "'$test' gives correct output");
-    is($x -> {_a}, 16,          "'$test' gives correct accuracy");
+    is($x -> {accuracy}, 16,          "'$test' gives correct accuracy");
     is($x -> {_p}, undef,       "'$test' gives correct precision");
 };
 
@@ -69,7 +69,7 @@ subtest "Called as instance method without argument.", sub {
 
     isa_ok($x, 'Math::BigFloat');
     is($x,         $pi -> {40}, "'$test' gives correct output");
-    is($x -> {_a}, undef,       "'$test' gives correct accuracy");
+    is($x -> {accuracy}, undef,       "'$test' gives correct accuracy");
     is($x -> {_p}, undef,       "'$test' gives correct precision");
 };
 
@@ -84,7 +84,7 @@ subtest "Called as instance method with scalar argument.", sub {
 
     isa_ok($x, 'Math::BigFloat');
     is($x,         $pi -> {16}, "'$test' gives correct output");
-    is($x -> {_a}, 16,          "'$test' gives correct accuracy");
+    is($x -> {accuracy}, 16,          "'$test' gives correct accuracy");
     is($x -> {_p}, undef,       "'$test' gives correct precision");
 };
 
@@ -101,7 +101,7 @@ subtest "Called as instance method with instance argument.", sub {
 
     isa_ok($x, 'Math::BigFloat');
     is($x,         $pi -> {16}, "'$test' gives correct output");
-    is($x -> {_a}, 16,          "'$test' gives correct accuracy");
+    is($x -> {accuracy}, 16,          "'$test' gives correct accuracy");
     is($x -> {_p}, undef,       "'$test' gives correct precision");
 };
 
@@ -116,7 +116,7 @@ subtest "Called as function without argument.", sub {
 
     isa_ok($x, 'Math::BigFloat');
     is($x,         $pi -> {40}, "'$test' gives correct output");
-    is($x -> {_a}, undef,       "'$test' gives correct accuracy");
+    is($x -> {accuracy}, undef,       "'$test' gives correct accuracy");
     is($x -> {_p}, undef,       "'$test' gives correct precision");
 };
 
@@ -131,7 +131,7 @@ subtest "Called as function with scalar argument.", sub {
 
     isa_ok($x, 'Math::BigFloat');
     is($x,         $pi -> {16}, "'$test' gives correct output");
-    is($x -> {_a}, 16,          "'$test' gives correct accuracy");
+    is($x -> {accuracy}, 16,          "'$test' gives correct accuracy");
     is($x -> {_p}, undef,       "'$test' gives correct precision");
 };
 
@@ -152,12 +152,12 @@ subtest "Called as function with instance argument.", sub {
 
     isa_ok($x, 'Math::BigFloat');
     is($x,         $pi -> {40}, "'$test' gives correct output");
-    is($x -> {_a}, undef,       "'$test' gives correct accuracy");
+    is($x -> {accuracy}, undef,       "'$test' gives correct accuracy");
     is($x -> {_p}, undef,       "'$test' gives correct precision");
 
     isa_ok($n, 'Math::BigFloat');
     is($n,         $pi -> {40}, "'$test' gives correct output");
-    is($n -> {_a}, undef,       "'$test' gives correct accuracy");
+    is($n -> {accuracy}, undef,       "'$test' gives correct accuracy");
     is($n -> {_p}, undef,       "'$test' gives correct precision");
 };
 
