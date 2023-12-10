@@ -259,7 +259,7 @@ foreach my $class ($mbi, $mbf) {
 
     $x = $class->bzero();
     $x->precision(5);
-    is($x->{_p}, 5, qq|\$x = $class->bzero(); \$x->precision(5); \$x->{_p}|);
+    is($x->{precision}, 5, qq|\$x = $class->bzero(); \$x->precision(5); \$x->{precision}|);
 
     $x = $class->new(0);
     $x->accuracy(5);
@@ -267,7 +267,7 @@ foreach my $class ($mbi, $mbf) {
 
     $x = $class->new(0);
     $x->precision(5);
-    is($x->{_p}, 5, qq|\$x = $class->new(0); \$x->precision(5); \$x->{_p}|);
+    is($x->{precision}, 5, qq|\$x = $class->new(0); \$x->precision(5); \$x->{precision}|);
 
     $x = $class->bzero();
     $x->round(5);
@@ -275,7 +275,7 @@ foreach my $class ($mbi, $mbf) {
 
     $x = $class->bzero();
     $x->round(undef, 5);
-    is($x->{_p}, 5, qq|\$x = $class->bzero(); \$x->round(undef, 5); \$x->{_p}|);
+    is($x->{precision}, 5, qq|\$x = $class->bzero(); \$x->round(undef, 5); \$x->{precision}|);
 
     $x = $class->new(0);
     $x->round(5);
@@ -283,7 +283,7 @@ foreach my $class ($mbi, $mbf) {
 
     $x = $class->new(0);
     $x->round(undef, 5);
-    is($x->{_p}, 5, qq|\$x = $class->new(0); \$x->round(undef, 5); \$x->{_p}|);
+    is($x->{precision}, 5, qq|\$x = $class->new(0); \$x->round(undef, 5); \$x->{precision}|);
 
     # see if trying to increasing A in bzero() doesn't do something
     $x = $class->bzero();
@@ -634,7 +634,7 @@ is($x->{accuracy}, 4, q|$x->{accuracy}|);                   # set's it since no 
 
 # rounding to P of x
 $x = $mbf->new(10);
-$x->{_p} = -2;
+$x->{precision} = -2;
 is($x->bdiv(3), '3.33', q|$x->bdiv(3)|);
 
 # round in div with requested P
@@ -657,16 +657,16 @@ $y->{accuracy} = 4;
 is($x->bdiv($y), '3.333', q|$x->bdiv($y) = '3.333'|);
 is($x->{accuracy}, 4, q|$x->{accuracy} = 4|);
 is($y->{accuracy}, 4, q|$y->{accuracy} = 4|);       # set's it since no fallback
-is($x->{_p}, undef, q|$x->{_p} = undef|);
-is($y->{_p}, undef, q|$y->{_p} = undef|);
+is($x->{precision}, undef, q|$x->{precision} = undef|);
+is($y->{precision}, undef, q|$y->{precision} = undef|);
 
 # rounding to P of y
 $x = $mbf->new(10);
 $y = $mbf->new(3);
-$y->{_p} = -2;
+$y->{precision} = -2;
 is($x->bdiv($y), '3.33', q|$x->bdiv($y) = '3.33'|);
-is($x->{_p}, -2, q|$x->{_p} = -2|);
- is($y->{_p}, -2, q|$y->{_p} = -2|);
+is($x->{precision}, -2, q|$x->{precision} = -2|);
+ is($y->{precision}, -2, q|$y->{precision} = -2|);
 is($x->{accuracy}, undef, q|$x->{accuracy} = undef|);
 is($y->{accuracy}, undef, q|$y->{accuracy} = undef|);
 
@@ -816,13 +816,13 @@ is($x, "0.00017611835153222965833039802747446283902782"
 note("rounding with already set precision/accuracy");
 
 $x = $mbf->new(1);
-$x->{_p} = -5;
+$x->{precision} = -5;
 is($x, "1.00000", q|$x = "1.00000"|);
 
 note("further rounding down");
 
 is($x->bfround(-2), "1.00", q|$x->bfround(-2) = "1.00"|);
-is($x->{_p}, -2, q|$x->{_p} = -2|);
+is($x->{precision}, -2, q|$x->{precision} = -2|);
 
 $x = $mbf->new(12345);
 $x->{accuracy} = 5;
@@ -840,27 +840,27 @@ $x = $mbf->new("12345.678");
 $x->accuracy(4);
 is($x, "12350", q|$x = "12350"|);
 is($x->{accuracy}, 4, q|$x->{accuracy} = 4|);
-is($x->{_p}, undef, q|$x->{_p} = undef|);
+is($x->{precision}, undef, q|$x->{precision} = undef|);
 
 #is($x->{_m}->{accuracy}, undef, q|$x->{_m}->{accuracy} = undef|);
 #is($x->{_e}->{accuracy}, undef, q|$x->{_e}->{accuracy} = undef|);
-#is($x->{_m}->{_p}, undef, q|$x->{_m}->{_p} = undef|);
-#is($x->{_e}->{_p}, undef, q|$x->{_e}->{_p} = undef|);
+#is($x->{_m}->{precision}, undef, q|$x->{_m}->{precision} = undef|);
+#is($x->{_e}->{precision}, undef, q|$x->{_e}->{precision} = undef|);
 
 note("check for no A/P in case of fallback result");
 
 $x = $mbf->new(100) / 3;
 is($x->{accuracy}, undef, q|$x->{accuracy} = undef|);
-is($x->{_p}, undef, q|$x->{_p} = undef|);
+is($x->{precision}, undef, q|$x->{precision} = undef|);
 
 note("result & remainder");
 
 $x = $mbf->new(100) / 3;
 ($x, $y) = $x->bdiv(3);
 is($x->{accuracy}, undef, q|$x->{accuracy} = undef|);
-is($x->{_p}, undef, q|$x->{_p} = undef|);
+is($x->{precision}, undef, q|$x->{precision} = undef|);
 is($y->{accuracy}, undef, q|$y->{accuracy} = undef|);
-is($y->{_p}, undef, q|$y->{_p} = undef|);
+is($y->{precision}, undef, q|$y->{precision} = undef|);
 
 ###############################################################################
 # math with two numbers with different A and P
@@ -960,19 +960,19 @@ is($params[0], $x, q|$params[0] = $x|);               # self
 foreach my $class ($mbi, $mbf) {
     $x = $class->new(2)->bzero();
     is($x->{accuracy}, undef, qq|\$x = $class->new(2)->bzero(); \$x->{accuracy}|);
-    is($x->{_p}, undef, qq|\$x = $class->new(2)->bzero(); \$x->{_p}|);
+    is($x->{precision}, undef, qq|\$x = $class->new(2)->bzero(); \$x->{precision}|);
 
     $x = $class->new(2)->bone();
     is($x->{accuracy}, undef, qq|\$x = $class->new(2)->bone(); \$x->{accuracy}|);
-    is($x->{_p}, undef, qq|\$x = $class->new(2)->bone(); \$x->{_p}|);
+    is($x->{precision}, undef, qq|\$x = $class->new(2)->bone(); \$x->{precision}|);
 
     $x = $class->new(2)->binf();
     is($x->{accuracy}, undef, qq|\$x = $class->new(2)->binf(); \$x->{accuracy}|);
-    is($x->{_p}, undef, qq|\$x = $class->new(2)->binf(); \$x->{_p}|);
+    is($x->{precision}, undef, qq|\$x = $class->new(2)->binf(); \$x->{precision}|);
 
     $x = $class->new(2)->bnan();
     is($x->{accuracy}, undef, qq|\$x = $class->new(2)->bnan(); \$x->{accuracy}|);
-    is($x->{_p}, undef, qq|\$x = $class->new(2)->bnan(); \$x->{_p}|);
+    is($x->{precision}, undef, qq|\$x = $class->new(2)->bnan(); \$x->{precision}|);
 
     note "Verify that bnan() does not delete/undefine accuracy and precision.";
 
@@ -982,9 +982,9 @@ foreach my $class ($mbi, $mbf) {
     is($x->{accuracy}, 1, qq|\$x = $class->new(2); \$x->{accuracy} = 1; \$x->bnan(); \$x->{accuracy}|);
 
     $x = $class->new(2);
-    $x->{_p} = 1;
+    $x->{precision} = 1;
     $x->bnan();
-    is($x->{_p}, 1, qq|\$x = $class->new(2); \$x->{_p} = 1; \$x->bnan(); \$x->{_p}|);
+    is($x->{precision}, 1, qq|\$x = $class->new(2); \$x->{precision} = 1; \$x->bnan(); \$x->{precision}|);
 
     note "Verify that binf() does not delete/undefine accuracy and precision.";
 
@@ -994,87 +994,87 @@ foreach my $class ($mbi, $mbf) {
     is($x->{accuracy}, 1, qq|\$x = $class->new(2); \$x->{accuracy} = 1; \$x->binf(); \$x->{accuracy}|);
 
     $x = $class->new(2);
-    $x->{_p} = 1;
+    $x->{precision} = 1;
     $x->binf();
-    is($x->{_p}, 1, qq|\$x = $class->new(2); \$x->{_p} = 1; \$x->binf(); \$x->{_p}|);
+    is($x->{precision}, 1, qq|\$x = $class->new(2); \$x->{precision} = 1; \$x->binf(); \$x->{precision}|);
 
     note "Verify that accuracy can be set as argument to new().";
 
     $x = $class->new(2, 1);
     is($x->{accuracy}, 1,     qq|\$x = $class->new(2, 1); \$x->{accuracy}|);
-    is($x->{_p}, undef, qq|\$x = $class->new(2, 1); \$x->{_p}|);
+    is($x->{precision}, undef, qq|\$x = $class->new(2, 1); \$x->{precision}|);
 
     note "Verify that precision can be set as argument to new().";
 
     $x = $class->new(2, undef, 1);
     is($x->{accuracy}, undef, qq|\$x = $class->new(2, undef, 1); \$x->{accuracy}|);
-    is($x->{_p}, 1,     qq|\$x = $class->new(2, undef, 1); \$x->{_p}|);
+    is($x->{precision}, 1,     qq|\$x = $class->new(2, undef, 1); \$x->{precision}|);
 
     note "Verify that accuracy set with new() is preserved after calling bzero().";
 
     $x = $class->new(2, 1)->bzero();
     is($x->{accuracy}, 1,     qq|\$x = $class->new(2, 1)->bzero(); \$x->{accuracy}|);
-    is($x->{_p}, undef, qq|\$x = $class->new(2, 1)->bzero(); \$x->{_p}|);
+    is($x->{precision}, undef, qq|\$x = $class->new(2, 1)->bzero(); \$x->{precision}|);
 
     note "Verify that precision set with new() is preserved after calling bzero().";
 
     $x = $class->new(2, undef, 1)->bzero();
     is($x->{accuracy}, undef, qq|\$x = $class->new(2, undef, 1)->bzero(); \$x->{accuracy}|);
-    is($x->{_p}, 1,     qq|\$x = $class->new(2, undef, 1)->bzero(); \$x->{_p}|);
+    is($x->{precision}, 1,     qq|\$x = $class->new(2, undef, 1)->bzero(); \$x->{precision}|);
 
     note "Verify that accuracy set with new() is preserved after calling bone().";
 
     $x = $class->new(2, 1)->bone();
     is($x->{accuracy}, 1,     qq|\$x = $class->new(2, 1)->bone(); \$x->{accuracy}|);
-    is($x->{_p}, undef, qq|\$x = $class->new(2, 1)->bone(); \$x->{_p}|);
+    is($x->{precision}, undef, qq|\$x = $class->new(2, 1)->bone(); \$x->{precision}|);
 
     note "Verify that precision set with new() is preserved after calling bone().";
 
     $x = $class->new(2, undef, 1)->bone();
     is($x->{accuracy}, undef, qq|\$x = $class->new(2, undef, 1)->bone(); \$x->{accuracy}|);
-    is($x->{_p}, 1,     qq|\$x = $class->new(2, undef, 1)->bone(); \$x->{_p}|);
+    is($x->{precision}, 1,     qq|\$x = $class->new(2, undef, 1)->bone(); \$x->{precision}|);
 
     note "Verify that accuracy can be set with instance method bone('+').";
 
     $x = $class->new(2);
     $x->bone('+', 2, undef);
     is($x->{accuracy}, 2,     qq|\$x = $class->new(2); \$x->{accuracy}|);
-    is($x->{_p}, undef, qq|\$x = $class->new(2); \$x->{_p}|);
+    is($x->{precision}, undef, qq|\$x = $class->new(2); \$x->{precision}|);
 
     note "Verify that precision can be set with instance method bone('+').";
 
     $x = $class->new(2);
     $x->bone('+', undef, 2);
     is($x->{accuracy}, undef, qq|\$x = $class->new(2); \$x->bone('+', undef, 2); \$x->{accuracy}|);
-    is($x->{_p}, 2,     qq|\$x = $class->new(2); \$x->bone('+', undef, 2); \$x->{_p}|);
+    is($x->{precision}, 2,     qq|\$x = $class->new(2); \$x->bone('+', undef, 2); \$x->{precision}|);
 
     note "Verify that accuracy can be set with instance method bone('-').";
 
     $x = $class->new(2);
     $x->bone('-', 2, undef);
     is($x->{accuracy}, 2,     qq|\$x = $class->new(2); \$x->bone('-', 2, undef); \$x->{accuracy}|);
-    is($x->{_p}, undef, qq|\$x = $class->new(2); \$x->bone('-', 2, undef); \$x->{_p}|);
+    is($x->{precision}, undef, qq|\$x = $class->new(2); \$x->bone('-', 2, undef); \$x->{precision}|);
 
     note "Verify that precision can be set with instance method bone('-').";
 
     $x = $class->new(2);
     $x->bone('-', undef, 2);
     is($x->{accuracy}, undef, qq|\$x = $class->new(2); \$x->bone('-', undef, 2); \$x->{accuracy}|);
-    is($x->{_p}, 2,     qq|\$x = $class->new(2); \$x->bone('-', undef, 2); \$x->{_p}|);
+    is($x->{precision}, 2,     qq|\$x = $class->new(2); \$x->bone('-', undef, 2); \$x->{precision}|);
 
     note "Verify that accuracy can be set with instance method bzero().";
 
     $x = $class->new(2);
     $x->bzero(2, undef);
     is($x->{accuracy}, 2,     qq|\$x = $class->new(2);\$x->bzero(2, undef); \$x->{accuracy}|);
-    is($x->{_p}, undef, qq|\$x = $class->new(2);\$x->bzero(2, undef); \$x->{_p}|);
+    is($x->{precision}, undef, qq|\$x = $class->new(2);\$x->bzero(2, undef); \$x->{precision}|);
 
     note "Verify that precision can be set with instance method bzero().";
 
     $x = $class->new(2);
     $x->bzero(undef, 2);
     is($x->{accuracy}, undef, qq|\$x = $class->new(2); \$x->bzero(undef, 2); \$x->{accuracy}|);
-    is($x->{_p}, 2,     qq|\$x = $class->new(2); \$x->bzero(undef, 2); \$x->{_p}|);
+    is($x->{precision}, 2,     qq|\$x = $class->new(2); \$x->bzero(undef, 2); \$x->{precision}|);
 }
 
 ###############################################################################
@@ -1315,14 +1315,14 @@ while (<DATA>) {
     # print "# Tried: '$try'\n";
     if ($a ne '') {
         unless (is($x->{accuracy}, $a,    qq|\$x->{accuracy} == $a|) &&
-                is($x->{_p}, undef, qq|\$x->{_p} is undef|))
+                is($x->{precision}, undef, qq|\$x->{precision} is undef|))
         {
             print "# Check: A = $a and P = undef\n";
             print "# Tried: $try\n";
         }
     }
     if ($p ne '') {
-        unless (is($x->{_p}, $p,    qq|\$x->{_p} == $p|) &&
+        unless (is($x->{precision}, $p,    qq|\$x->{precision} == $p|) &&
                 is($x->{accuracy}, undef, qq|\$x->{accuracy} is undef|))
         {
             print "# Check: A = undef and P = $p\n";

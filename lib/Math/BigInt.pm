@@ -12,7 +12,7 @@ package Math::BigInt;
 #          sign : "+", "-", "+inf", "-inf", or "NaN"
 #         value : unsigned int with actual value ($LIB thingy)
 #      accuracy : accuracy (scalar)
-#            _p : precision (scalar)
+#     precision : precision (scalar)
 
 # Remember not to take shortcuts ala $xs = $x->{value}; $LIB->foo($xs); since
 # underlying lib might change the reference!
@@ -385,7 +385,7 @@ sub accuracy {
             # Set instance variable.
             $x = $x->bround($a) if defined $a;
             $x->{accuracy} = $a;      # set/overwrite, even if not rounded
-            $x->{_p} = undef;   # clear P
+            $x->{precision} = undef;   # clear P
             # Why return class variable here? Fixme!
             $a = ${"${class}::accuracy"} unless defined $a;
         } else {
@@ -427,7 +427,7 @@ sub precision {
         if (ref($x)) {
             # Set instance variable.
             $x = $x->bfround($p) if defined $p;
-            $x->{_p} = $p;      # set/overwrite, even if not rounded
+            $x->{precision} = $p;      # set/overwrite, even if not rounded
             $x->{accuracy} = undef;   # clear A
             # Why return class variable here? Fixme!
             $p = ${"${class}::precision"} unless defined $p;
@@ -443,7 +443,7 @@ sub precision {
     # getter/accessor
 
     # Return instance variable.
-    return $x->{_p} if ref($x);
+    return $x->{precision} if ref($x);
 
     # Return class variable.
     return ${"${class}::precision"};
@@ -539,7 +539,7 @@ sub _scale_p {
     # used by bround() and bfround(), may return undef for scale (means no op)
     my ($x, $scale, $mode) = @_;
 
-    $scale = $x->{_p} unless defined $scale;
+    $scale = $x->{precision} unless defined $scale;
 
     no strict 'refs';
     my $class = ref($x);
@@ -1057,10 +1057,10 @@ sub bzero {
             return $self -> bnan();
         }
         $self->{accuracy} = $_[0];
-        $self->{_p} = $_[1];
+        $self->{precision} = $_[1];
     } elsif (!$selfref) {
         $self->{accuracy} = $class -> accuracy();
-        $self->{_p} = $class -> precision();
+        $self->{precision} = $class -> precision();
     }
 
     return $self;
@@ -1118,10 +1118,10 @@ sub bone {
             return $self -> bnan();
         }
         $self->{accuracy} = $_[0];
-        $self->{_p} = $_[1];
+        $self->{precision} = $_[1];
     } elsif (!$selfref) {
         $self->{accuracy} = $class -> accuracy();
-        $self->{_p} = $class -> precision();
+        $self->{precision} = $class -> precision();
     }
 
     return $self;
@@ -1187,10 +1187,10 @@ sub binf {
             return $self -> bnan();
         }
         $self->{accuracy} = $_[0];
-        $self->{_p} = $_[1];
+        $self->{precision} = $_[1];
     } elsif (!$selfref) {
         $self->{accuracy} = $class -> accuracy();
-        $self->{_p} = $class -> precision();
+        $self->{precision} = $class -> precision();
     }
 
     return $self;
@@ -1246,10 +1246,10 @@ sub bnan {
             return $self -> bnan();
         }
         $self->{accuracy} = $_[0];
-        $self->{_p} = $_[1];
+        $self->{precision} = $_[1];
     } elsif (!$selfref) {
         $self->{accuracy} = $class -> accuracy();
-        $self->{_p} = $class -> precision();
+        $self->{precision} = $class -> precision();
     }
 
     return $self;
@@ -1325,7 +1325,7 @@ sub copy {
     $copy->{sign}  = $x->{sign};
     $copy->{value} = $LIB->_copy($x->{value});
     $copy->{accuracy}    = $x->{accuracy} if exists $x->{accuracy};
-    $copy->{_p}    = $x->{_p} if exists $x->{_p};
+    $copy->{precision}    = $x->{precision} if exists $x->{precision};
 
     return $copy;
 }
@@ -1349,7 +1349,7 @@ sub as_int {
 
     # Copy the remaining instance variables.
 
-    ($y->{accuracy}, $y->{_p}) = ($x->{accuracy}, $x->{_p});
+    ($y->{accuracy}, $y->{precision}) = ($x->{accuracy}, $x->{precision});
 
     # Restore upgrading and downgrading
 
@@ -1377,7 +1377,7 @@ sub as_float {
 
     # Copy the remaining instance variables.
 
-    ($y->{accuracy}, $y->{_p}) = ($x->{accuracy}, $x->{_p});
+    ($y->{accuracy}, $y->{precision}) = ($x->{accuracy}, $x->{precision});
 
     # Restore upgrading and downgrading..
 
@@ -1403,7 +1403,7 @@ sub as_rat {
 
     # Copy the remaining instance variables.
 
-    ($y->{accuracy}, $y->{_p}) = ($x->{accuracy}, $x->{_p});
+    ($y->{accuracy}, $y->{precision}) = ($x->{accuracy}, $x->{precision});
 
     # Restore upgrading and downgrading.
 
@@ -2281,7 +2281,7 @@ sub bdiv {
             $rem -> {sign} = $ysign;
         }
         $rem -> {accuracy} = $x -> {accuracy};
-        $rem -> {_p} = $x -> {_p};
+        $rem -> {precision} = $x -> {precision};
         $rem = $rem -> round(@r);
         return ($x, $rem);
     }
@@ -2425,7 +2425,7 @@ sub btdiv {
         $rem -> {sign} = $xsign;
         $rem -> {sign} = '+' if $LIB -> _is_zero($rem -> {value});
         $rem -> {accuracy} = $x -> {accuracy};
-        $rem -> {_p} = $x -> {_p};
+        $rem -> {precision} = $x -> {precision};
         $rem = $rem -> round(@r);
         return ($x, $rem);
     }
@@ -4012,7 +4012,7 @@ sub round {
 
     if (@args >= 2 && @args <= 3 && !defined($args[0]) && !defined($args[1])) {
         $self->{accuracy} = undef;
-        $self->{_p} = undef;
+        $self->{precision} = undef;
         return $self;
     }
 
@@ -4046,8 +4046,8 @@ sub round {
         foreach ($self, @args) {
             # take the defined one, or if both defined, the one that is bigger
             # -2 > -3, and 3 > 2
-            $p = $_->{_p}
-              if (defined $_->{_p}) && (!defined $p || $_->{_p} > $p);
+            $p = $_->{precision}
+              if (defined $_->{precision}) && (!defined $p || $_->{precision} > $p);
         }
     }
 
@@ -4079,7 +4079,7 @@ sub round {
           if !defined $self->{accuracy} || $self->{accuracy} >= $a;
     } else {                  # both can't be undefined due to early out
         $self = $self->bfround(int($p), $r)
-          if !defined $self->{_p} || $self->{_p} <= $p;
+          if !defined $self->{precision} || $self->{precision} <= $p;
     }
 
     # bround() or bfround() already called bnorm() if nec.
@@ -4203,7 +4203,7 @@ sub bfround {
     $x = $x->bround($x->length()-$scale, $mode) if $scale > 0;
 
     $x->{accuracy} = undef;
-    $x->{_p} = $scale;          # store new _p
+    $x->{precision} = $scale;          # store new precision
     $x;
 }
 
@@ -5536,8 +5536,8 @@ sub _find_round_parameters {
         foreach ($self, @args) {
             # take the defined one, or if both defined, the one that is bigger
             # -2 > -3, and 3 > 2
-            $p = $_->{_p}
-              if (defined $_->{_p}) && (!defined $p || $_->{_p} > $p);
+            $p = $_->{precision}
+              if (defined $_->{precision}) && (!defined $p || $_->{precision} > $p);
         }
     }
 

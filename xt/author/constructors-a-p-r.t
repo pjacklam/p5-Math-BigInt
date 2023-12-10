@@ -266,7 +266,7 @@ for my $class (@$classes) {
                 #is($x -> accuracy(),   $ivars -> [1], '$x -> accuracy()');
                 is($x -> {accuracy},         $ivars -> [1], '$x -> {accuracy}');
                 #is($x -> precision(),  $ivars -> [2], '$x -> precision()');
-                is($x -> {_p},         $ivars -> [2], '$x -> {_p}');
+                is($x -> {precision},         $ivars -> [2], '$x -> {precision}');
                 #is($x -> round_mode(), $ivars -> [3], '$x -> round_mode()');
                 #is($x -> {_r},         $ivars -> [3], '$x -> {_r}');
             };
