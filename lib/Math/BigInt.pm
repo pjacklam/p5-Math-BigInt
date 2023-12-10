@@ -357,28 +357,37 @@ sub div_scale {
     # setter/mutator
 
     if (@_) {
-        my $ds = shift;
-        croak("The value for 'div_scale' must be defined") unless defined $ds;
-        $ds = $ds -> can('numify') ? $ds -> numify() : 0 + "$ds" if ref($ds);
+        my $f = shift;
+        croak("The value for 'div_scale' must be defined") unless defined $f;
+        $f = $f -> can('numify') ? $f -> numify() : 0 + "$f" if ref($f);
         # also croak on non-numerical
-        croak "div_scale must be a number, not '$ds'"
-          unless $ds =~/^[+-]?(?:\d+(?:\.\d*)?|\.\d+)(?:[Ee][+-]?\d+)?\z/;
-        croak "div_scale must be an integer, not '$ds'"
-          if $ds != int $ds;
+        croak "div_scale must be a number, not '$f'"
+          unless $f =~/^[+-]?(?:\d+(?:\.\d*)?|\.\d+)(?:[Ee][+-]?\d+)?\z/;
+        croak "div_scale must be an integer, not '$f'"
+          if $f != int $f;
         # It is not documented what div_scale <= 0 means, but Astro::Units sets
         # div_scale to 0 and fails its tests if this is not supported. So we
         # silently support div_scale = 0.
-        croak "div_scale must be positive, not '$ds'" if $ds < 0;
-        no strict 'refs';
-        ${"${class}::div_scale"} = $ds;
+        croak "div_scale must be positive, not '$f'" if $f < 0;
+
+        if (ref($self) && exists $self -> {div_scale}) {
+            $self -> {div_scale} = $f;
+        } else {
+            no strict 'refs';
+            ${"${class}::div_scale"} = $f;
+        }
     }
 
     # getter/accessor
 
     else {
-        no strict 'refs';
-        my $ds = ${"${class}::div_scale"};
-        defined($ds) ? $ds : $div_scale;
+        if (ref($self) && exists $self -> {div_scale}) {
+            return $self -> {div_scale};
+        } else {
+            no strict 'refs';
+            my $f = ${"${class}::div_scale"};
+            return defined($f) ? $f : $div_scale;
+        }
     }
 }
 
