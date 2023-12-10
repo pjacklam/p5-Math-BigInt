@@ -315,17 +315,28 @@ sub downgrade {
     my $self = shift;
     my $class = ref($self) || $self || __PACKAGE__;
 
-    no strict 'refs';
-
     # setter/mutator
 
     if (@_) {
-        return ${"${class}::downgrade"} = $_[0];
+        my $d = shift;
+        if (ref($self) && exists $self -> {downgrade}) {
+            $self -> {downgrade} = $d;
+        } else {
+            no strict 'refs';
+            ${"${class}::downgrade"} = $d;
+        }
     }
 
     # getter/accessor
 
-    ${"${class}::downgrade"};
+    else {
+        if (ref($self) && exists $self -> {downgrade}) {
+            return $self -> {downgrade};
+        } else {
+            no strict 'refs';
+            return ${"${class}::downgrade"};
+        }
+    }
 }
 
 sub div_scale {
