@@ -449,6 +449,62 @@ sub precision {
     return ${"${class}::precision"};
 }
 
+sub trap_inf {
+    my $self = shift;
+    my $class = ref($self) || $self || __PACKAGE__;
+
+    # setter/mutator
+
+    if (@_) {
+        my $b = shift() ? 1 : 0;
+        if (ref($self) && exists $self -> {trap_inf}) {
+            $self -> {trap_inf} = $b;
+        } else {
+            no strict 'refs';
+            ${"${class}::_trap_inf"} = $b;
+        }
+    }
+
+    # getter/accessor
+
+    else {
+        if (ref($self) && exists $self -> {trap_inf}) {
+            return $self -> {trap_inf};
+        } else {
+            no strict 'refs';
+            return ${"${class}::_trap_inf"};
+        }
+    }
+}
+
+sub trap_nan {
+    my $self = shift;
+    my $class = ref($self) || $self || __PACKAGE__;
+
+    # setter/mutator
+
+    if (@_) {
+        my $b = shift() ? 1 : 0;
+        if (ref($self) && exists $self -> {trap_nan}) {
+            $self -> {trap_nan} = $b;
+        } else {
+            no strict 'refs';
+            ${"${class}::_trap_nan"} = $b;
+        }
+    }
+
+    # getter/accessor
+
+    else {
+        if (ref($self) && exists $self -> {trap_nan}) {
+            return $self -> {trap_nan};
+        } else {
+            no strict 'refs';
+            return ${"${class}::_trap_nan"};
+        }
+    }
+}
+
 sub config {
     # return (or set) configuration data.
     my $class = shift || __PACKAGE__;
@@ -478,10 +534,6 @@ sub config {
                         "' passed to $class\->config()");
         }
         foreach my $key (keys %$set_args) {
-            if ($key =~ /^trap_(inf|nan)\z/) {
-                ${"${class}::_trap_$1"} = ($set_args->{"trap_$1"} ? 1 : 0);
-                next;
-            }
             # use a call instead of just setting the $variable to check argument
             $class->$key($set_args->{$key});
         }
