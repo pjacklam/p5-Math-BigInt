@@ -395,46 +395,40 @@ sub accuracy {
     my $x = shift;
     my $class = ref($x) || $x || __PACKAGE__;
 
-    no strict 'refs';
-
     # setter/mutator
 
     if (@_) {
         my $a = shift;
+
         if (defined $a) {
             $a = $a -> can('numify') ? $a -> numify() : 0 + "$a" if ref($a);
-            # also croak on non-numerical
             croak "accuracy must be a number, not '$a'"
-              unless $a =~/^[+-]?(?:\d+(?:\.\d*)?|\.\d+)(?:[Ee][+-]?\d+)?\z/;
+              if $a !~ /^\s*[+-]?(?:\d+(?:\.\d*)?|\.\d+)(?:[Ee][+-]?\d+)?\s*\z/;
             croak "accuracy must be an integer, not '$a'"
               if $a != int $a;
-            croak "accuracy must be greater than zero, not '$a'"
-              if $a <= 0;
         }
 
         if (ref($x)) {
-            # Set instance variable.
-            $x = $x->bround($a) if defined $a;
-            $x->{accuracy} = $a;      # set/overwrite, even if not rounded
-            $x->{precision} = undef;   # clear P
-            # Why return class variable here? Fixme!
-            $a = ${"${class}::accuracy"} unless defined $a;
+            $x = $x -> bround($a) if defined $a;
+            $x -> {precision} = undef;          # clear instance P
+            $x -> {accuracy}  = $a;             # set instance A
         } else {
-            # Set class variable.
-            ${"${class}::accuracy"}  = $a;      # set global A
-            ${"${class}::precision"} = undef;   # clear global P
+            no strict 'refs';
+            ${"${class}::precision"} = undef;   # clear class P
+            ${"${class}::accuracy"}  = $a;      # set class A
         }
-
-        return $a;              # shortcut
     }
 
     # getter/accessor
 
-    # Return instance variable.
-    return $x->{accuracy} if ref($x);
-
-    # Return class variable.
-    return ${"${class}::accuracy"};
+    else {
+        if (ref($x)) {
+            return $x -> {accuracy};
+        } else {
+            no strict 'refs';
+            return ${"${class}::accuracy"};
+        }
+    }
 }
 
 sub precision {
