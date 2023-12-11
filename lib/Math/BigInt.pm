@@ -531,7 +531,6 @@ sub config {
     # return (or set) configuration data.
     my $class = shift || __PACKAGE__;
 
-    no strict 'refs';
     if (@_ > 1 || (@_ == 1 && (ref($_[0]) eq 'HASH'))) {
         # try to set given options as arguments from hash
 
@@ -563,6 +562,8 @@ sub config {
 
     # now return actual configuration
 
+    no strict 'refs';
+
     my $cfg = {
                lib         => $LIB,
                lib_version => ${"${LIB}::VERSION"},
@@ -593,7 +594,6 @@ sub _scale_a {
 
     $scale = $x->{accuracy} unless defined $scale;
 
-    no strict 'refs';
     my $class = ref($x);
 
     $scale = $class -> accuracy() unless defined $scale;
@@ -615,7 +615,6 @@ sub _scale_p {
 
     $scale = $x->{precision} unless defined $scale;
 
-    no strict 'refs';
     my $class = ref($x);
 
     $scale = $class -> precision() unless defined $scale;
@@ -4125,8 +4124,6 @@ sub round {
         }
     }
 
-    no strict 'refs';
-
     # if still none defined, use globals
     unless (defined $a || defined $p) {
         $a = $class -> accuracy();
@@ -5591,7 +5588,6 @@ sub _find_round_parameters {
     # @args all 'other' arguments (0 for unary, 1 for binary ops)
 
     my $class = ref($self);       # find out class of argument(s)
-    no strict 'refs';
 
     # convert to normal scalar for speed and correctness in inner parts
     $a = $a->can('numify') ? $a->numify() : "$a" if defined $a && ref($a);
