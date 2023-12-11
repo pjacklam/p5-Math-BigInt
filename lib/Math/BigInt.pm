@@ -435,43 +435,40 @@ sub precision {
     my $x = shift;
     my $class = ref($x) || $x || __PACKAGE__;
 
-    no strict 'refs';
-
     # setter/mutator
 
     if (@_) {
         my $p = shift;
+
         if (defined $p) {
             $p = $p -> can('numify') ? $p -> numify() : 0 + "$p" if ref($p);
             croak "precision must be a number, not '$p'"
-              unless $p =~/^[+-]?(?:\d+(?:\.\d*)?|\.\d+)(?:[Ee][+-]?\d+)?\z/;
+              if $p !~ /^\s*[+-]?(?:\d+(?:\.\d*)?|\.\d+)(?:[Ee][+-]?\d+)?\s*\z/;
             croak "precision must be an integer, not '$p'"
               if $p != int $p;
         }
 
         if (ref($x)) {
-            # Set instance variable.
-            $x = $x->bfround($p) if defined $p;
-            $x->{precision} = $p;      # set/overwrite, even if not rounded
-            $x->{accuracy} = undef;   # clear A
-            # Why return class variable here? Fixme!
-            $p = ${"${class}::precision"} unless defined $p;
+            $x = $x -> bfround($p) if defined $p;
+            $x -> {accuracy}  = undef;          # clear instance A
+            $x -> {precision} = $p;             # set instance P
         } else {
-            # Set class variable.
-            ${"${class}::precision"} = $p;      # set global P
-            ${"${class}::accuracy"}  = undef;   # clear global A
+            no strict 'refs';
+            ${"${class}::accuracy"}  = undef;   # clear class A
+            ${"${class}::precision"} = $p;      # set class P
         }
-
-        return $p;              # shortcut
     }
 
     # getter/accessor
 
-    # Return instance variable.
-    return $x->{precision} if ref($x);
-
-    # Return class variable.
-    return ${"${class}::precision"};
+    else {
+        if (ref($x)) {
+            return $x -> {precision};
+        } else {
+            no strict 'refs';
+            return ${"${class}::precision"};
+        }
+    }
 }
 
 sub trap_inf {
