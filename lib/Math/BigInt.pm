@@ -256,7 +256,7 @@ sub FETCH {
 }
 
 sub STORE {
-    $rnd_mode = $_[0]->round_mode($_[1]);
+    $rnd_mode = (ref $_[0]) -> round_mode($_[1]);
 }
 
 BEGIN {
@@ -277,20 +277,33 @@ sub round_mode {
     my $self = shift;
     my $class = ref($self) || $self || __PACKAGE__;
 
-    if (@_) {                           # setter
+    # setter/mutator
+
+    if (@_) {
         my $m = shift;
         croak("The value for 'round_mode' must be defined")
           unless defined $m;
         croak("Unknown round mode '$m'")
           unless $m =~ /^(even|odd|\+inf|\-inf|zero|trunc|common)$/;
-        no strict 'refs';
-        ${"${class}::round_mode"} = $m;
+
+        if (ref($self) && exists $self -> {round_mode}) {
+            $self->{round_mode} = $m;
+        } else {
+            no strict 'refs';
+            ${"${class}::round_mode"}  = $m;
+        }
     }
 
-    else {                              # getter
-        no strict 'refs';
-        my $m = ${"${class}::round_mode"};
-        defined($m) ? $m : $round_mode;
+    # getter/accessor
+
+    else {
+        if (ref($self) && exists $self -> {round_mode}) {
+            return $self->{round_mode};
+        } else {
+            no strict 'refs';
+            my $m = ${"${class}::round_mode"};
+            return defined($m) ? $m : $round_mode;
+        }
     }
 }
 
