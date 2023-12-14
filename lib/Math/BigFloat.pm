@@ -274,54 +274,40 @@ sub DESTROY {
 }
 
 sub AUTOLOAD {
-    # make fxxx and bxxx both work by selectively mapping fxxx() to MBF::bxxx()
+
+    # Make fxxx() work by mapping fxxx() to Math::BigFloat::bxxx().
+
     my $name = $AUTOLOAD;
-    $name =~ s/(.*):://;        # split package
-    my $c = $1 || __PACKAGE__;
-    no strict 'refs';
-    $c->import() if $IMPORT == 0;
-    if (!_method_alias($name)) {
-        if (!defined $name) {
-            # delayed load of Carp and avoid recursion
-            croak("$c: Can't call a method without name");
-        }
-        if (!_method_hand_up($name)) {
-            # delayed load of Carp and avoid recursion
-            croak("Can't call $c\-\>$name, not a valid method");
-        }
-        # try one level up, but subst. bxxx() for fxxx() since MBI only got
-        # bxxx()
-        $name =~ s/^f/b/;
-        return &{"Math::BigInt"."::$name"}(@_);
-    }
+    $name =~ s/^(.*):://;               # strip package name
+    my $class = $1 || __PACKAGE__;
+
+    $class -> import() if $IMPORT == 0;
+
+    # E.g., "fabs" -> "babs", but "is_neg" -> "is_neg"
+
     my $bname = $name;
     $bname =~ s/^f/b/;
-    $c .= "::$name";
-    *{$c} = \&{$bname};
-    &{$c};                      # uses @_
+
+    # Map, e.g., Math::BigFloat::fabs() to Math::BigFloat::babs()
+
+    if ($bname ne $name && Math::BigFloat -> can($bname)) {
+        no strict 'refs';
+        return &{"Math::BigFloat::$bname"}(@_);
+    }
+
+    # Map, e.g., Math::BigFloat::babs() to Math::BigInt::babs()
+
+    elsif (Math::BigInt -> can($bname)) {
+        no strict 'refs';
+        return &{"Math::BigInt::$bname"}(@_);
+    }
+
+    else {
+        croak("Can't call $class->$name(), not a valid method");
+    }
 }
 
 ##############################################################################
-
-{
-    # valid method aliases for AUTOLOAD
-    my %methods = map { $_ => 1 }
-      qw / fadd fsub fmul fdiv fround ffround fsqrt fmod fstr fsstr fpow fnorm
-           fint facmp fcmp fzero fnan finf finc fdec ffac fneg
-           fceil ffloor frsft flsft fone flog froot fexp
-         /;
-    # valid methods that can be handed up (for AUTOLOAD)
-    my %hand_ups = map { $_ => 1 }
-      qw / is_nan is_inf is_negative is_positive is_pos is_neg
-           accuracy precision div_scale round_mode fabs fnot
-           objectify upgrade downgrade
-           bone binf bnan bzero
-           bsub
-         /;
-
-    sub _method_alias { exists $methods{$_[0]||''}; }
-    sub _method_hand_up { exists $hand_ups{$_[0]||''}; }
-}
 
 # Compare the following function with @ISA above. This inheritance mess needs a
 # clean up. When doing so, also consider the BEGIN block and the AUTOLOAD code.
