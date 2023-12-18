@@ -4123,9 +4123,17 @@ sub round {
 
     my ($class, $self, @args) = ref($_[0]) ? (ref($_[0]), @_) : objectify(1, @_);
 
-    # $x->round(undef, undef) signals no rounding
+    # These signal no rounding:
+    #
+    #   $x->round(undef)
+    #   $x->round(undef, undef, ...)
+    #
+    # The "@args <= 3" is necessary because the final set of parameters that
+    # will be used for rounding depend on the "extra arguments", if any.
 
-    if (@args >= 2 && @args <= 3 && !defined($args[0]) && !defined($args[1])) {
+    if (@args == 1 && !defined($args[0]) ||
+        @args >= 2 && @args <= 3 && !defined($args[0]) && !defined($args[1]))
+    {
         $self->{accuracy} = undef;
         $self->{precision} = undef;
         return $self;
