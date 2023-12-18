@@ -544,59 +544,88 @@ sub config {
     # return (or set) configuration data.
     my $class = shift || __PACKAGE__;
 
+    # setter/mutator
+    #
+    # $class -> config(var => value, ...)
+    # $class -> config({ var => value, ... })
+
     if (@_ > 1 || (@_ == 1 && (ref($_[0]) eq 'HASH'))) {
         # try to set given options as arguments from hash
 
-        my $args = $_[0];
-        if (ref($args) ne 'HASH') {
-            $args = { @_ };
+        # If the argument is a hash ref, make a copy of it, since keys will be
+        # deleted below and we don't want to modify the input hash.
+
+        my $args = ref($_[0]) eq 'HASH' ? { %{ $_[0] } }: { @_ };
+
+        # We use this special handling of accuracy and precision because
+        # accuracy() always sets precision to undef and precision() always sets
+        # accuracy to undef. With out this special treatment, the following
+        # would result in both accuracy and precision being undef.
+        #
+        #   $x -> config(accuracy => 3, precision => undef)
+
+        croak "config(): both accuracy and precision are defined"
+          if defined($args -> {accuracy}) && defined ($args -> {precision});
+
+        if (defined $args -> {accuracy}) {
+            $class -> accuracy($args -> {accuracy});
+        } elsif (defined $args -> {precision}) {
+            $class -> precision($args -> {precision});
+        } else {
+            $class -> accuracy(undef);  # also sets precision to undef
         }
-        # these values can be "set"
-        my $set_args = {};
+
+        delete $args->{accuracy};
+        delete $args->{precision};
+
+        # Set any remaining keys.
+
         foreach my $key (qw/
-                               accuracy precision
                                round_mode div_scale
                                upgrade downgrade
                                trap_inf trap_nan
                            /)
         {
-            $set_args->{$key} = $args->{$key} if exists $args->{$key};
+            # use a method call to check argument
+            $class->$key($args->{$key}) if exists $args->{$key};
             delete $args->{$key};
         }
-        if (keys %$args > 0) {
+
+        # If there are any keys left, they are invalid.
+
+        if (keys %$args) {
             croak("Illegal key(s) '", join("', '", keys %$args),
                         "' passed to $class\->config()");
         }
-        foreach my $key (keys %$set_args) {
-            # use a call instead of just setting the $variable to check argument
-            $class->$key($set_args->{$key});
-        }
     }
 
-    # now return actual configuration
-
-    no strict 'refs';
+    # Now build the full configuration.
 
     my $cfg = {
                lib         => $LIB,
-               lib_version => ${"${LIB}::VERSION"},
+               lib_version => $LIB -> VERSION(),
                class       => $class,
-               trap_nan    => ${"${class}::_trap_nan"},
-               trap_inf    => ${"${class}::_trap_inf"},
-               version     => ${"${class}::VERSION"},
+               version     => $class -> VERSION(),
               };
+
     foreach my $key (qw/
                            accuracy precision
                            round_mode div_scale
                            upgrade downgrade
+                           trap_inf trap_nan
                        /)
     {
-        $cfg->{$key} = ${"${class}::$key"};
+        $cfg->{$key} = $class -> $key();
     }
+
+    # getter/accessor
+    #
+    # $class -> config("var")
+
     if (@_ == 1 && (ref($_[0]) ne 'HASH')) {
-        # calls of the style config('lib') return just this value
         return $cfg->{$_[0]};
     }
+
     $cfg;
 }
 
