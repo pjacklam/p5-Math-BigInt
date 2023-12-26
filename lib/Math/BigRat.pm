@@ -23,7 +23,7 @@ use Scalar::Util    qw< blessed >;
 
 use Math::BigFloat ();
 
-our $VERSION = '2.002001';
+our $VERSION = '2.003001';
 $VERSION =~ tr/_//d;
 
 our @ISA = qw(Math::BigFloat);
