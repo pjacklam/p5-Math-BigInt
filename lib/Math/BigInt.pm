@@ -6499,6 +6499,9 @@ Math::BigInt - arbitrary size integer math package
   Math::BigInt->round_mode($m); # set global round mode, must be one of
                                 # 'even', 'odd', '+inf', '-inf', 'zero',
                                 # 'trunc', or 'common'
+  Math::BigInt->div_scale($n);  # set fallback accuracy
+  Math::BigInt->trap_inf($b);   # trap infinities or not
+  Math::BigInt->trap_nan($b);   # trap NaNs or not
   Math::BigInt->config();       # return hash with configuration
 
   # Constructor methods (when the class methods below are used as instance
@@ -6877,6 +6880,15 @@ attempt to return an infinite number of digits.
 =item round_mode()
 
 Set/get the rounding mode.
+
+=item trap_inf()
+
+Set/get the value determining whether infinities should cause a fatal error or
+not.
+
+=item trap_nan()
+
+Set/get the value determining whether NaNs should cause a fatal error or not.
 
 =item upgrade()
 
