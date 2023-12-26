@@ -3043,6 +3043,82 @@ sub bexp {
     return $x -> round(@r);
 }
 
+sub bilog2 {
+    my ($class, $x, @r) = ref($_[0]) ? (ref($_[0]), @_) : objectify(1, @_);
+
+    return $x if $x -> modify('bilog2');
+
+    return $upgrade -> new($x, @r) unless $x -> isa(__PACKAGE__);
+
+    return $x -> bnan(@r)        if $x -> is_nan();
+    return $x -> binf("+", @r)   if $x -> is_inf("+");
+    return $x -> binf("-", @r)   if $x -> is_zero();
+    if ($x -> is_neg()) {
+        return $upgrade -> bilog2($x, @r) if $upgrade;
+        return $x -> bnan(@r);
+    }
+
+    $x -> {value} = $LIB -> _ilog2($x -> {value});
+    return $x -> round(@r);
+}
+
+sub bilog10 {
+    my ($class, $x, @r) = ref($_[0]) ? (ref($_[0]), @_) : objectify(1, @_);
+
+    return $x if $x -> modify('bilog10');
+
+    return $upgrade -> new($x, @r) unless $x -> isa(__PACKAGE__);
+
+    return $x -> bnan(@r)        if $x -> is_nan();
+    return $x -> binf("+", @r)   if $x -> is_inf("+");
+    return $x -> binf("-", @r)   if $x -> is_zero();
+    if ($x -> is_neg()) {
+        return $upgrade -> bilog2($x, @r) if $upgrade;
+        return $x -> bnan(@r);
+    }
+
+    $x -> {value} = $LIB -> _ilog10($x -> {value});
+    return $x -> round(@r);
+}
+
+sub bclog2 {
+    my ($class, $x, @r) = ref($_[0]) ? (ref($_[0]), @_) : objectify(1, @_);
+
+    return $x if $x -> modify('bclog2');
+
+    return $upgrade -> new($x, @r) unless $x -> isa(__PACKAGE__);
+
+    return $x -> bnan(@r)        if $x -> is_nan();
+    return $x -> binf("+", @r)   if $x -> is_inf("+");
+    return $x -> binf("-", @r)   if $x -> is_zero();
+    if ($x -> is_neg()) {
+        return $upgrade -> bilog2($x, @r) if $upgrade;
+        return $x -> bnan(@r);
+    }
+
+    $x -> {value} = $LIB -> _clog2($x -> {value});
+    return $x -> round(@r);
+}
+
+sub bclog10 {
+    my ($class, $x, @r) = ref($_[0]) ? (ref($_[0]), @_) : objectify(1, @_);
+
+    return $x if $x -> modify('bclog10');
+
+    return $upgrade -> new($x, @r) unless $x -> isa(__PACKAGE__);
+
+    return $x -> bnan(@r)        if $x -> is_nan();
+    return $x -> binf("+", @r)   if $x -> is_inf("+");
+    return $x -> binf("-", @r)   if $x -> is_zero();
+    if ($x -> is_neg()) {
+        return $upgrade -> bilog2($x, @r) if $upgrade;
+        return $x -> bnan(@r);
+    }
+
+    $x -> {value} = $LIB -> _clog10($x -> {value});
+    return $x -> round(@r);
+}
+
 sub bnok {
     # Calculate n over k (binomial coefficient or "choose" function) as
     # integer.
@@ -6505,6 +6581,10 @@ Math::BigInt - arbitrary size integer math package
   $x->blog();             # logarithm of $x to base e (Euler's number)
   $x->blog($base);        # logarithm of $x to base $base (e.g., base 2)
   $x->bexp();             # calculate e ** $x where e is Euler's number
+  $x->bilog2();           # log2($x) rounded down to nearest int
+  $x->bilog10();          # log10($x) rounded down to nearest int
+  $x->bclog2();           # log2($x) rounded up to nearest int
+  $x->bclog10();          # log19($x) rounded up to nearest int
   $x->bnok($y);           # x over y (binomial coefficient n over k)
   $x->buparrow($n, $y);   # Knuth's up-arrow notation
   $x->backermann($y);     # the Ackermann function
@@ -7442,6 +7522,42 @@ Calculates the expression C<e ** $x> where C<e> is Euler's number.
 This method was added in v1.82 of Math::BigInt (April 2007).
 
 See also L</blog()>.
+
+=item bilog2()
+
+Base 2 logarithm rounded down towards the nearest integer.
+
+    $x->bilog2();               # int(log2(x)) = int(log(x)/log(2))
+
+In list context a second argument is returned. This is 1 if the result is
+exact, i.e., the input is an exact power of 2, and 0 otherwise.
+
+=item bilog10()
+
+Base 10 logarithm rounded down towards the nearest integer.
+
+    $x->bilog10();              # int(log10(x)) = int(log(x)/log(10))
+
+In list context a second argument is returned. This is 1 if the result is
+exact, i.e., the input is an exact power of 10, and 0 otherwise.
+
+=item bclog2()
+
+Base 2 logarithm rounded up towards the nearest integer.
+
+    $x->bclog2();               # ceil(log2(x)) = ceil(log(x)/log(2))
+
+In list context a second argument is returned. This is 1 if the result is
+exact, i.e., the input is an exact power of 2, and 0 otherwise.
+
+=item bclog10()
+
+Base 10 logarithm rounded up towards the nearest integer.
+
+    $x->bclog10();              # ceil(log10(x)) = ceil(log(x)/log(10))
+
+In list context a second argument is returned. This is 1 if the result is
+exact, i.e., the input is an exact power of 10, and 0 otherwise.
 
 =item bnok()
 

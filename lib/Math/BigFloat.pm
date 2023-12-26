@@ -3045,6 +3045,22 @@ sub bexp {
     $x;
 }
 
+sub bilog2 {
+    croak "Method ", (caller(0))[3], "() not implemented yet";
+}
+
+sub bilog10 {
+    croak "Method ", (caller(0))[3], "() not implemented yet";
+}
+
+sub bclog2 {
+    croak "Method ", (caller(0))[3], "() not implemented yet";
+}
+
+sub bclog10 {
+    croak "Method ", (caller(0))[3], "() not implemented yet";
+}
+
 sub bnok {
     # Calculate n over k (binomial coefficient or "choose" function) as integer.
     # set up parameters
