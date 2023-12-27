@@ -3606,43 +3606,50 @@ sub bfib {
         croak("bfib() can't return an infinitely long list of numbers")
           if $x -> is_inf();
 
-        # Use the backend library to compute the first $x Fibonacci numbers.
+        my $n = $x -> numify();
 
-        my @values = $LIB->_fib($x->{value});
+        my @y;
 
-        # Make objects out of them. The last element in the array is the
-        # invocand.
+        $y[0] = $x -> copy() -> babs();
+        $y[0]{value} = $LIB -> _zero();
+        return @y if $n == 0;
 
-        for (my $i = 0 ; $i < $#values ; ++ $i) {
-            my $fib = $class -> bzero();
-            $fib -> {value} = $values[$i];
-            $values[$i] = $fib;
+        $y[1] = $y[0] -> copy();
+        $y[1]{value} = $LIB -> _one();
+        return @y if $n == 1;
+
+        for (my $i = 2 ; $i <= abs($n) ; $i++) {
+            $y[$i] = $y[$i - 1] -> copy();
+            $y[$i]{value} = $LIB -> _add($LIB -> _copy($y[$i - 1]{value}),
+                                           $y[$i - 2]{value});
         }
 
-        $x -> {value} = $values[-1];
-        $values[-1] = $x;
+        # The last element in the array is the invocand.
+
+        $x->{value} = $y[-1]{value};
+        $y[-1] = $x;
 
         # If negative, insert sign as appropriate.
 
         if ($x -> is_neg()) {
-            for (my $i = 2 ; $i <= $#values ; $i += 2) {
-                $values[$i]{sign} = '-';
+            for (my $i = 2 ; $i <= $#y ; $i += 2) {
+                $y[$i]{sign} = '-';
             }
         }
 
-        @values = map { $_ -> round(@r) } @values;
-        return @values;
+        @y = map { $_ -> round(@r) } @y;
+        return @y;
     }
 
     # Scalar context.
 
     else {
-        return $x if $x->modify('bdfac') || $x ->  is_inf('+');
-        return $x->bnan() if $x -> is_nan() || $x -> is_inf('-');
+        return $x if $x -> is_inf('+');
+        return $x -> bnan() if $x -> is_nan() || $x -> is_inf('-');
 
         $x->{sign}  = $x -> is_neg() && $x -> is_even() ? '-' : '+';
-        $x->{value} = $LIB->_fib($x->{value});
-        return $x->round(@r);
+        $x->{value} = $LIB -> _fib($x->{value});
+        return $x -> round(@r);
     }
 }
 
