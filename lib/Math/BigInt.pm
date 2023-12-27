@@ -3198,7 +3198,19 @@ sub bnok {
         }
     }
 
-    $n->{value} = $LIB->_nok($n->{value}, $k->{value});
+    # Some backends, e.g., Math::BigInt::GMP do not allow values of n and k
+    # that are larger than the largest unsigned integer, so check for this, and
+    # use the simpler and slower generic method in the superclass if n and/or k
+    # are larger than the largest unsigned integer.
+
+    my $uintmax = $LIB -> _new(~0);
+    if ($LIB -> _acmp($n->{value}, $uintmax) > 0 ||
+        $LIB -> _acmp($k->{value}, $uintmax) > 0)
+    {
+        $n->{value} = $LIB -> SUPER::_nok($n->{value}, $k->{value});
+    } else {
+        $n->{value} = $LIB -> _nok($n->{value}, $k->{value});
+    }
     $n = $n -> bneg() if $sign == -1;
 
     $n -> round(@r);
