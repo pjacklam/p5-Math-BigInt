@@ -819,7 +819,7 @@ sub new {
         $wanted =~ /^\s*[+-]?0_*\d/ and
         @parts = $class -> _oct_str_to_flt_lib_parts($wanted))
     {
-        # The value is an integer iff the exponent is non-negative.
+        # The value is an integer if the exponent is non-negative.
 
         if ($parts[2] eq '+') {
             $self -> {sign}  = $parts[0];
@@ -866,7 +866,7 @@ sub from_dec {
 
     if (my @parts = $class -> _dec_str_to_flt_lib_parts($str)) {
 
-        # The value is an integer iff the exponent is non-negative.
+        # The value is an integer if the exponent is non-negative.
 
         if ($parts[2] eq '+') {
             $self -> {sign}  = $parts[0];
@@ -906,7 +906,7 @@ sub from_hex {
 
     if (my @parts = $class -> _hex_str_to_flt_lib_parts($str)) {
 
-        # The value is an integer iff the exponent is non-negative.
+        # The value is an integer if the exponent is non-negative.
 
         if ($parts[2] eq '+') {
             $self -> {sign}  = $parts[0];
@@ -946,7 +946,7 @@ sub from_oct {
 
     if (my @parts = $class -> _oct_str_to_flt_lib_parts($str)) {
 
-        # The value is an integer iff the exponent is non-negative.
+        # The value is an integer if the exponent is non-negative.
 
         if ($parts[2] eq '+') {
             $self -> {sign}  = $parts[0];
@@ -986,7 +986,7 @@ sub from_bin {
 
     if (my @parts = $class -> _bin_str_to_flt_lib_parts($str)) {
 
-        # The value is an integer iff the exponent is non-negative.
+        # The value is an integer if the exponent is non-negative.
 
         if ($parts[2] eq '+') {
             $self -> {sign}  = $parts[0];
@@ -6404,7 +6404,7 @@ sub _flt_lib_parts_to_dec_str {
     my $class = shift;
     my @parts = @_;
 
-    # The number is an integer iff the exponent is non-negative.
+    # The number is an integer if the exponent is non-negative.
 
     if ($parts[2] eq '+') {
         my $str = $parts[0]
