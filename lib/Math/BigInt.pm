@@ -2339,10 +2339,33 @@ sub bdiv {
     # At this point, both the numerator and denominator are finite numbers, and
     # the denominator (divisor) is non-zero.
 
-    # Division might return a non-integer result, so upgrade unconditionally, if
-    # upgrading is enabled.
+    # Division in scalar context might return a non-integer result, so upgrade
+    # if upgrading is enabled. In list context, we return the quotient and the
+    # remainder, which are both integers, so upgrading is not necessary.
 
-    return $upgrade -> bdiv($x, $y, @r) if defined $upgrade;
+    if ($upgrade && !$wantarray) {
+        my ($quo, $rem);
+
+        if ($wantarray) {
+            ($quo, $rem) = $upgrade -> bdiv($x, $y, @r);
+        } else {
+            $quo = $upgrade -> bdiv($x, $y, @r);
+        }
+
+        if ($quo -> is_int()) {
+            $quo = $quo -> as_int();
+            %$x = %$quo;
+        } else {
+            %$x = %$quo;
+            bless $x, $upgrade;
+        }
+
+        if ($wantarray && $rem -> is_int()) {
+            $rem = $rem -> as_int();
+        }
+
+        return $wantarray ? ($x, $rem) : $x;
+    }
 
     $r[3] = $y;                                   # no push!
 
