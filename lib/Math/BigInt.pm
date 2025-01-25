@@ -2559,7 +2559,7 @@ sub btdiv {
         $x = $x -> round(@r);
     }
 
-    if (wantarray) {
+    if ($wantarray) {
         $rem -> {sign} = $xsign;
         $rem -> {sign} = '+' if $LIB -> _is_zero($rem -> {value});
         $rem -> {accuracy} = $x -> {accuracy};

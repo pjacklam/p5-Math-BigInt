@@ -2195,7 +2195,7 @@ sub bdiv {
     # upgrade, if upgrading is enabled.
 
     return $upgrade -> bdiv($x, $y, @r)
-      if defined($upgrade) && !wantarray && !$LIB -> _is_one($y -> {_m});
+      if defined($upgrade) && !$wantarray && !$LIB -> _is_one($y -> {_m});
 
     # we need to limit the accuracy to protect against overflow
     my $fallback = 0;
@@ -2218,7 +2218,7 @@ sub bdiv {
     }
 
     my $rem;
-    $rem = $class -> bzero() if wantarray;
+    $rem = $class -> bzero() if $wantarray;
 
     $y = $class->new($y) unless $y->isa('Math::BigFloat');
 
@@ -2247,7 +2247,7 @@ sub bdiv {
 
         # make copy of $x in case of list context for later remainder
         # calculation
-        if (wantarray && $y_not_one) {
+        if ($wantarray && $y_not_one) {
             $rem = $x->copy();
         }
 
@@ -2288,7 +2288,7 @@ sub bdiv {
         $x->{precision} = undef;
     }
 
-    if (wantarray) {
+    if ($wantarray) {
         if ($y_not_one) {
             $x = $x -> bfloor();
             $rem = $rem->bmod($y, @params); # copy already done

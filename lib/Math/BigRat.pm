@@ -1113,7 +1113,7 @@ sub bdiv {
     $x->{sign} = $x->{sign} eq $y->{sign} ? '+' : '-';
 
     $x -> bnorm();
-    if (wantarray) {
+    if ($wantarray) {
         my $rem = $x -> copy();
         $x = $x -> bfloor();
         $x = $x -> round(@r);
