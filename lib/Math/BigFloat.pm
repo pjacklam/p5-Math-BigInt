@@ -438,7 +438,7 @@ sub new {
           $
         /x)
     {
-        return $downgrade -> new($1 . $2) if defined $downgrade;
+        return $downgrade -> new($1 . $2) if $downgrade;
         $self->{sign} = $1 || '+';
         $self->{_m}   = $LIB -> _new($2);
         $self->{_es}  = '+';
@@ -525,7 +525,7 @@ sub new {
           unless @r >= 2 && !defined($r[0]) && !defined($r[1]);
 
         return $downgrade -> new($self -> bdstr(), @r)
-          if defined($downgrade) && $self -> is_int();
+          if $downgrade && $self -> is_int();
         return $self;
     }
 
@@ -562,7 +562,7 @@ sub from_dec {
           unless @r >= 2 && !defined($r[0]) && !defined($r[1]);
 
         return $downgrade -> new($self -> bdstr(), @r)
-          if defined($downgrade) && $self -> is_int();
+          if $downgrade && $self -> is_int();
         return $self;
     }
 
@@ -596,7 +596,7 @@ sub from_hex {
           unless @r >= 2 && !defined($r[0]) && !defined($r[1]);
 
         return $downgrade -> new($self -> bdstr(), @r)
-          if defined($downgrade) && $self -> is_int();
+          if $downgrade && $self -> is_int();
         return $self;
     }
 
@@ -630,7 +630,7 @@ sub from_oct {
           unless @r >= 2 && !defined($r[0]) && !defined($r[1]);
 
         return $downgrade -> new($self -> bdstr(), @r)
-          if defined($downgrade) && $self -> is_int();
+          if $downgrade && $self -> is_int();
         return $self;
     }
 
@@ -664,7 +664,7 @@ sub from_bin {
           unless @r >= 2 && !defined($r[0]) && !defined($r[1]);
 
         return $downgrade -> new($self -> bdstr(), @r)
-          if defined($downgrade) && $self -> is_int();
+          if $downgrade && $self -> is_int();
         return $self;
     }
 
@@ -831,7 +831,7 @@ sub from_ieee754 {
         }
 
         return $downgrade -> new($self -> bdstr(), @r)
-          if defined($downgrade) && $self -> is_int();
+          if $downgrade && $self -> is_int();
         return $self -> round(@r);
     }
 
@@ -866,7 +866,7 @@ sub bzero {
 
     my @r = @_;
 
-    return $downgrade -> bzero(@r) if defined $downgrade;
+    return $downgrade -> bzero(@r) if $downgrade;
 
     # If called as a class method, initialize a new object.
 
@@ -924,7 +924,7 @@ sub bone {
 
     return $self if $selfref && $self->modify('bone');
 
-    return $downgrade -> bone(@_) if defined $downgrade;
+    return $downgrade -> bone(@_) if $downgrade;
 
     # Get the sign.
 
@@ -1078,7 +1078,7 @@ sub bnan {
 
     return $self if $selfref && $self->modify('bnan');
 
-    return $downgrade -> bnan(@_) if defined $downgrade;
+    return $downgrade -> bnan(@_) if $downgrade;
 
     # Get the rounding parameters, if any.
 
@@ -1284,7 +1284,7 @@ EOF
     }
 
     return $downgrade -> new($self -> bdstr(), @r)
-      if defined($downgrade) && $self->is_int();
+      if $downgrade && $self->is_int();
     return $self;
 }
 
@@ -1703,7 +1703,7 @@ sub bneg {
     $x->{sign} =~ tr/+-/-+/
       unless $x->{sign} eq '+' && $LIB->_is_zero($x->{_m});
 
-    return $downgrade -> new($x -> bdstr(), @r) if defined($downgrade)
+    return $downgrade -> new($x -> bdstr(), @r) if $downgrade
       && ($x -> is_int() || $x -> is_inf() || $x -> is_nan());
     return $x -> round(@r);
 }
@@ -1719,7 +1719,7 @@ sub bnorm {
 
     # inf, nan etc
     if ($x->{sign} !~ /^[+-]$/) {
-        return $downgrade -> new($x) if defined $downgrade;
+        return $downgrade -> new($x) if $downgrade;
         return $x;
     }
 
@@ -1749,7 +1749,7 @@ sub bnorm {
     }
 
     return $downgrade -> new($x)
-      if defined($downgrade) && $x->is_int();
+      if $downgrade && $x->is_int();
     return $x;
 }
 
@@ -1792,7 +1792,7 @@ sub binc {
     }
 
     return $downgrade -> new($x -> bdstr(), @r)
-      if defined($downgrade) && $x -> is_int();
+      if $downgrade && $x -> is_int();
     return $x;
 }
 
@@ -1836,7 +1836,7 @@ sub bdec {
     }
 
     return $downgrade -> new($x -> bdstr(), @r)
-      if defined($downgrade) && $x -> is_int();
+      if $downgrade && $x -> is_int();
     return $x -> round(@r);
 }
 
@@ -1867,11 +1867,11 @@ sub badd {
             $x->{sign} = $y->{sign};
         }
 
-        return $downgrade -> new($x -> bdstr(), @r) if defined $downgrade;
+        return $downgrade -> new($x -> bdstr(), @r) if $downgrade;
         return $x -> round(@r);
     }
 
-    return $upgrade->badd($x, $y, @r) if defined $upgrade;
+    return $upgrade->badd($x, $y, @r) if $upgrade;
 
     $r[3] = $y;                 # no push!
 
@@ -1925,7 +1925,7 @@ sub badd {
     }
 
     return $downgrade -> new($x -> bdstr(), @r)
-      if defined($downgrade) && $x -> is_int();
+      if $downgrade && $x -> is_int();
     return $x;          # rounding already done above
 }
 
@@ -1954,7 +1954,7 @@ sub bsub {
             } else {
                 $x = $x -> bnan();      # NaN, -inf, +inf
             }
-            return $downgrade -> new($x -> bdstr(), @r) if defined $downgrade;
+            return $downgrade -> new($x -> bdstr(), @r) if $downgrade;
             return $x -> round(@r);
         }
         $x = $x -> badd($y, @r);        # badd does not leave internal zeros
@@ -1962,7 +1962,7 @@ sub bsub {
     }
 
     return $downgrade -> new($x -> bdstr(), @r)
-      if defined($downgrade) && ($x->is_int() || $x->is_inf() || $x->is_nan());
+      if $downgrade && ($x->is_int() || $x->is_inf() || $x->is_nan());
     $x;                         # already rounded by badd() or no rounding
 }
 
@@ -1989,7 +1989,7 @@ sub bmul {
         return $x->binf('-', @r);
     }
 
-    return $upgrade->bmul($x, $y, @r) if defined $upgrade;
+    return $upgrade->bmul($x, $y, @r) if $upgrade;
 
     # aEb * cEd = (a*c)E(b+d)
     $x->{_m} = $LIB->_mul($x->{_m}, $y->{_m});
@@ -2003,7 +2003,7 @@ sub bmul {
     $x = $x->bnorm->round(@r);
 
     return $downgrade -> new($x -> bdstr(), @r)
-      if defined($downgrade) && ($x->is_int() || $x->is_inf() || $x->is_nan());
+      if $downgrade && ($x->is_int() || $x->is_inf() || $x->is_nan());
     return $x;
 }
 
@@ -2046,7 +2046,7 @@ sub bmuladd {
     # z=inf handling (z=NaN handled above)
     if ($z->{sign} =~ /^[+-]inf$/) {
         $x->{sign} = $z->{sign};
-        return $downgrade -> new($x -> bdstr(), @r) if defined $downgrade;
+        return $downgrade -> new($x -> bdstr(), @r) if $downgrade;
         return $x -> round(@r);
     }
 
@@ -2083,7 +2083,7 @@ sub bmuladd {
     $x = $x->bnorm()->round(@r);
 
     return $downgrade -> new($x -> bdstr(), @r)
-      if defined($downgrade) && ($x->is_int() || $x->is_inf() || $x->is_nan());
+      if $downgrade && ($x->is_int() || $x->is_inf() || $x->is_nan());
     return $x;
 }
 
@@ -2119,7 +2119,7 @@ sub bdiv {
         if ($wantarray) {
             $rem = $x -> copy() -> round(@r);
             $rem = $downgrade -> new($rem, @r)
-              if defined($downgrade) && $rem -> is_int();
+              if $downgrade && $rem -> is_int();
         }
         if ($x -> is_zero()) {
             $quo = $x -> bnan(@r);
@@ -2157,7 +2157,7 @@ sub bdiv {
             if ($x -> is_zero() || $x -> bcmp(0) == $y -> bcmp(0)) {
                 $rem = $x -> copy() -> round(@r);
                 $rem = $downgrade -> new($rem, @r)
-                  if defined($downgrade) && $rem -> is_int();
+                  if $downgrade && $rem -> is_int();
                 $quo = $x -> bzero(@r);
             } else {
                 $rem = $class -> binf($y -> {sign}, @r);
@@ -2183,7 +2183,7 @@ sub bdiv {
         my ($quo, $rem);
         $quo = $x->round(@r);
         $quo = $downgrade -> new($quo, @r)
-          if defined($downgrade) && $quo -> is_int();
+          if $downgrade && $quo -> is_int();
         if ($wantarray) {
             $rem = $class -> bzero(@r);
             return $quo, $rem;
@@ -2195,7 +2195,7 @@ sub bdiv {
     # upgrade, if upgrading is enabled.
 
     return $upgrade -> bdiv($x, $y, @r)
-      if defined($upgrade) && !$wantarray && !$LIB -> _is_one($y -> {_m});
+      if $upgrade && !$wantarray && !$LIB -> _is_one($y -> {_m});
 
     # we need to limit the accuracy to protect against overflow
     my $fallback = 0;
@@ -2299,14 +2299,14 @@ sub bdiv {
             $rem->{precision} = undef;
         }
         $x = $downgrade -> new($x -> bdstr(), @r)
-          if defined($downgrade) && $x -> is_int();
+          if $downgrade && $x -> is_int();
         $rem = $downgrade -> new($rem -> bdstr(), @r)
-          if defined($downgrade) && $rem -> is_int();
+          if $downgrade && $rem -> is_int();
         return ($x, $rem);
     }
 
     $x = $downgrade -> new($x, @r)
-      if defined($downgrade) && $x -> is_int();
+      if $downgrade && $x -> is_int();
     $x;         # rounding already done above
 }
 
@@ -2420,7 +2420,7 @@ sub bmod {
 
     $x = $x->round($r[0], $r[1], $r[2], $y);
     return $downgrade -> new($x -> bdstr(), @r)
-      if defined($downgrade) && ($x->is_int() || $x->is_inf() || $x->is_nan());
+      if $downgrade && ($x->is_int() || $x->is_inf() || $x->is_nan());
     return $x;
 }
 
@@ -2457,7 +2457,7 @@ sub bmodpow {
     # XXX TODO: speed it up when all three numbers are integers
     $num = $num->bpow($exp)->bmod($mod);
 
-    return $downgrade -> new($num -> bdstr(), @r) if defined($downgrade)
+    return $downgrade -> new($num -> bdstr(), @r) if $downgrade
       && ($num->is_int() || $num->is_inf() || $num->is_nan());
     return $num -> round(@r);
 }
@@ -2510,7 +2510,7 @@ sub bpow {
     # We don't support complex numbers, so upgrade or return NaN.
 
     if ($x -> is_negative() && !$y -> is_int()) {
-        return $upgrade -> bpow($x, $y, $a, $p, $r) if defined $upgrade;
+        return $upgrade -> bpow($x, $y, $a, $p, $r) if $upgrade;
         return $x -> bnan();
     }
 
@@ -2550,7 +2550,7 @@ sub bpow {
     $x = $x -> round($a, $p, $r, $y);
 
     return $downgrade -> new($x)
-      if defined($downgrade) && ($x->is_int() || $x->is_inf() || $x->is_nan());
+      if $downgrade && ($x->is_int() || $x->is_inf() || $x->is_nan());
     return $x;
 }
 
@@ -2561,7 +2561,7 @@ sub binv {
 
     my $inv = $class -> bdiv($class -> bone(), $x, @r);
 
-    return $downgrade -> new($inv, @r) if defined($downgrade)
+    return $downgrade -> new($inv, @r) if $downgrade
       && ($inv -> is_int() || $inv -> is_inf() || $inv -> is_nan());
 
     for my $key (qw/ sign _m _es _e /) {
@@ -2611,7 +2611,7 @@ sub blog {
             return $x -> bzero(@r) if $x -> is_one();   #     x = 1
             return $x -> bone('+', @r)  if $x == $base; #     x = base
             # we can't handle these cases, so upgrade, if we can
-            return $upgrade -> blog($x, $base, @r) if defined $upgrade;
+            return $upgrade -> blog($x, $base, @r) if $upgrade;
             return $x -> bnan(@r);
         }
         return $x -> bone(@r) if $x == $base;       # 0 < base && 0 < x < inf
@@ -2621,7 +2621,7 @@ sub blog {
         my $sign = defined($base) && $base < 1 ? '-' : '+';
         return $x -> binf($sign, @r);
     } elsif ($x -> is_neg()) {                  # -inf < x < 0
-        return $upgrade -> blog($x, $base, @r) if defined $upgrade;
+        return $upgrade -> blog($x, $base, @r) if $upgrade;
         return $x -> bnan(@r);
     } elsif ($x -> is_one()) {                  # x = 1
         return $x -> bzero(@r);
@@ -2728,7 +2728,7 @@ sub blog {
     $class -> downgrade($dng);
 
     return $downgrade -> new($x -> bdstr(), @r)
-      if defined($downgrade) && $x -> is_int();
+      if $downgrade && $x -> is_int();
     return $x;
 }
 
@@ -3080,7 +3080,7 @@ sub bnok {
     my $yint = Math::BigInt -> new($y -> bsstr());
     $xint = $xint -> bnok($yint);
 
-    return $xint if defined $downgrade;
+    return $xint if $downgrade;
 
     my $xflt = Math::BigFloat -> new($xint);
 
@@ -3395,7 +3395,7 @@ sub bcos {
     $class -> downgrade($dng);
 
     return $downgrade -> new($x -> bdstr(), @r)
-      if defined($downgrade) && $x -> is_int();
+      if $downgrade && $x -> is_int();
     $x;
 }
 
@@ -3574,7 +3574,7 @@ sub batan {
     $class -> downgrade($dng);
 
     return $downgrade -> new($x -> bdstr(), @r)
-      if defined($downgrade) && ($x -> is_int() || $x -> is_inf());
+      if $downgrade && ($x -> is_int() || $x -> is_inf());
     $x;
 }
 
@@ -3684,7 +3684,7 @@ sub bsqrt {
     # We don't support complex numbers.
 
     if ($x -> is_neg()) {
-        return $upgrade -> bsqrt($x, @r) if defined($upgrade);
+        return $upgrade -> bsqrt($x, @r) if $upgrade;
         return $x -> bnan(@r);
     }
 
@@ -3748,7 +3748,7 @@ sub bsqrt {
     }
 
     return $downgrade -> new($x, @r)
-      if defined($downgrade) && $x -> is_int();
+      if $downgrade && $x -> is_int();
     $x;
 }
 
@@ -3770,7 +3770,7 @@ sub broot {
         # -27 ** (1/3) = -3
         return $x -> broot($y -> copy() -> bneg(), @r) -> bneg()
           if $x -> is_int() && $y -> is_int() && $y -> is_neg();
-        return $upgrade -> broot($x, $y, @r) if defined $upgrade;
+        return $upgrade -> broot($x, $y, @r) if $upgrade;
         return $x -> bnan(@r);
     }
 
@@ -3901,7 +3901,7 @@ sub broot {
     $class -> downgrade($dng);
 
     return $downgrade -> new($x -> bdstr(), @r)
-      if defined($downgrade) && ($x -> is_int() || $x -> is_inf());
+      if $downgrade && ($x -> is_int() || $x -> is_inf());
     $x;
 }
 
@@ -3920,7 +3920,7 @@ sub bfac {
     return $x -> bone(@r)      if $x->is_zero() || $x->is_one();
 
     if ($x -> is_neg() || !$x -> is_int()) {
-        return $upgrade -> bfac($x, @r) if defined($upgrade);
+        return $upgrade -> bfac($x, @r) if $upgrade;
         return $x -> bnan(@r);
     }
 
@@ -3933,7 +3933,7 @@ sub bfac {
 
     $x = $x->bnorm()->round(@r);     # norm again and round result
 
-    return $downgrade -> new($x -> bdstr(), @r) if defined($downgrade)
+    return $downgrade -> new($x -> bdstr(), @r) if $downgrade
       && ($x -> is_int() || $x -> is_inf());
     $x;
 }
@@ -3950,7 +3950,7 @@ sub bdfac {
     return $x -> binf("+", @r) if $x->is_inf("+");
 
     if ($x <= -2 || !$x -> is_int()) {
-        return $upgrade -> bdfac($x, @r) if defined($upgrade);
+        return $upgrade -> bdfac($x, @r) if $upgrade;
         return $x -> bnan(@r);
     }
 
@@ -3969,7 +3969,7 @@ sub bdfac {
     $x = $x->bnorm()->round(@r);     # norm again and round result
 
     return $downgrade -> new($x -> bdstr(), @r)
-      if defined($downgrade) && $x -> is_int();
+      if $downgrade && $x -> is_int();
     return $x;
 }
 
@@ -3985,7 +3985,7 @@ sub btfac {
     return $x -> binf("+", @r) if $x->is_inf("+");
 
     if ($x <= -3 || !$x -> is_int()) {
-        return $upgrade -> btfac($x, @r) if defined($upgrade);
+        return $upgrade -> btfac($x, @r) if $upgrade;
         return $x -> bnan(@r);
     }
 
@@ -4003,7 +4003,7 @@ sub btfac {
     $x = $x->round(@r);
 
     return $downgrade -> new($x -> bdstr(), @r)
-      if defined($downgrade) && $x -> is_int();
+      if $downgrade && $x -> is_int();
     return $x;
 }
 
@@ -4020,7 +4020,7 @@ sub bmfac {
     if ($x <= -$k || !$x -> is_int() ||
         ($k -> is_finite() && !$k -> is_int()))
     {
-        return $upgrade -> bmfac($x, $k, @r) if defined($upgrade);
+        return $upgrade -> bmfac($x, $k, @r) if $upgrade;
         return $x -> bnan(@r);
     }
 
@@ -4035,7 +4035,7 @@ sub bmfac {
     $x = $x->round(@r);
 
     return $downgrade -> new($x -> bdstr(), @r)
-      if defined($downgrade) && $x -> is_int();
+      if $downgrade && $x -> is_int();
     return $x;
 }
 
@@ -4064,7 +4064,7 @@ sub blsft {
 
     $x = $x -> bmul($b -> bpow($y), $r[0], $r[1], $r[2], $y);
 
-    return $downgrade -> new($x -> bdstr(), @r) if defined($downgrade)
+    return $downgrade -> new($x -> bdstr(), @r) if $downgrade
       && ($x -> is_int() || $x -> is_inf() || $x -> is_nan());
     return $x;
 }
@@ -4095,7 +4095,7 @@ sub brsft {
     # call bdiv()
     $x = $x -> bdiv($b -> bpow($y), $r[0], $r[1], $r[2], $y);
 
-    return $downgrade -> new($x -> bdstr(), @r) if defined($downgrade)
+    return $downgrade -> new($x -> bdstr(), @r) if $downgrade
       && ($x -> is_int() || $x -> is_inf() || $x -> is_nan());
     return $x;
 }
@@ -4141,7 +4141,7 @@ sub bblsft {
 
     # Now we might downgrade.
 
-    return $downgrade -> new($x) if defined($downgrade);
+    return $downgrade -> new($x) if $downgrade;
     $x -> round(@r);
 }
 
@@ -4182,7 +4182,7 @@ sub bbrsft {
 
     # Now we might downgrade.
 
-    return $downgrade -> new($x) if defined($downgrade);
+    return $downgrade -> new($x) if $downgrade;
     $x -> round(@r);
 }
 
@@ -4200,7 +4200,7 @@ sub band {
 
     $xint = $xint -> band($yint);
 
-    return $xint -> round(@r) if defined $downgrade;
+    return $xint -> round(@r) if $downgrade;
 
     my $xflt = $class -> new($xint);    # back to Math::BigFloat
     $x -> {sign} = $xflt -> {sign};
@@ -4225,7 +4225,7 @@ sub bior {
 
     $xint = $xint -> bior($yint);
 
-    return $xint -> round(@r) if defined $downgrade;
+    return $xint -> round(@r) if $downgrade;
 
     my $xflt = $class -> new($xint);    # back to Math::BigFloat
     $x -> {sign} = $xflt -> {sign};
@@ -4250,7 +4250,7 @@ sub bxor {
 
     $xint = $xint -> bxor($yint);
 
-    return $xint -> round(@r) if defined $downgrade;
+    return $xint -> round(@r) if $downgrade;
 
     my $xflt = $class -> new($xint);    # back to Math::BigFloat
     $x -> {sign} = $xflt -> {sign};
@@ -4271,7 +4271,7 @@ sub bnot {
     my $xint = $x -> as_int();          # to Math::BigInt
     $xint = $xint -> bnot();
 
-    return $xint -> round(@r) if defined $downgrade;
+    return $xint -> round(@r) if $downgrade;
 
     my $xflt = $class -> new($xint);    # back to Math::BigFloat
     $x -> {sign} = $xflt -> {sign};
@@ -4299,7 +4299,7 @@ sub bround {
 
     my ($scale, $mode) = $x->_scale_a(@a);
     if (!defined $scale) {         # no-op
-        return $downgrade -> new($x) if defined($downgrade)
+        return $downgrade -> new($x) if $downgrade
           && ($x->is_int() || $x->is_inf() || $x->is_nan());
         return $x;
     }
@@ -4310,7 +4310,7 @@ sub bround {
     # round a number with A=5 to 5 digits afterwards again
 
     if (defined $x->{accuracy} && $x->{accuracy} < $scale) {
-        return $downgrade -> new($x) if defined($downgrade)
+        return $downgrade -> new($x) if $downgrade
           && ($x->is_int() || $x->is_inf() || $x->is_nan());
         return $x;
     }
@@ -4320,7 +4320,7 @@ sub bround {
     # never round a +-inf, NaN
 
     if ($scale <= 0 || $x->{sign} !~ /^[+-]$/) {
-        return $downgrade -> new($x) if defined($downgrade)
+        return $downgrade -> new($x) if $downgrade
           && ($x->is_int() || $x->is_inf() || $x->is_nan());
         return $x;
     }
@@ -4329,7 +4329,7 @@ sub bround {
     # 2: if we should keep more digits than the mantissa has, do nothing
     if ($x->is_zero() || $LIB->_len($x->{_m}) <= $scale) {
         $x->{accuracy} = $scale if !defined $x->{accuracy} || $x->{accuracy} > $scale;
-        return $downgrade -> new($x) if defined($downgrade)
+        return $downgrade -> new($x) if $downgrade
           && ($x->is_int() || $x->is_inf() || $x->is_nan());
         return $x;
     }
@@ -4357,7 +4357,7 @@ sub bfround {
 
     my ($scale, $mode) = $x->_scale_p(@p);
     if (!defined $scale) {
-        return $downgrade -> new($x) if defined($downgrade)
+        return $downgrade -> new($x) if $downgrade
           && ($x->is_int() || $x->is_inf() || $x->is_nan());
         return $x;
     }
@@ -4366,20 +4366,20 @@ sub bfround {
 
     if ($x->is_zero()) {
         $x->{precision} = $scale if !defined $x->{precision} || $x->{precision} < $scale; # -3 < -2
-        return $downgrade -> new($x) if defined($downgrade)
+        return $downgrade -> new($x) if $downgrade
           && ($x->is_int() || $x->is_inf() || $x->is_nan());
         return $x;
     }
 
     if ($x->{sign} !~ /^[+-]$/) {
-        return $downgrade -> new($x) if defined($downgrade)
+        return $downgrade -> new($x) if $downgrade
           && ($x->is_int() || $x->is_inf() || $x->is_nan());
         return $x;
     }
 
     # don't round if x already has lower precision
     if (defined $x->{precision} && $x->{precision} < 0 && $scale < $x->{precision}) {
-        return $downgrade -> new($x) if defined($downgrade)
+        return $downgrade -> new($x) if $downgrade
           && ($x->is_int() || $x->is_inf() || $x->is_nan());
         return $x;
     }
@@ -4390,7 +4390,7 @@ sub bfround {
         # round right from the '.'
 
         if ($x->{_es} eq '+') { # e >= 0 => nothing to round
-            return $downgrade -> new($x) if defined($downgrade)
+            return $downgrade -> new($x) if $downgrade
               && ($x->is_int() || $x->is_inf() || $x->is_nan());
             return $x;
         }
@@ -4415,7 +4415,7 @@ sub bfround {
         # do not round after/right of the $dad
 
         if ($scale > $dad) { # 0.123, scale >= 3 => exit
-            return $downgrade -> new($x) if defined($downgrade)
+            return $downgrade -> new($x) if $downgrade
               && ($x->is_int() || $x->is_inf() || $x->is_nan());
             return $x;
         }
@@ -4424,7 +4424,7 @@ sub bfround {
         # 0.0065, scale -2, round last '0' with following '65' (scale == zad
         # case)
         if ($scale < $zad) {
-            return $downgrade -> new($x) if defined($downgrade)
+            return $downgrade -> new($x) if $downgrade
               && ($x->is_int() || $x->is_inf() || $x->is_nan());
             return $x->bzero();
         }
@@ -4453,7 +4453,7 @@ sub bfround {
         $scale = 1 if $scale == 0;
         # shortcut if already integer
         if ($scale == 1 && $dbt <= $dbd) {
-            return $downgrade -> new($x) if defined($downgrade)
+            return $downgrade -> new($x) if $downgrade
               && ($x->is_int() || $x->is_inf() || $x->is_nan());
             return $x;
         }
@@ -4462,7 +4462,7 @@ sub bfround {
 
         if ($scale > $dbd) {
             # not enough digits before dot, so round to zero
-            return $downgrade -> new($x) if defined($downgrade);
+            return $downgrade -> new($x) if $downgrade;
             return $x->bzero;
         } elsif ($scale == $dbd) {
             # maximum
@@ -4500,7 +4500,7 @@ sub bfloor {
         }
         $x = $x->round(@r);
     }
-    return $downgrade -> new($x -> bdstr(), @r) if defined($downgrade);
+    return $downgrade -> new($x -> bdstr(), @r) if $downgrade;
     return $x;
 }
 
@@ -4527,7 +4527,7 @@ sub bceil {
         $x = $x->round(@r);
     }
 
-    return $downgrade -> new($x -> bdstr(), @r) if defined($downgrade);
+    return $downgrade -> new($x -> bdstr(), @r) if $downgrade;
     return $x;
 }
 
@@ -4550,7 +4550,7 @@ sub bint {
         $x = $x->round(@r);
     }
 
-    return $downgrade -> new($x -> bdstr(), @r) if defined($downgrade);
+    return $downgrade -> new($x -> bdstr(), @r) if $downgrade;
     return $x;
 }
 
@@ -4594,7 +4594,7 @@ sub bgcd {
     $x = $x -> babs();
 
     return $downgrade -> new($x)
-      if defined $downgrade && $x->is_int();
+      if $downgrade && $x->is_int();
     return $x;
 }
 
@@ -4631,7 +4631,7 @@ sub blcm {
     $x = $x -> babs();
 
     return $downgrade -> new($x)
-      if defined $downgrade && $x->is_int();
+      if $downgrade && $x->is_int();
     return $x;
 }
 
@@ -4746,11 +4746,11 @@ sub sparts {
     my $mant = $class -> new($x);
     $mant->{_es} = '+';
     $mant->{_e}  = $LIB->_zero();
-    $mant = $downgrade -> new($mant) if defined $downgrade;
+    $mant = $downgrade -> new($mant) if $downgrade;
     return $mant unless wantarray;
 
     my $expo = $class -> new($x -> {_es} . $LIB->_str($x -> {_e}));
-    $expo = $downgrade -> new($expo) if defined $downgrade;
+    $expo = $downgrade -> new($expo) if $downgrade;
     return ($mant, $expo);
 }
 
@@ -4861,7 +4861,7 @@ sub dparts {
         return ($int, $frc);
     }
 
-    $int = $downgrade -> new($int) if defined $downgrade;
+    $int = $downgrade -> new($int) if $downgrade;
     return $int unless wantarray;
     return $int, $frc;
 }
@@ -4894,7 +4894,7 @@ sub fparts {
 
     # If we get here, we know that the output is an integer.
 
-    $class = $downgrade if defined $downgrade;
+    $class = $downgrade if $downgrade;
 
     my @flt_parts = ($x->{sign}, $x->{_m}, $x->{_es}, $x->{_e});
     my @rat_parts = $class -> _flt_lib_parts_to_rat_lib_parts(@flt_parts);
@@ -4918,7 +4918,7 @@ sub numerator {
 
     # If we get here, we know that the output is an integer.
 
-    $class = $downgrade if defined $downgrade;
+    $class = $downgrade if $downgrade;
 
     if ($x -> {_es} eq '-') {                   # exponent < 0
         my $numer_lib = $LIB -> _copy($x -> {_m});
@@ -4950,7 +4950,7 @@ sub denominator {
 
     # If we get here, we know that the output is an integer.
 
-    $class = $downgrade if defined $downgrade;
+    $class = $downgrade if $downgrade;
 
     if ($x -> {_es} eq '-') {                   # exponent < 0
         my $numer_lib = $LIB -> _copy($x -> {_m});
@@ -5050,7 +5050,7 @@ sub bdstr {
     # Upgrade?
 
     return $upgrade -> bdstr($x, @r)
-      if defined($upgrade) && !$x -> isa(__PACKAGE__);
+      if $upgrade && !$x -> isa(__PACKAGE__);
 
     # Finite number
 
@@ -5101,7 +5101,7 @@ sub bsstr {
     # Upgrade?
 
     return $upgrade -> bsstr($x, @r)
-      if defined($upgrade) && !$x -> isa(__PACKAGE__);
+      if $upgrade && !$x -> isa(__PACKAGE__);
 
     # Finite number
 
@@ -5126,7 +5126,7 @@ sub bnstr {
     # Upgrade?
 
     return $upgrade -> bnstr($x, @r)
-      if defined($upgrade) && !$x -> isa(__PACKAGE__);
+      if $upgrade && !$x -> isa(__PACKAGE__);
 
     # Finite number
 
@@ -5177,7 +5177,7 @@ sub bestr {
     # Upgrade?
 
     return $upgrade -> bestr($x, @r)
-      if defined($upgrade) && !$x -> isa(__PACKAGE__);
+      if $upgrade && !$x -> isa(__PACKAGE__);
 
     # Finite number
 
@@ -5232,7 +5232,7 @@ sub bfstr {
     # Upgrade?
 
     return $upgrade -> bfstr($x, @r)
-      if defined($upgrade) && !$x -> isa(__PACKAGE__);
+      if $upgrade && !$x -> isa(__PACKAGE__);
 
     # Finite number
 
@@ -5266,7 +5266,7 @@ sub to_hex {
     # Upgrade?
 
     return $upgrade -> to_hex($x, @r)
-      if defined($upgrade) && !$x -> isa(__PACKAGE__);
+      if $upgrade && !$x -> isa(__PACKAGE__);
 
     # Finite number
 
@@ -5298,7 +5298,7 @@ sub to_oct {
     # Upgrade?
 
     return $upgrade -> to_oct($x, @r)
-      if defined($upgrade) && !$x -> isa(__PACKAGE__);
+      if $upgrade && !$x -> isa(__PACKAGE__);
 
     # Finite number
 
@@ -5330,7 +5330,7 @@ sub to_bin {
     # Upgrade?
 
     return $upgrade -> to_bin($x, @r)
-      if defined($upgrade) && !$x -> isa(__PACKAGE__);
+      if $upgrade && !$x -> isa(__PACKAGE__);
 
     # Finite number
 

@@ -332,7 +332,7 @@ sub new {
         #return $n -> copy($n)               if $n -> isa('Math::BigRat');
         if ($n -> isa('Math::BigRat')) {
             return $downgrade -> new($n)
-              if defined($downgrade) && $n -> is_int();
+              if $downgrade && $n -> is_int();
             return $class -> copy($n);
         }
 
@@ -349,7 +349,7 @@ sub new {
                                               -> bstr());
             $self -> {_d}   = $LIB -> _one();
             $self -> {sign} = $n -> sign();
-            return $downgrade -> new($n) if defined $downgrade;
+            return $downgrade -> new($n) if $downgrade;
             return $self;
         }
 
@@ -376,7 +376,7 @@ sub new {
 
             $self -> {sign} = $n -> sign();
             return $downgrade -> new($n, undef, undef)
-              if defined($downgrade) && $n -> is_int();
+              if $downgrade && $n -> is_int();
             return $self;
         }
 
@@ -477,7 +477,7 @@ sub new {
                                          $LIB -> _div($LIB -> _copy($r), $gcd_pr));
 
             return $downgrade -> new($n->bstr())
-              if defined($downgrade) && $self -> is_int();
+              if $downgrade && $self -> is_int();
             return $self;       # no need for $self -> bnorm() here
         }
 
@@ -584,7 +584,7 @@ sub new {
     }
 
     return $downgrade -> new($self -> bstr())
-      if defined($downgrade) && $self -> is_int();
+      if $downgrade && $self -> is_int();
     return $self;
 }
 
@@ -626,7 +626,7 @@ sub bnan {
         croak ("Tried to set a variable to NaN in $class->bnan()");
     }
 
-    return $downgrade -> bnan() if defined $downgrade;
+    return $downgrade -> bnan() if $downgrade;
 
     $self -> {sign} = $nan;
     $self -> {_n}   = $LIB -> _zero();
@@ -656,7 +656,7 @@ sub binf {
         croak ("Tried to set a variable to +-inf in $class->binf()");
     }
 
-    return $downgrade -> binf($sign) if defined $downgrade;
+    return $downgrade -> binf($sign) if $downgrade;
 
     $self -> {sign} = $sign;
     $self -> {_n}   = $LIB -> _zero();
@@ -680,7 +680,7 @@ sub bone {
     my $sign = shift();
     $sign = '+' unless defined($sign) && $sign eq '-';
 
-    return $downgrade -> bone($sign) if defined $downgrade;
+    return $downgrade -> bone($sign) if $downgrade;
 
     $self = bless {}, $class unless $selfref;
     $self -> {sign} = $sign;
@@ -702,7 +702,7 @@ sub bzero {
 
     $class -> import() if $IMPORT == 0;
 
-    return $downgrade -> bzero() if defined $downgrade;
+    return $downgrade -> bzero() if $downgrade;
 
     $self = bless {}, $class unless $selfref;
     $self -> {sign} = '+';
@@ -754,7 +754,7 @@ sub bstr {
     # Upgrade?
 
     return $upgrade -> bstr($x, @r)
-      if defined($upgrade) && !$x -> isa($class);
+      if $upgrade && !$x -> isa($class);
 
     # Finite number
 
@@ -782,7 +782,7 @@ sub bsstr {
     # Upgrade?
 
     return $upgrade -> bsstr($x, @r)
-      if defined($upgrade) && !$x -> isa($class);
+      if $upgrade && !$x -> isa($class);
 
     # Finite number
 
@@ -807,7 +807,7 @@ sub bfstr {
     # Upgrade?
 
     return $upgrade -> bfstr($x, @r)
-      if defined($upgrade) && !$x -> isa($class);
+      if $upgrade && !$x -> isa($class);
 
     # Finite number
 
@@ -831,13 +831,13 @@ sub bnorm {
 
     # no normalize for NaN, inf etc.
     if ($x->{sign} !~ /^[+-]$/) {
-        return $downgrade -> new($x) if defined $downgrade;
+        return $downgrade -> new($x) if $downgrade;
         return $x;
     }
 
     # normalize zeros to 0/1
     if ($LIB->_is_zero($x->{_n})) {
-        return $downgrade -> bzero() if defined($downgrade);
+        return $downgrade -> bzero() if $downgrade;
         $x->{sign} = '+';                               # never leave a -0
         $x->{_d} = $LIB->_one() unless $LIB->_is_one($x->{_d});
         return $x;
@@ -845,7 +845,7 @@ sub bnorm {
 
     # n/1
     if ($LIB->_is_one($x->{_d})) {
-        return $downgrade -> new($x) if defined($downgrade);
+        return $downgrade -> new($x) if $downgrade;
         return $x;               # no need to reduce
     }
 
@@ -874,7 +874,7 @@ sub bneg {
       unless ($x->{sign} eq '+' && $LIB->_is_zero($x->{_n}));
 
     return $downgrade -> new($x)
-      if defined($downgrade) && $LIB -> _is_one($x->{_d});
+      if $downgrade && $LIB -> _is_one($x->{_d});
     $x;
 }
 
@@ -979,12 +979,12 @@ sub bmul {
 
     # x == 0  # also: or y == 1 or y == -1
     if ($x -> is_zero()) {
-        $x = $downgrade -> bzero($x) if defined $downgrade;
+        $x = $downgrade -> bzero($x) if $downgrade;
         return wantarray ? ($x, $class->bzero()) : $x;
     }
 
     if ($y -> is_zero()) {
-        $x = defined($downgrade) ? $downgrade -> bzero($x) : $x -> bzero();
+        $x = $downgrade ? $downgrade -> bzero($x) : $x -> bzero();
         return wantarray ? ($x, $class->bzero()) : $x;
     }
 
@@ -1033,11 +1033,11 @@ sub bdiv {
     if ($x -> is_nan() || $y -> is_nan()) {
         if ($wantarray) {
             return $downgrade -> bnan(), $downgrade -> bnan()
-              if defined($downgrade);
+              if $downgrade;
             return $x -> bnan(), $class -> bnan();
         } else {
             return $downgrade -> bnan()
-              if defined($downgrade);
+              if $downgrade;
             return $x -> bnan();
         }
     }
@@ -1058,9 +1058,9 @@ sub bdiv {
         }
 
         $quo = $downgrade -> new($quo)
-          if defined($downgrade) && $quo -> is_int();
+          if $downgrade && $quo -> is_int();
         $rem = $downgrade -> new($rem)
-          if $wantarray && defined($downgrade) && $rem -> is_int();
+          if $wantarray && $downgrade && $rem -> is_int();
         return $wantarray ? ($quo, $rem) : $quo;
     }
 
@@ -1079,9 +1079,9 @@ sub bdiv {
         }
 
         $quo = $downgrade -> new($quo)
-          if defined($downgrade) && $quo -> is_int();
+          if $downgrade && $quo -> is_int();
         $rem = $downgrade -> new($rem)
-          if $wantarray && defined($downgrade) && $rem -> is_int();
+          if $wantarray && $downgrade && $rem -> is_int();
         return $wantarray ? ($quo, $rem) : $quo;
     }
 
@@ -1100,17 +1100,17 @@ sub bdiv {
                 $quo = $x -> bone('-');
             }
             $quo = $downgrade -> new($quo)
-              if defined($downgrade) && $quo -> is_int();
+              if $downgrade && $quo -> is_int();
             $rem = $downgrade -> new($rem)
-              if defined($downgrade) && $rem -> is_int();
+              if $downgrade && $rem -> is_int();
             return ($quo, $rem);
         } else {
             if ($y -> is_inf()) {
                 if ($x -> is_nan() || $x -> is_inf()) {
-                    return $downgrade -> bnan() if defined $downgrade;
+                    return $downgrade -> bnan() if $downgrade;
                     return $x -> bnan();
                 } else {
-                    return $downgrade -> bzero() if defined $downgrade;
+                    return $downgrade -> bzero() if $downgrade;
                     return $x -> bzero();
                 }
             }
@@ -1123,7 +1123,7 @@ sub bdiv {
     # x == 0?
     if ($x->is_zero()) {
         return $wantarray ? ($downgrade -> bzero(), $downgrade -> bzero())
-                          : $downgrade -> bzero() if defined $downgrade;
+                          : $downgrade -> bzero() if $downgrade;
         return $wantarray ? ($x, $class->bzero()) : $x;
     }
 
@@ -1147,8 +1147,8 @@ sub bdiv {
         $x = $x -> bfloor();
         $x = $x -> round(@r);
         $rem = $rem -> bsub($x -> copy()) -> bmul($y);
-        $x   = $downgrade -> new($x)   if defined($downgrade) && $x -> is_int();
-        $rem = $downgrade -> new($rem) if defined($downgrade) && $rem -> is_int();
+        $x   = $downgrade -> new($x)   if $downgrade && $x -> is_int();
+        $rem = $downgrade -> new($rem) if $downgrade && $rem -> is_int();
         return $x, $rem;
     } else {
         return $x -> round(@r);
@@ -1177,7 +1177,7 @@ sub bmod {
     # Modulo zero. This is handled the same way as in Math::BigInt -> bmod().
 
     if ($y -> is_zero()) {
-        return $downgrade -> bzero() if defined $downgrade;
+        return $downgrade -> bzero() if $downgrade;
         return $x;
     }
 
@@ -1193,10 +1193,10 @@ sub bmod {
 
     if ($y -> is_inf()) {
         if ($x -> is_zero() || $x -> bcmp(0) == $y -> bcmp(0)) {
-            return $downgrade -> new($x) if defined($downgrade) && $x -> is_int();
+            return $downgrade -> new($x) if $downgrade && $x -> is_int();
             return $x;
         } else {
-            return $downgrade -> binf($y -> sign()) if defined($downgrade);
+            return $downgrade -> binf($y -> sign()) if $downgrade;
             return $x -> binf($y -> sign());
         }
     }
@@ -1205,7 +1205,7 @@ sub bmod {
     # the denominator (divisor) is non-zero.
 
     if ($x->is_zero()) {        # 0 / 7 = 0, mod 0
-        return $downgrade -> bzero() if defined $downgrade;
+        return $downgrade -> bzero() if $downgrade;
         return $x;
     }
 
@@ -1224,7 +1224,7 @@ sub bdec {
     my ($class, $x, @r) = ref($_[0]) ? (ref($_[0]), @_) : objectify(1, @_);
 
     if ($x->{sign} !~ /^[+-]$/) {       # NaN, inf, -inf
-        return $downgrade -> new($x) if defined $downgrade;
+        return $downgrade -> new($x) if $downgrade;
         return $x;
     }
 
@@ -1248,7 +1248,7 @@ sub binc {
     my ($class, $x, @r) = ref($_[0]) ? (ref($_[0]), @_) : objectify(1, @_);
 
     if ($x->{sign} !~ /^[+-]$/) {       # NaN, inf, -inf
-        return $downgrade -> new($x) if defined $downgrade;
+        return $downgrade -> new($x) if $downgrade;
         return $x;
     }
 
@@ -1440,7 +1440,7 @@ sub bceil {
     if ($x->{sign} !~ /^[+-]$/ ||     # NaN or inf or
         $LIB->_is_one($x->{_d}))      # integer
     {
-        return $downgrade -> new($x) if defined $downgrade;
+        return $downgrade -> new($x) if $downgrade;
         return $x;
     }
 
@@ -1448,7 +1448,7 @@ sub bceil {
     $x->{_d} = $LIB->_one();                    # d => 1
     $x->{_n} = $LIB->_inc($x->{_n}) if $x->{sign} eq '+';   # +22/7 => 4/1
     $x->{sign} = '+' if $x->{sign} eq '-' && $LIB->_is_zero($x->{_n}); # -0 => 0
-    return $downgrade -> new($x) if defined $downgrade;
+    return $downgrade -> new($x) if $downgrade;
     $x;
 }
 
@@ -1458,14 +1458,14 @@ sub bfloor {
     if ($x->{sign} !~ /^[+-]$/ ||     # NaN or inf or
         $LIB->_is_one($x->{_d}))      # integer
     {
-        return $downgrade -> new($x) if defined $downgrade;
+        return $downgrade -> new($x) if $downgrade;
         return $x;
     }
 
     $x->{_n} = $LIB->_div($x->{_n}, $x->{_d});  # 22/7 => 3/1 w/ truncate
     $x->{_d} = $LIB->_one();                    # d => 1
     $x->{_n} = $LIB->_inc($x->{_n}) if $x->{sign} eq '-';   # -22/7 => -4/1
-    return $downgrade -> new($x) if defined $downgrade;
+    return $downgrade -> new($x) if $downgrade;
     $x;
 }
 
@@ -1475,14 +1475,14 @@ sub bint {
     if ($x->{sign} !~ /^[+-]$/ ||     # NaN or inf or
         $LIB->_is_one($x->{_d}))      # integer
     {
-        return $downgrade -> new($x) if defined $downgrade;
+        return $downgrade -> new($x) if $downgrade;
         return $x;
     }
 
     $x->{_n} = $LIB->_div($x->{_n}, $x->{_d});  # 22/7 => 3/1 w/ truncate
     $x->{_d} = $LIB->_one();                    # d => 1
     $x->{sign} = '+' if $x->{sign} eq '-' && $LIB -> _is_zero($x->{_n});
-    return $downgrade -> new($x) if defined $downgrade;
+    return $downgrade -> new($x) if $downgrade;
     return $x;
 }
 
@@ -1547,7 +1547,7 @@ sub bpow {
 
     if ($x -> is_negative() && !$y -> is_int()) {
         return $upgrade -> bpow($upgrade -> new($x), $y, @r)
-          if defined $upgrade;
+          if $upgrade;
         return $x -> bnan();
     }
 
@@ -1995,7 +1995,7 @@ sub bblsft {
 
     # Now we might downgrade.
 
-    return $downgrade -> new($x) if defined($downgrade);
+    return $downgrade -> new($x) if $downgrade;
     $x -> round(@r);
 }
 
@@ -2035,7 +2035,7 @@ sub bbrsft {
 
     # Now we might downgrade.
 
-    return $downgrade -> new($x) if defined($downgrade);
+    return $downgrade -> new($x) if $downgrade;
     $x -> round(@r);
 }
 
@@ -2142,21 +2142,21 @@ sub bnot {
 
 sub round {
     my $x = shift;
-    return $downgrade -> new($x) if defined($downgrade) &&
+    return $downgrade -> new($x) if $downgrade &&
       ($x -> is_int() || $x -> is_inf() || $x -> is_nan());
     $x;
 }
 
 sub bround {
     my $x = shift;
-    return $downgrade -> new($x) if defined($downgrade) &&
+    return $downgrade -> new($x) if $downgrade &&
       ($x -> is_int() || $x -> is_inf() || $x -> is_nan());
     $x;
 }
 
 sub bfround {
     my $x = shift;
-    return $downgrade -> new($x) if defined($downgrade) &&
+    return $downgrade -> new($x) if $downgrade &&
       ($x -> is_int() || $x -> is_inf() || $x -> is_nan());
     $x;
 }
@@ -2567,7 +2567,7 @@ sub from_dec {
         }
 
         return $downgrade -> new($self -> bstr(), @r)
-          if defined($downgrade) && $self -> is_int();
+          if $downgrade && $self -> is_int();
         return $self;
     }
 
