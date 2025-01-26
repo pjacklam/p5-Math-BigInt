@@ -287,26 +287,41 @@ sub new {
 
     # One or two input arguments may be given. First handle the numerator $n.
 
-    if (ref($n)) {
-        $n = Math::BigFloat -> new($n, undef, undef)
-          unless ($n -> isa('Math::BigRat') ||
-                  $n -> isa('Math::BigInt') ||
-                  $n -> isa('Math::BigFloat'));
-    } else {
-        if (defined $d) {
-            # If the denominator is defined, the numerator is not a string
-            # fraction, e.g., "355/113".
-            $n = Math::BigFloat -> new($n, undef, undef);
+    {
+        # Temporarily disable upgrading and downgrading
+
+        my $upg = Math::BigFloat -> upgrade();
+        my $dng = Math::BigFloat -> downgrade();
+        Math::BigFloat -> upgrade(undef);
+        Math::BigFloat -> downgrade(undef);
+
+        if (ref($n)) {
+            $n = Math::BigFloat -> new($n, undef, undef)
+              unless ($n -> isa('Math::BigRat') ||
+                      $n -> isa('Math::BigInt') ||
+                      $n -> isa('Math::BigFloat'));
         } else {
-            # If the denominator is undefined, the numerator might be a string
-            # fraction, e.g., "355/113".
-            if ($n =~ m| ^ \s* (\S+) \s* / \s* (\S+) \s* $ |x) {
-                $n = Math::BigFloat -> new($1, undef, undef);
-                $d = Math::BigFloat -> new($2, undef, undef);
-            } else {
+
+            if (defined $d) {
+                # If the denominator is defined, the numerator is not a string
+                # fraction, e.g., "355/113".
                 $n = Math::BigFloat -> new($n, undef, undef);
+            } else {
+                # If the denominator is undefined, the numerator might be a string
+                # fraction, e.g., "355/113".
+                if ($n =~ m| ^ \s* (\S+) \s* / \s* (\S+) \s* $ |x) {
+                    $n = Math::BigFloat -> new($1, undef, undef);
+                    $d = Math::BigFloat -> new($2, undef, undef);
+                } else {
+                    $n = Math::BigFloat -> new($n, undef, undef);
+                }
             }
         }
+
+        # Restore upgrading and downgrading
+
+        Math::BigFloat -> upgrade($upg);
+        Math::BigFloat -> downgrade($dng);
     }
 
     # At this point $n is an object and $d is either an object or undefined. An
@@ -371,10 +386,24 @@ sub new {
     # At the point we know that both $n and $d are defined. We know that $n is
     # an object, but $d might still be a scalar. Now handle $d.
 
-    $d = Math::BigFloat -> new($d, undef, undef)
-      unless ref($d) && ($d -> isa('Math::BigRat') ||
-                         $d -> isa('Math::BigInt') ||
-                         $d -> isa('Math::BigFloat'));
+    {
+        # Temporarily disable upgrading and downgrading
+
+        my $upg = Math::BigFloat -> upgrade();
+        my $dng = Math::BigFloat -> downgrade();
+        Math::BigFloat -> upgrade(undef);
+        Math::BigFloat -> downgrade(undef);
+
+        $d = Math::BigFloat -> new($d, undef, undef)
+          unless ref($d) && ($d -> isa('Math::BigRat') ||
+                             $d -> isa('Math::BigInt') ||
+                             $d -> isa('Math::BigFloat'));
+
+        # Restore upgrading and downgrading
+
+        Math::BigFloat -> upgrade($upg);
+        Math::BigFloat -> downgrade($dng);
+    }
 
     # At this point both $n and $d are objects.
 
