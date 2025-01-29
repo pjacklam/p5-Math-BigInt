@@ -320,8 +320,8 @@ sub isa {
 }
 
 sub config {
-    # return (later set?) configuration data as hash ref
-    my $class = shift || 'Math::BigFloat';
+    my $self  = shift;
+    my $class = ref($self) || $self || __PACKAGE__;
 
     # Getter/accessor.
 
@@ -329,16 +329,20 @@ sub config {
         my $param = shift;
         return $class if $param eq 'class';
         return $LIB   if $param eq 'with';
-        return $class->SUPER::config($param);
+        return $self -> SUPER::config($param);
     }
 
     # Setter.
 
-    my $cfg = $class->SUPER::config(@_);
+    my $cfg = $self -> SUPER::config(@_);
 
-    # now we need only to override the ones that are different from our parent
-    $cfg->{class} = $class;
-    $cfg->{with} = $LIB;
+    # We need only to override the ones that are different from our parent.
+
+    unless (ref($self)) {
+        $cfg->{class} = $class;
+        $cfg->{with}  = $LIB;
+    }
+
     $cfg;
 }
 

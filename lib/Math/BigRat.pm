@@ -718,19 +718,28 @@ sub bzero {
 ##############################################################################
 
 sub config {
-    # return (later set?) configuration data as hash ref
-    my $class = shift() || 'Math::BigRat';
+    my $self  = shift;
+    my $class = ref($self) || $self || __PACKAGE__;
+
+    # Getter/accessor.
 
     if (@_ == 1 && ref($_[0]) ne 'HASH') {
-        my $cfg = $class->SUPER::config();
-        return $cfg->{$_[0]};
+        my $param = shift;
+        return $class if $param eq 'class';
+        return $LIB   if $param eq 'with';
+        return $self -> SUPER::config($param);
     }
 
-    my $cfg = $class->SUPER::config(@_);
+    # Setter.
 
-    # now we need only to override the ones that are different from our parent
-    $cfg->{class} = $class;
-    $cfg->{with}  = $LIB;
+    my $cfg = $self -> SUPER::config(@_);
+
+    # We need only to override the ones that are different from our parent.
+
+    unless (ref($self)) {
+        $cfg->{class} = $class;
+        $cfg->{with} = $LIB;
+    }
 
     $cfg;
 }

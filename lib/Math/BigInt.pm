@@ -542,18 +542,19 @@ sub trap_nan {
 
 sub config {
     # return (or set) configuration data.
-    my $class = shift || __PACKAGE__;
+    my $self  = shift;
+    my $class = ref($self) || $self || __PACKAGE__;
 
     # setter/mutator
     #
-    # $class -> config(var => value, ...)
-    # $class -> config({ var => value, ... })
+    # $self -> config(param => value, ...)
+    # $self -> config({ param => value, ... })
 
     if (@_ > 1 || (@_ == 1 && (ref($_[0]) eq 'HASH'))) {
         # try to set given options as arguments from hash
 
-        # If the argument is a hash ref, make a copy of it, since keys will be
-        # deleted below and we don't want to modify the input hash.
+        # If the argument is a hash ref, make a copy of it, since hash keys
+        # will be deleted below, and we don't want to modify the input hash.
 
         my $args = ref($_[0]) eq 'HASH' ? { %{ $_[0] } }: { @_ };
 
@@ -568,17 +569,17 @@ sub config {
           if defined($args -> {accuracy}) && defined ($args -> {precision});
 
         if (defined $args -> {accuracy}) {
-            $class -> accuracy($args -> {accuracy});
+            $self -> accuracy($args -> {accuracy});
         } elsif (defined $args -> {precision}) {
-            $class -> precision($args -> {precision});
+            $self -> precision($args -> {precision});
         } else {
-            $class -> accuracy(undef);  # also sets precision to undef
+            $self -> accuracy(undef);  # also sets precision to undef
         }
 
         delete $args->{accuracy};
         delete $args->{precision};
 
-        # Set any remaining keys.
+        # Set any remaining hash keys.
 
         foreach my $key (qw/
                                round_mode div_scale
@@ -587,7 +588,7 @@ sub config {
                            /)
         {
             # use a method call to check argument
-            $class->$key($args->{$key}) if exists $args->{$key};
+            $self -> $key($args->{$key}) if exists $args->{$key};
             delete $args->{$key};
         }
 
@@ -595,35 +596,46 @@ sub config {
 
         if (keys %$args) {
             croak("Illegal key(s) '", join("', '", keys %$args),
-                        "' passed to $class\->config()");
+                        "' passed to ${class}->config()");
         }
     }
 
-    # Now build the full configuration.
+    # getter/accessor
 
-    my $cfg = {
-               lib         => $LIB,
-               lib_version => $LIB -> VERSION(),
-               class       => $class,
-               version     => $class -> VERSION(),
-              };
+    my $cfg = {};
 
-    foreach my $key (qw/
-                           accuracy precision
-                           round_mode div_scale
-                           upgrade downgrade
-                           trap_inf trap_nan
-                       /)
-    {
-        $cfg->{$key} = $class -> $key();
+    if (ref($self)) {           # $x->config("param") or $x->config()
+
+        # Currently, only 'accuracy' and 'precision' are supported, but more
+        # parameters will be added as the global variables are moved into the
+        # OO interface. XXX
+
+        my @param = ('accuracy', 'precision');
+
+        for my $param (@param) {
+            $cfg -> {$param} = $self -> {$param};
+        }
+
+    } else {                    # $class->config("param") or $class->config()
+
+        my @param = ('accuracy', 'precision', 'round_mode', 'div_scale',
+                     'upgrade', 'downgrade', 'trap_inf', 'trap_nan');
+
+        for my $param (@param) {
+            $cfg -> {$param} = $self -> $param();
+        }
+
+        # Additional read-only class parameters.
+
+        $cfg -> {lib}         = $LIB;
+        $cfg -> {lib_version} = $LIB -> VERSION();
+        $cfg -> {class}       = $class;
+        $cfg -> {version}     = $class -> VERSION();
     }
 
-    # getter/accessor
-    #
-    # $class -> config("var")
-
     if (@_ == 1 && (ref($_[0]) ne 'HASH')) {
-        return $cfg->{$_[0]};
+        my $param = shift;
+        return $cfg->{$param};
     }
 
     $cfg;
