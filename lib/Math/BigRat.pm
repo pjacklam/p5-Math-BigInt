@@ -1024,14 +1024,12 @@ sub bdiv {
     # (dividend: BRAT or num_str, divisor: BRAT or num_str) return
     # (BRAT, BRAT) (quo, rem) or BRAT (only rem)
 
-    # set up parameters
-    my ($class, $x, $y, @r) = (ref($_[0]), @_);
-    # objectify is costly, so avoid it
-    if ((!ref($_[0])) || (ref($_[0]) ne ref($_[1]))) {
-        ($class, $x, $y, @r) = objectify(2, @_);
-    }
+    # Set up parameters.
+    my ($class, $x, $y, @r) = ref($_[0]) && ref($_[0]) eq ref($_[1])
+                            ? (ref($_[0]), @_)
+                            : objectify(2, @_);
 
-    return $x if $x->modify('bdiv');
+    return $x if $x -> modify('bdiv');
 
     my $wantarray = wantarray;  # call only once
 
@@ -1039,16 +1037,12 @@ sub bdiv {
     # Math::BigInt -> bdiv(). See the comments in the code implementing that
     # method.
 
+    # At least one argument is NaN. This is handled the same way as in
+    # Math::BigInt -> bdiv().
+
     if ($x -> is_nan() || $y -> is_nan()) {
-        if ($wantarray) {
-            return $downgrade -> bnan(), $downgrade -> bnan()
-              if $downgrade;
-            return $x -> bnan(), $class -> bnan();
-        } else {
-            return $downgrade -> bnan()
-              if $downgrade;
-            return $x -> bnan();
-        }
+        return $wantarray ? ($x -> bnan(@r), $class -> bnan(@r))
+                          : $x -> bnan(@r);
     }
 
     # Divide by zero and modulo zero. This is handled the same way as in
@@ -1056,42 +1050,34 @@ sub bdiv {
     # method.
 
     if ($y -> is_zero()) {
-        my ($quo, $rem);
+        my $rem;
         if ($wantarray) {
-            $rem = $x -> copy();
+            $rem = $x -> copy() -> round(@r);
+            $rem = $downgrade -> new($rem, @r)
+              if $downgrade && $rem -> is_int();
         }
         if ($x -> is_zero()) {
-            $quo = $x -> bnan();
+            $x = $x -> bnan(@r);
         } else {
-            $quo = $x -> binf($x -> {sign});
+            $x = $x -> binf($x -> {sign}, @r);
         }
-
-        $quo = $downgrade -> new($quo)
-          if $downgrade && $quo -> is_int();
-        $rem = $downgrade -> new($rem)
-          if $wantarray && $downgrade && $rem -> is_int();
-        return $wantarray ? ($quo, $rem) : $quo;
+        return $wantarray ? ($x, $rem) : $x;
     }
 
     # Numerator (dividend) is +/-inf. This is handled the same way as in
-    # Math::BigInt -> bdiv(). See the comments in the code implementing that
-    # method.
+    # Math::BigInt -> bdiv(). See the comment in the code for Math::BigInt ->
+    # bdiv() for further details.
 
     if ($x -> is_inf()) {
-        my ($quo, $rem);
-        $rem = $class -> bnan() if $wantarray;
+        my $rem;
+        $rem = $class -> bnan(@r) if $wantarray;
         if ($y -> is_inf()) {
-            $quo = $x -> bnan();
+            $x = $x -> bnan(@r);
         } else {
             my $sign = $x -> bcmp(0) == $y -> bcmp(0) ? '+' : '-';
-            $quo = $x -> binf($sign);
+            $x = $x -> binf($sign, @r);
         }
-
-        $quo = $downgrade -> new($quo)
-          if $downgrade && $quo -> is_int();
-        $rem = $downgrade -> new($rem)
-          if $wantarray && $downgrade && $rem -> is_int();
-        return $wantarray ? ($quo, $rem) : $quo;
+        return $wantarray ? ($x, $rem) : $x;
     }
 
     # Denominator (divisor) is +/-inf. This is handled the same way as in
@@ -1099,46 +1085,48 @@ sub bdiv {
     # method.
 
     if ($y -> is_inf()) {
-        my ($quo, $rem);
+        my $rem;
         if ($wantarray) {
             if ($x -> is_zero() || $x -> bcmp(0) == $y -> bcmp(0)) {
                 $rem = $x -> copy();
-                $quo = $x -> bzero();
+                $x = $x -> bzero();
             } else {
                 $rem = $class -> binf($y -> {sign});
-                $quo = $x -> bone('-');
+                $x = $x -> bone('-');
             }
-            $quo = $downgrade -> new($quo)
-              if $downgrade && $quo -> is_int();
+            $x = $downgrade -> new($x)
+              if $downgrade && $x -> is_int();
             $rem = $downgrade -> new($rem)
               if $downgrade && $rem -> is_int();
-            return ($quo, $rem);
+            return $x, $rem;
         } else {
             if ($y -> is_inf()) {
                 if ($x -> is_nan() || $x -> is_inf()) {
-                    return $downgrade -> bnan() if $downgrade;
                     return $x -> bnan();
                 } else {
-                    return $downgrade -> bzero() if $downgrade;
                     return $x -> bzero();
                 }
             }
         }
     }
 
-    # At this point, both the numerator and denominator are finite numbers, and
-    # the denominator (divisor) is non-zero.
-
-    # x == 0?
-    if ($x->is_zero()) {
-        return $wantarray ? ($downgrade -> bzero(), $downgrade -> bzero())
-                          : $downgrade -> bzero() if $downgrade;
-        return $wantarray ? ($x, $class->bzero()) : $x;
+    if ($x -> is_zero()) {
+        $x = $x -> round(@r);
+        $x = $downgrade -> new($x, @r)
+          if $downgrade && $x -> is_int();
+        my $rem;
+        if ($wantarray) {
+            $rem = $class -> bzero(@r);
+            return $x, $rem;
+        }
+        return $x;
     }
 
-    # XXX TODO: list context, upgrade
+    # At this point, both the numerator and denominator are finite, non-zero
+    # numbers.
+
     # According to Knuth, this can be optimized by doing gcd twice (for d and n)
-    # and reducing in one step. This would save us the bnorm() at the end.
+    # and reducing in one step. This would save us the bnorm().
     #
     # p   r    p * s    (p / gcd(p, r)) * (s / gcd(s, q))
     # - / -  = ----- =  ---------------------------------

@@ -2348,8 +2348,18 @@ sub bdiv {
         return $wantarray ? ($x, $rem) : $x;
     }
 
-    # At this point, both the numerator and denominator are finite numbers, and
-    # the denominator (divisor) is non-zero.
+    if ($x -> is_zero()) {
+        $x = $x -> round(@r);
+        my $rem;
+        if ($wantarray) {
+            $rem = $class -> bzero(@r);
+            return $x, $rem;
+        }
+        return $x;
+    }
+
+    # At this point, both the numerator and denominator are finite, non-zero
+    # numbers.
 
     # Division in scalar context might return a non-integer result, so upgrade
     # if upgrading is enabled. In list context, we return the quotient and the
@@ -2383,7 +2393,8 @@ sub bdiv {
 
     # Inialize remainder.
 
-    my $rem = $class -> bzero();
+    my $rem;
+    $rem = $class -> bzero() if $wantarray;
 
     # Are both operands the same object, i.e., like $x -> bdiv($x)? If so,
     # flipping the sign of $y also flips the sign of $x.
@@ -2395,7 +2406,7 @@ sub bdiv {
     my $same = $xsign ne $x -> {sign};    # ... if that changed the sign of $x.
     $y -> {sign} = $ysign;                # Re-insert the original sign.
 
-    if ($same) {
+    if ($same) {                          # $x -> bdiv($x)
         $x = $x -> bone();
     } else {
         ($x -> {value}, $rem -> {value}) =

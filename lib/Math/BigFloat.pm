@@ -2095,12 +2095,10 @@ sub bdiv {
     # (dividend: BFLOAT or num_str, divisor: BFLOAT or num_str) return
     # (BFLOAT, BFLOAT) (quo, rem) or BFLOAT (only quo)
 
-    # set up parameters
-    my ($class, $x, $y, @r) = (ref($_[0]), @_);
-    # objectify is costly, so avoid it
-    if ((!ref($_[0])) || (ref($_[0]) ne ref($_[1]))) {
-        ($class, $x, $y, @r) = objectify(2, @_);
-    }
+    # Set up parameters.
+    my ($class, $x, $y, @r) = ref($_[0]) && ref($_[0]) eq ref($_[1])
+                            ? (ref($_[0]), @_)
+                            : objectify(2, @_);
 
     return $x if $x->modify('bdiv');
 
@@ -2119,18 +2117,18 @@ sub bdiv {
     # bdiv() for further details.
 
     if ($y -> is_zero()) {
-        my ($quo, $rem);
+        my $rem;
         if ($wantarray) {
             $rem = $x -> copy() -> round(@r);
             $rem = $downgrade -> new($rem, @r)
               if $downgrade && $rem -> is_int();
         }
         if ($x -> is_zero()) {
-            $quo = $x -> bnan(@r);
+            $x = $x -> bnan(@r);
         } else {
-            $quo = $x -> binf($x -> {sign}, @r);
+            $x = $x -> binf($x -> {sign}, @r);
         }
-        return $wantarray ? ($quo, $rem) : $quo;
+        return $wantarray ? ($x, $rem) : $x;
     }
 
     # Numerator (dividend) is +/-inf. This is handled the same way as in
@@ -2138,15 +2136,15 @@ sub bdiv {
     # bdiv() for further details.
 
     if ($x -> is_inf()) {
-        my ($quo, $rem);
+        my $rem;
         $rem = $class -> bnan(@r) if $wantarray;
         if ($y -> is_inf()) {
-            $quo = $x -> bnan(@r);
+            $x = $x -> bnan(@r);
         } else {
             my $sign = $x -> bcmp(0) == $y -> bcmp(0) ? '+' : '-';
-            $quo = $x -> binf($sign, @r);
+            $x = $x -> binf($sign, @r);
         }
-        return $wantarray ? ($quo, $rem) : $quo;
+        return $wantarray ? ($x, $rem) : $x;
     }
 
     # Denominator (divisor) is +/-inf. This is handled the same way as in
@@ -2156,44 +2154,41 @@ sub bdiv {
     # comment in the code for Math::BigInt -> bdiv() for further details.
 
     if ($y -> is_inf()) {
-        my ($quo, $rem);
+        my $rem;
         if ($wantarray) {
             if ($x -> is_zero() || $x -> bcmp(0) == $y -> bcmp(0)) {
                 $rem = $x -> copy() -> round(@r);
                 $rem = $downgrade -> new($rem, @r)
                   if $downgrade && $rem -> is_int();
-                $quo = $x -> bzero(@r);
+                $x = $x -> bzero(@r);
             } else {
                 $rem = $class -> binf($y -> {sign}, @r);
-                $quo = $x -> bone('-', @r);
+                $x = $x -> bone('-', @r);
             }
-            return ($quo, $rem);
+            return $x, $rem;
         } else {
-            if ($y -> is_inf()) {
-                if ($x -> is_nan() || $x -> is_inf()) {
-                    return $x -> bnan(@r);
-                } else {
-                    return $x -> bzero(@r);
-                }
+            if ($x -> is_nan() || $x -> is_inf()) {
+                return $x -> bnan(@r);
+            } else {
+                return $x -> bzero(@r);
             }
         }
     }
 
-    # At this point, both the numerator and denominator are finite numbers, and
-    # the denominator (divisor) is non-zero.
-
-    # x == 0?
-    if ($x->is_zero()) {
-        my ($quo, $rem);
-        $quo = $x->round(@r);
-        $quo = $downgrade -> new($quo, @r)
-          if $downgrade && $quo -> is_int();
+    if ($x -> is_zero()) {
+        $x = $x -> round(@r);
+        $x = $downgrade -> new($x, @r)
+          if $downgrade && $x -> is_int();
+        my $rem;
         if ($wantarray) {
             $rem = $class -> bzero(@r);
-            return $quo, $rem;
+            return $x, $rem;
         }
-        return $quo;
+        return $x;
     }
+
+    # At this point, both the numerator and denominator are finite, non-zero
+    # numbers.
 
     # Division might return a value that we can not represent exactly, so
     # upgrade, if upgrading is enabled.
@@ -2206,7 +2201,10 @@ sub bdiv {
     my (@params, $scale);
     ($x, @params) = $x->_find_round_parameters($r[0], $r[1], $r[2], $y);
 
-    return $x -> round(@r) if $x->is_nan();  # error in _find_round_parameters?
+    if ($x -> is_nan()) {       # error in _find_round_parameters?
+        $x = $x -> round(@r);
+        return $wantarray ? ($x, $class -> bnan(@r)) : $x;
+    }
 
     # no rounding at all, so must use fallback
     if (scalar @params == 0) {
@@ -2236,19 +2234,19 @@ sub bdiv {
     # check that $y is not 1 nor -1 and cache the result:
     my $y_not_one = !($LIB->_is_zero($y->{_e}) && $LIB->_is_one($y->{_m}));
 
-    # flipping the sign of $y will also flip the sign of $x for the special
-    # case of $x->bsub($x); so we can catch it below:
-    my $xsign = $x->{sign};
-    $y->{sign} =~ tr/+-/-+/;
+    # Are both operands the same object, i.e., like $x -> bdiv($x)? If so,
+    # flipping the sign of $y also flips the sign of $x.
 
-    if ($xsign ne $x->{sign}) {
-        # special case of $x /= $x results in 1
-        $x = $x->bone();        # "fixes" also sign of $y, since $x is $y
+    my $xsign = $x -> {sign};
+    my $ysign = $y -> {sign};
+
+    $y -> {sign} =~ tr/+-/-+/;            # Flip the sign of $y, and see ...
+    my $same = $xsign ne $x -> {sign};    # ... if that changed the sign of $x.
+    $y -> {sign} = $ysign;                # Re-insert the original sign.
+
+    if ($same) {                          # $x -> bdiv($x)
+        $x = $x -> bone();
     } else {
-        # correct $y's sign again
-        $y->{sign} =~ tr/+-/-+/;
-        # continue with normal div code:
-
         # make copy of $x in case of list context for later remainder
         # calculation
         if ($wantarray && $y_not_one) {
@@ -2306,7 +2304,7 @@ sub bdiv {
           if $downgrade && $x -> is_int();
         $rem = $downgrade -> new($rem -> bdstr(), @r)
           if $downgrade && $rem -> is_int();
-        return ($x, $rem);
+        return $x, $rem;
     }
 
     $x = $downgrade -> new($x, @r)
