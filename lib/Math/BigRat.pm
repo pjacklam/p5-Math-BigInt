@@ -2537,34 +2537,39 @@ sub from_dec {
 
     # Don't modify constant (read-only) objects.
 
-    return $self if $selfref && $self->modify('from_dec');
+    return $self if $selfref && $self -> modify('from_dec');
 
     my $str = shift;
     my @r = @_;
 
-    # If called as a class method, initialize a new object.
-
-    $self = bless {}, $class unless $selfref;
-
     if (my @parts = $class -> _dec_str_to_flt_lib_parts($str)) {
+
+        # If called as a class method, initialize a new object.
+
+        unless ($selfref) {
+            $self = bless {}, $class;
+            $self -> _init();
+        }
+
         my ($mant_sgn, $mant_abs, $expo_sgn, $expo_abs) = @parts;
+
         $self->{sign} = $mant_sgn;
         $self->{_n}   = $mant_abs;
+
         if ($expo_sgn eq "+") {
             $self->{_n} = $LIB -> _lsft($self->{_n}, $expo_abs, 10);
             $self->{_d} = $LIB -> _one();
         } else {
-            $self->{_d} = $LIB -> _1ex($mant_abs);
+            $self->{_d} = $LIB -> _1ex($expo_abs);
         }
 
         my $gcd = $LIB -> _gcd($LIB -> _copy($self->{_n}), $self->{_d});
         if (!$LIB -> _is_one($gcd)) {
-            $self -> {_n} = $LIB -> _div($self->{_n}, $gcd);
-            $self -> {_d} = $LIB -> _div($self->{_d}, $gcd);
+            $self->{_n} = $LIB -> _div($self->{_n}, $gcd);
+            $self->{_d} = $LIB -> _div($self->{_d}, $gcd);
         }
 
-        return $downgrade -> new($self -> bstr(), @r)
-          if $downgrade && $self -> is_int();
+        $self -> dng() if $downgrade && $self -> is_int();
         return $self;
     }
 
@@ -2572,34 +2577,171 @@ sub from_dec {
 }
 
 sub from_hex {
-    my $class = shift;
+    my $self    = shift;
+    my $selfref = ref $self;
+    my $class   = $selfref || $self;
 
-    # The relationship should probably go the otherway, i.e, that new() calls
-    # from_hex(). Fixme!
-    my ($x, @r) = @_;
-    $x =~ s|^\s*(?:0?[Xx]_*)?|0x|;
-    $class->new($x, @r);
+    # Make "require" work.
+
+    $class -> import() if $IMPORT == 0;
+
+    # Don't modify constant (read-only) objects.
+
+    return $self if $selfref && $self -> modify('from_hex');
+
+    my $str = shift;
+    my @r = @_;
+
+    if (my @parts = $class -> _hex_str_to_flt_lib_parts($str)) {
+
+        # If called as a class method, initialize a new object.
+
+        unless ($selfref) {
+            $self = bless {}, $class;
+            $self -> _init();
+        }
+
+        my ($mant_sgn, $mant_abs, $expo_sgn, $expo_abs) = @parts;
+
+        $self->{sign} = $mant_sgn;
+        $self->{_n}   = $mant_abs;
+
+        if ($expo_sgn eq "+") {
+
+            # e.g., 345e+2 => 34500/1
+            $self->{_n} = $LIB -> _lsft($self->{_n}, $expo_abs, 10);
+            $self->{_d} = $LIB -> _one();
+
+        } else {
+
+            # e.g., 345e-2 => 345/100
+            $self->{_d} = $LIB -> _1ex($expo_abs);
+
+            # e.g., 345/100 => 69/20
+            my $gcd = $LIB -> _gcd($LIB -> _copy($self->{_n}), $self->{_d});
+            unless ($LIB -> _is_one($gcd)) {
+                $self->{_n} = $LIB -> _div($self->{_n}, $gcd);
+                $self->{_d} = $LIB -> _div($self->{_d}, $gcd);
+            }
+        }
+
+        $self -> dng() if $downgrade && $self -> is_int();
+        return $self;
+    }
+
+    return $self -> bnan(@r);
 }
 
 sub from_bin {
-    my $class = shift;
+    my $self    = shift;
+    my $selfref = ref $self;
+    my $class   = $selfref || $self;
 
-    # The relationship should probably go the otherway, i.e, that new() calls
-    # from_bin(). Fixme!
-    my ($x, @r) = @_;
-    $x =~ s|^\s*(?:0?[Bb]_*)?|0b|;
-    $class->new($x, @r);
+    # Make "require" work.
+
+    $class -> import() if $IMPORT == 0;
+
+    # Don't modify constant (read-only) objects.
+
+    return $self if $selfref && $self -> modify('from_bin');
+
+    my $str = shift;
+    my @r = @_;
+
+    if (my @parts = $class -> _bin_str_to_flt_lib_parts($str)) {
+
+        # If called as a class method, initialize a new object.
+
+        unless ($selfref) {
+            $self = bless {}, $class;
+            $self -> _init();
+        }
+
+        my ($mant_sgn, $mant_abs, $expo_sgn, $expo_abs) = @parts;
+
+        $self->{sign} = $mant_sgn;
+        $self->{_n}   = $mant_abs;
+
+        if ($expo_sgn eq "+") {
+
+            # e.g., 345e+2 => 34500/1
+            $self->{_n} = $LIB -> _lsft($self->{_n}, $expo_abs, 10);
+            $self->{_d} = $LIB -> _one();
+
+        } else {
+
+            # e.g., 345e-2 => 345/100
+            $self->{_d} = $LIB -> _1ex($expo_abs);
+
+            # e.g., 345/100 => 69/20
+            my $gcd = $LIB -> _gcd($LIB -> _copy($self->{_n}), $self->{_d});
+            unless ($LIB -> _is_one($gcd)) {
+                $self->{_n} = $LIB -> _div($self->{_n}, $gcd);
+                $self->{_d} = $LIB -> _div($self->{_d}, $gcd);
+            }
+        }
+
+        $self -> dng() if $downgrade && $self -> is_int();
+        return $self;
+    }
+
+    return $self -> bnan(@r);
 }
 
 sub from_oct {
-    my $class = shift;
+    my $self    = shift;
+    my $selfref = ref $self;
+    my $class   = $selfref || $self;
 
-    # Why is this different from from_hex() and from_bin()? Fixme!
-    my @parts;
-    for my $c (@_) {
-        push @parts, Math::BigInt->from_oct($c);
+    # Make "require" work.
+
+    $class -> import() if $IMPORT == 0;
+
+    # Don't modify constant (read-only) objects.
+
+    return $self if $selfref && $self -> modify('from_oct');
+
+    my $str = shift;
+    my @r = @_;
+
+    if (my @parts = $class -> _oct_str_to_flt_lib_parts($str)) {
+
+        # If called as a class method, initialize a new object.
+
+        unless ($selfref) {
+            $self = bless {}, $class;
+            $self -> _init();
+        }
+
+        my ($mant_sgn, $mant_abs, $expo_sgn, $expo_abs) = @parts;
+
+        $self->{sign} = $mant_sgn;
+        $self->{_n}   = $mant_abs;
+
+        if ($expo_sgn eq "+") {
+
+            # e.g., 345e+2 => 34500/1
+            $self->{_n} = $LIB -> _lsft($self->{_n}, $expo_abs, 10);
+            $self->{_d} = $LIB -> _one();
+
+        } else {
+
+            # e.g., 345e-2 => 345/100
+            $self->{_d} = $LIB -> _1ex($expo_abs);
+
+            # e.g., 345/100 => 69/20
+            my $gcd = $LIB -> _gcd($LIB -> _copy($self->{_n}), $self->{_d});
+            unless ($LIB -> _is_one($gcd)) {
+                $self->{_n} = $LIB -> _div($self->{_n}, $gcd);
+                $self->{_d} = $LIB -> _div($self->{_d}, $gcd);
+            }
+        }
+
+        $self -> dng() if $downgrade && $self -> is_int();
+        return $self;
     }
-    $class->new (@parts);
+
+    return $self -> bnan(@r);
 }
 
 ##############################################################################

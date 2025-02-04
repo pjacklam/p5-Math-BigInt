@@ -528,8 +528,7 @@ sub new {
         $self = $self->round(@r)
           unless @r >= 2 && !defined($r[0]) && !defined($r[1]);
 
-        return $downgrade -> new($self -> bdstr(), @r)
-          if $downgrade && $self -> is_int();
+        $self -> dng() if $downgrade && $self -> is_int();
         return $self;
     }
 
@@ -550,23 +549,26 @@ sub from_dec {
 
     # Don't modify constant (read-only) objects.
 
-    return $self if $selfref && $self->modify('from_dec');
+    return $self if $selfref && $self -> modify('from_dec');
 
     my $str = shift;
     my @r = @_;
 
-    # If called as a class method, initialize a new object.
-
-    $self = bless {}, $class unless $selfref;
-
     if (my @parts = $class -> _dec_str_to_flt_lib_parts($str)) {
+
+        # If called as a class method, initialize a new object.
+
+        unless ($selfref) {
+            $self = bless {}, $class;
+            $self -> _init();
+        }
+
         ($self->{sign}, $self->{_m}, $self->{_es}, $self->{_e}) = @parts;
 
-        $self = $self->round(@r)
+        $self -> round(@r)
           unless @r >= 2 && !defined($r[0]) && !defined($r[1]);
 
-        return $downgrade -> new($self -> bdstr(), @r)
-          if $downgrade && $self -> is_int();
+        $self -> dng() if $downgrade && $self -> is_int();
         return $self;
     }
 
@@ -584,23 +586,26 @@ sub from_hex {
 
     # Don't modify constant (read-only) objects.
 
-    return $self if $selfref && $self->modify('from_hex');
+    return $self if $selfref && $self -> modify('from_hex');
 
     my $str = shift;
     my @r = @_;
 
-    # If called as a class method, initialize a new object.
-
-    $self = bless {}, $class unless $selfref;
-
     if (my @parts = $class -> _hex_str_to_flt_lib_parts($str)) {
+
+        # If called as a class method, initialize a new object.
+
+        unless ($selfref) {
+            $self = bless {}, $class;
+            $self -> _init();
+        }
+
         ($self->{sign}, $self->{_m}, $self->{_es}, $self->{_e}) = @parts;
 
-        $self = $self->round(@r)
+        $self = $self -> round(@r)
           unless @r >= 2 && !defined($r[0]) && !defined($r[1]);
 
-        return $downgrade -> new($self -> bdstr(), @r)
-          if $downgrade && $self -> is_int();
+        $self -> dng() if $downgrade && $self -> is_int();
         return $self;
     }
 
@@ -618,23 +623,26 @@ sub from_oct {
 
     # Don't modify constant (read-only) objects.
 
-    return $self if $selfref && $self->modify('from_oct');
+    return $self if $selfref && $self -> modify('from_oct');
 
     my $str = shift;
     my @r = @_;
 
-    # If called as a class method, initialize a new object.
-
-    $self = bless {}, $class unless $selfref;
-
     if (my @parts = $class -> _oct_str_to_flt_lib_parts($str)) {
+
+        # If called as a class method, initialize a new object.
+
+        unless ($selfref) {
+            $self = bless {}, $class;
+            $self -> _init();
+        }
+
         ($self->{sign}, $self->{_m}, $self->{_es}, $self->{_e}) = @parts;
 
-        $self = $self->round(@r)
+        $self = $self -> round(@r)
           unless @r >= 2 && !defined($r[0]) && !defined($r[1]);
 
-        return $downgrade -> new($self -> bdstr(), @r)
-          if $downgrade && $self -> is_int();
+        $self -> dng() if $downgrade && $self -> is_int();
         return $self;
     }
 
@@ -652,23 +660,26 @@ sub from_bin {
 
     # Don't modify constant (read-only) objects.
 
-    return $self if $selfref && $self->modify('from_bin');
+    return $self if $selfref && $self -> modify('from_bin');
 
     my $str = shift;
     my @r = @_;
 
-    # If called as a class method, initialize a new object.
-
-    $self = bless {}, $class unless $selfref;
-
     if (my @parts = $class -> _bin_str_to_flt_lib_parts($str)) {
+
+        # If called as a class method, initialize a new object.
+
+        unless ($selfref) {
+            $self = bless {}, $class;
+            $self -> _init();
+        }
+
         ($self->{sign}, $self->{_m}, $self->{_es}, $self->{_e}) = @parts;
 
-        $self = $self->round(@r)
+        $self = $self -> round(@r)
           unless @r >= 2 && !defined($r[0]) && !defined($r[1]);
 
-        return $downgrade -> new($self -> bdstr(), @r)
-          if $downgrade && $self -> is_int();
+        $self -> dng() if $downgrade && $self -> is_int();
         return $self;
     }
 
@@ -834,9 +845,9 @@ sub from_ieee754 {
             $self = $x;
         }
 
-        return $downgrade -> new($self -> bdstr(), @r)
-          if $downgrade && $self -> is_int();
-        return $self -> round(@r);
+        $self -> round(@r);
+        $self -> dng() if $downgrade && $self -> is_int();
+        return $self;
     }
 
     croak("The format '$format' is not yet supported.");

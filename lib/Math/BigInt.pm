@@ -683,9 +683,73 @@ sub _scale_p {
     ($scale, $mode);
 }
 
+# An undocumented method which downgrades an instance to its downgrade class.
+
+sub dng {
+    my $self  = shift;
+    my $class = ref($self);
+
+    my $downgrade = $class -> downgrade();
+    return $self unless $downgrade;           # bail out if no downgrading
+    return $self if ref($self) eq $downgrade; # bail out if already downgraded
+
+    my $tmp = $downgrade -> new($self);       # new instance
+
+    for my $param ('accuracy', 'precision') { # copy instance variables
+        $tmp -> {$param} = $self -> {$param} if exists $self -> {$param};
+    }
+
+    %$self = %$tmp;                           # replace
+    bless $self, $downgrade;                  # bless into downgrade class
+
+    return $self;
+}
+
+# An undocumented method which upgrades an instance to its upgrade class.
+
+sub upg {
+    my $self = shift;
+    my $class = ref($self);
+
+    my $upgrade = $class -> upgrade();
+    return $self unless $upgrade;             # bail out if no upgrading
+    return $self if ref($self) eq $upgrade;   # bail out if already upgraded
+
+    my $tmp = $upgrade -> new($self);         # new instance
+    for my $param ('accuracy', 'precision') { # copy instance variables
+        $tmp -> {$param} = $self -> {$param} if exists $self -> {$param};
+    }
+
+    %$self = %$tmp;                           # replace
+    bless $self, $upgrade;                    # bless into upgrade class
+
+    return $self;
+}
+
 ###############################################################################
 # Constructor methods
 ###############################################################################
+
+sub _init {
+    my $self  = shift;
+    my $class = ref($self);
+
+    $self -> SUPER::_init() if SUPER -> can('_init');
+
+    $self -> {accuracy}   = $class -> accuracy();
+    $self -> {precision}  = $class -> precision();
+
+    #$self -> {round_mode} = $round_mode;
+    #$self -> {div_scale}  = $div_scale;
+
+    #$self -> {trap_inf}   = $_trap_inf;
+    #$self -> {trap_nan}   = $_trap_nan;
+
+    #$self -> {upgrade}    = $upgrade;
+    #$self -> {downgrade}  = $downgrade;
+
+    return $self;
+}
 
 sub new {
     # Create a new Math::BigInt object from a string or another Math::BigInt
@@ -872,11 +936,14 @@ sub from_dec {
     my $str = shift;
     my @r   = @_;
 
-    # If called as a class method, initialize a new object.
-
-    $self = $class -> bzero(@r) unless $selfref;
-
     if (my @parts = $class -> _dec_str_to_flt_lib_parts($str)) {
+
+        # If called as a class method, initialize a new object.
+
+        unless ($selfref) {
+            $self = bless {}, $class;
+            $self -> _init();
+        }
 
         # The value is an integer iff the exponent is non-negative.
 
@@ -888,7 +955,11 @@ sub from_dec {
 
         # The value is not an integer, so upgrade if upgrading is enabled.
 
-        return $upgrade -> new($str, @r) if $upgrade;
+        if ($upgrade) {
+            return $self -> upg() -> from_dec($str, @r)     # instance method
+              if $selfref && $selfref ne $upgrade;
+            return $upgrade -> from_dec($str, @r);          # class method
+        }
     }
 
     return $self -> bnan(@r);
@@ -912,11 +983,14 @@ sub from_hex {
     my $str = shift;
     my @r   = @_;
 
-    # If called as a class method, initialize a new object.
-
-    $self = $class -> bzero(@r) unless $selfref;
-
     if (my @parts = $class -> _hex_str_to_flt_lib_parts($str)) {
+
+        # If called as a class method, initialize a new object.
+
+        unless ($selfref) {
+            $self = bless {}, $class;
+            $self -> _init();
+        }
 
         # The value is an integer iff the exponent is non-negative.
 
@@ -928,7 +1002,11 @@ sub from_hex {
 
         # The value is not an integer, so upgrade if upgrading is enabled.
 
-        return $upgrade -> new($str, @r) if $upgrade;
+        if ($upgrade) {
+            return $self -> upg() -> from_hex($str, @r)     # instance method
+              if $selfref && $selfref ne $upgrade;
+            return $upgrade -> from_hex($str, @r);          # class method
+        }
     }
 
     return $self -> bnan(@r);
@@ -952,11 +1030,14 @@ sub from_oct {
     my $str = shift;
     my @r   = @_;
 
-    # If called as a class method, initialize a new object.
-
-    $self = $class -> bzero(@r) unless $selfref;
-
     if (my @parts = $class -> _oct_str_to_flt_lib_parts($str)) {
+
+        # If called as a class method, initialize a new object.
+
+        unless ($selfref) {
+            $self = bless {}, $class;
+            $self -> _init();
+        }
 
         # The value is an integer iff the exponent is non-negative.
 
@@ -968,7 +1049,11 @@ sub from_oct {
 
         # The value is not an integer, so upgrade if upgrading is enabled.
 
-        return $upgrade -> new($str, @r) if $upgrade;
+        if ($upgrade) {
+            return $self -> upg() -> from_oct($str, @r)     # instance method
+              if $selfref && $selfref ne $upgrade;
+            return $upgrade -> from_oct($str, @r);          # class method
+        }
     }
 
     return $self -> bnan(@r);
@@ -992,11 +1077,14 @@ sub from_bin {
     my $str = shift;
     my @r   = @_;
 
-    # If called as a class method, initialize a new object.
-
-    $self = $class -> bzero(@r) unless $selfref;
-
     if (my @parts = $class -> _bin_str_to_flt_lib_parts($str)) {
+
+        # If called as a class method, initialize a new object.
+
+        unless ($selfref) {
+            $self = bless {}, $class;
+            $self -> _init();
+        }
 
         # The value is an integer iff the exponent is non-negative.
 
@@ -1008,7 +1096,11 @@ sub from_bin {
 
         # The value is not an integer, so upgrade if upgrading is enabled.
 
-        return $upgrade -> new($str, @r) if $upgrade;
+        if ($upgrade) {
+            return $self -> upg() -> from_bin($str, @r)     # instance method
+              if $selfref && $selfref ne $upgrade;
+            return $upgrade -> from_bin($str, @r);          # class method
+        }
     }
 
     return $self -> bnan(@r);
