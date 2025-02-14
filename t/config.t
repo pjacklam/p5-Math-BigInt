@@ -17,8 +17,8 @@ my @classes = ($mbi, $mbf, $mbr);
 
 # Default configuration for all classes.
 #
-# config() can also return 'lib', 'lib_version', and 'class', but they are
-# read-only.
+# config() can also return 'lib', 'lib_version', 'class', and 'version' but
+# they are read-only.
 
 my %defaults = (
   'accuracy'    => undef,
@@ -50,6 +50,7 @@ EOF
                  'lib'         => 'Math::BigInt::Calc',
                  'lib_version' => $Math::BigInt::Calc::VERSION,
                  'class'       => $class,
+                 'version'     => $Math::BigInt::VERSION,
                 );
 
     # Test getting via the new style $class -> config($key).
@@ -59,7 +60,7 @@ EOF
 
         for my $key (sort keys %table) {
             my $val = $table{$key};
-            note qq|\n$class -> config("$key") <<<<<\n\n|;
+            note qq|\n$class -> config("$key")\n\n|;
             is($class -> config($key), $val, qq|$class -> config("$key")|);
         }
     };
@@ -75,6 +76,7 @@ EOF
 
        for my $key (sort keys %table) {
             my $val = $table{$key};
+            note qq|\n$class -> config() -> {$key}\n\n|;
             is($cfg->{$key}, $val, qq|$class -> config()->{$key}|);
         }
     };

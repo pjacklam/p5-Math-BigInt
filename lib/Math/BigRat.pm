@@ -20,16 +20,13 @@ use warnings;
 
 use Carp            qw< carp croak >;
 use Scalar::Util    qw< blessed >;
+use Math::BigFloat  qw<>;
 
-use Math::BigFloat ();
-
-our $VERSION = '2.003005';
+our $VERSION = '2.004001';
 $VERSION =~ tr/_//d;
 
-our @ISA = qw(Math::BigFloat);
-
-our ($accuracy, $precision, $round_mode, $div_scale,
-     $upgrade, $downgrade, $_trap_nan, $_trap_inf);
+require Exporter;
+our @ISA = qw< Math::BigFloat >;
 
 use overload
 
@@ -205,29 +202,27 @@ BEGIN {
 
     *AUTOLOAD  = \&Math::BigFloat::AUTOLOAD; # can't inherit AUTOLOAD
     *as_number = \&as_int;
-    *is_pos = \&is_positive;
-    *is_neg = \&is_negative;
+    *is_pos    = \&is_positive;
+    *is_neg    = \&is_negative;
 }
 
 ##############################################################################
 # Global constants and flags. Access these only via the accessor methods!
 
-$accuracy   = $precision = undef;
-$round_mode = 'even';
-$div_scale  = 40;
-$upgrade    = undef;
-$downgrade  = undef;
+our $accuracy   = undef;
+our $precision  = undef;
+our $round_mode = 'even';
+our $div_scale  = 40;
 
-# These are internally, and not to be used from the outside at all!
+our $upgrade    = undef;
+our $downgrade  = undef;
 
-$_trap_nan = 0;                         # are NaNs ok? set w/ config()
-$_trap_inf = 0;                         # are infs ok? set w/ config()
+our $_trap_nan  = 0;            # croak on NaNs?
+our $_trap_inf  = 0;            # croak on Infs?
 
-# the math backend library
+my $nan = 'NaN';                                # constant for easier life
 
-my $LIB = 'Math::BigInt::Calc';
-
-my $nan   = 'NaN';
+my $LIB = Math::BigInt -> config('lib');        # math backend library
 
 # Has import() been called yet? This variable is needed to make "require" work.
 
@@ -331,8 +326,10 @@ sub new {
     unless (defined $d) {
         #return $n -> copy($n)               if $n -> isa('Math::BigRat');
         if ($n -> isa('Math::BigRat')) {
-            return $downgrade -> new($n)
-              if $downgrade && $n -> is_int();
+            if ($n -> is_int()) {
+                my $dng = $class -> downgrade();
+                return $dng -> new($n) if $dng && $dng ne $class;
+            }
             return $class -> copy($n);
         }
 
@@ -346,10 +343,13 @@ sub new {
 
         if ($n -> isa('Math::BigInt')) {
             $self -> {_n}   = $LIB -> _new($n -> copy() -> babs(undef, undef)
-                                              -> bstr());
+                                           -> bstr());
             $self -> {_d}   = $LIB -> _one();
             $self -> {sign} = $n -> sign();
-            return $downgrade -> new($n) if $downgrade;
+
+            my $dng = $class -> downgrade();
+            return $dng -> new($n) if $dng && $dng ne $class;
+
             return $self;
         }
 
@@ -375,8 +375,12 @@ sub new {
             }
 
             $self -> {sign} = $n -> sign();
-            return $downgrade -> new($n, undef, undef)
-              if $downgrade && $n -> is_int();
+
+            if ($n -> is_int()) {
+                my $dng = $class -> downgrade();
+                return $dng -> new($n, undef, undef) if $dng && $dng ne $class;
+            }
+
             return $self;
         }
 
@@ -476,8 +480,10 @@ sub new {
             $self -> {_d} = $LIB -> _mul($LIB -> _div($LIB -> _copy($q), $gcd_sq),
                                          $LIB -> _div($LIB -> _copy($r), $gcd_pr));
 
-            return $downgrade -> new($n->bstr())
-              if $downgrade && $self -> is_int();
+            if ($self -> is_int()) {
+                my $dng = $self -> downgrade();
+                $self -> _dng() if $dng && $dng ne $class;
+            }
             return $self;       # no need for $self -> bnorm() here
         }
 
@@ -583,8 +589,11 @@ sub new {
         }
     }
 
-    return $downgrade -> new($self -> bstr())
-      if $downgrade && $self -> is_int();
+    if ($self -> is_int()) {
+        my $dng = $self -> downgrade();
+        $self -> _dng() if $dng && $dng ne $class;
+    }
+
     return $self;
 }
 
@@ -616,17 +625,30 @@ sub bnan {
     my $selfref = ref $self;
     my $class   = $selfref || $self;
 
+    {
+        no strict 'refs';
+        if (${"${class}::_trap_nan"}) {
+            croak("Tried to create NaN in $class->bnan()");
+        }
+    }
+
     # Make "require" work.
 
     $class -> import() if $IMPORT == 0;
 
-    $self = bless {}, $class unless $selfref;
+    # Don't modify constant (read-only) objects.
 
-    if ($_trap_nan) {
-        croak ("Tried to set a variable to NaN in $class->bnan()");
+    return $self if $selfref && $self -> modify('bnan');
+
+    my $dng = $self -> downgrade();
+    if ($dng && $dng ne $class) {
+        return $self -> _dng() -> bnan(@_) if $selfref;
+        return $dng -> bnan(@_);
     }
 
-    return $downgrade -> bnan() if $downgrade;
+    # If called as a class method, initialize a new object.
+
+    $self = bless {}, $class unless $selfref;
 
     $self -> {sign} = $nan;
     $self -> {_n}   = $LIB -> _zero();
@@ -643,18 +665,25 @@ sub binf {
     my $selfref = ref $self;
     my $class   = $selfref || $self;
 
+    {
+        no strict 'refs';
+        if (${"${class}::_trap_inf"}) {
+            croak("Tried to create +-inf in $class->binf()");
+        }
+    }
+
     # Make "require" work.
 
     $class -> import() if $IMPORT == 0;
+
+    # Don't modify constant (read-only) objects.
+
+    return $self if $selfref && $self -> modify('binf');
 
     $self = bless {}, $class unless $selfref;
 
     my $sign = shift();
     $sign = defined($sign) && substr($sign, 0, 1) eq '-' ? '-inf' : '+inf';
-
-    if ($_trap_inf) {
-        croak ("Tried to set a variable to +-inf in $class->binf()");
-    }
 
     return $downgrade -> binf($sign) if $downgrade;
 
@@ -762,7 +791,7 @@ sub bstr {
 
     # Upgrade?
 
-    return $upgrade -> bstr($x, @r)
+    return $x -> _upg() -> bstr(@r)
       if $upgrade && !$x -> isa($class);
 
     # Finite number
@@ -790,7 +819,7 @@ sub bsstr {
 
     # Upgrade?
 
-    return $upgrade -> bsstr($x, @r)
+    return $x -> _upg() -> bsstr(@r)
       if $upgrade && !$x -> isa($class);
 
     # Finite number
@@ -815,7 +844,7 @@ sub bfstr {
 
     # Upgrade?
 
-    return $upgrade -> bfstr($x, @r)
+    return $x -> _upg() -> bfstr(@r)
       if $upgrade && !$x -> isa($class);
 
     # Finite number
@@ -876,7 +905,7 @@ sub bneg {
     # negate number or make a negated number from string
     my ($class, $x) = ref($_[0]) ? (undef, $_[0]) : objectify(1, @_);
 
-    return $x if $x->modify('bneg');
+    return $x if $x -> modify('bneg');
 
     # for +0 do not negate (to have always normalized +0). Does nothing for 'NaN'
     $x->{sign} =~ tr/+-/-+/
@@ -940,7 +969,7 @@ sub badd {
     $x->{_d} = $LIB->_mul($x->{_d}, $y->{_d});
 
     # normalize result, and possible round
-    $x->bnorm()->round(@r);
+    $x -> bnorm() -> round(@r);
 }
 
 sub bsub {
@@ -956,11 +985,11 @@ sub bsub {
     # flip sign of $x, call badd(), then flip sign of result
     $x->{sign} =~ tr/+-/-+/
       unless $x->{sign} eq '+' && $x -> is_zero();      # not -0
-    $x = $x->badd($y, @r);           # does norm and round
+    $x = $x -> badd($y, @r);           # does norm and round
     $x->{sign} =~ tr/+-/-+/
       unless $x->{sign} eq '+' && $x -> is_zero();      # not -0
 
-    $x->bnorm();
+    $x -> bnorm();
 }
 
 sub bmul {
@@ -973,28 +1002,28 @@ sub bmul {
         ($class, $x, $y, @r) = objectify(2, @_);
     }
 
-    return $x->bnan() if $x->{sign} eq 'NaN' || $y->{sign} eq 'NaN';
+    return $x -> bnan() if $x->{sign} eq 'NaN' || $y->{sign} eq 'NaN';
 
     # inf handling
     if ($x->{sign} =~ /^[+-]inf$/ || $y->{sign} =~ /^[+-]inf$/) {
-        return $x->bnan() if $x->is_zero() || $y->is_zero();
+        return $x -> bnan() if $x -> is_zero() || $y -> is_zero();
         # result will always be +-inf:
         # +inf * +/+inf => +inf, -inf * -/-inf => +inf
         # +inf * -/-inf => -inf, -inf * +/+inf => -inf
-        return $x->binf() if ($x->{sign} =~ /^\+/ && $y->{sign} =~ /^\+/);
-        return $x->binf() if ($x->{sign} =~ /^-/ && $y->{sign} =~ /^-/);
-        return $x->binf('-');
+        return $x -> binf() if ($x->{sign} =~ /^\+/ && $y->{sign} =~ /^\+/);
+        return $x -> binf() if ($x->{sign} =~ /^-/ && $y->{sign} =~ /^-/);
+        return $x -> binf('-');
     }
 
     # x == 0  # also: or y == 1 or y == -1
     if ($x -> is_zero()) {
         $x = $downgrade -> bzero($x) if $downgrade;
-        return wantarray ? ($x, $class->bzero()) : $x;
+        return wantarray ? ($x, $class -> bzero()) : $x;
     }
 
     if ($y -> is_zero()) {
         $x = $downgrade ? $downgrade -> bzero($x) : $x -> bzero();
-        return wantarray ? ($x, $class->bzero()) : $x;
+        return wantarray ? ($x, $class -> bzero()) : $x;
     }
 
     # According to Knuth, this can be optimized by doing gcd twice (for d
@@ -1017,7 +1046,7 @@ sub bmul {
     # compute new sign
     $x->{sign} = $x->{sign} eq $y->{sign} ? '+' : '-';
 
-    $x->bnorm()->round(@r);
+    $x -> bnorm() -> round(@r);
 }
 
 sub bdiv {
@@ -1053,13 +1082,12 @@ sub bdiv {
         my $rem;
         if ($wantarray) {
             $rem = $x -> copy() -> round(@r);
-            $rem = $downgrade -> new($rem, @r)
-              if $downgrade && $rem -> is_int();
+            $rem -> _dng() if $rem -> downgrade() && $rem -> is_int();
         }
         if ($x -> is_zero()) {
-            $x = $x -> bnan(@r);
+            $x -> bnan(@r);
         } else {
-            $x = $x -> binf($x -> {sign}, @r);
+            $x -> binf($x -> {sign}, @r);
         }
         return $wantarray ? ($x, $rem) : $x;
     }
@@ -1072,10 +1100,10 @@ sub bdiv {
         my $rem;
         $rem = $class -> bnan(@r) if $wantarray;
         if ($y -> is_inf()) {
-            $x = $x -> bnan(@r);
+            $x -> bnan(@r);
         } else {
             my $sign = $x -> bcmp(0) == $y -> bcmp(0) ? '+' : '-';
-            $x = $x -> binf($sign, @r);
+            $x -> binf($sign, @r);
         }
         return $wantarray ? ($x, $rem) : $x;
     }
@@ -1089,15 +1117,12 @@ sub bdiv {
         if ($wantarray) {
             if ($x -> is_zero() || $x -> bcmp(0) == $y -> bcmp(0)) {
                 $rem = $x -> copy();
-                $x = $x -> bzero();
+                $rem -> _dng() if $downgrade && $rem -> is_int();
+                $x -> bzero();
             } else {
                 $rem = $class -> binf($y -> {sign});
-                $x = $x -> bone('-');
+                $x -> bone('-');
             }
-            $x = $downgrade -> new($x)
-              if $downgrade && $x -> is_int();
-            $rem = $downgrade -> new($rem)
-              if $downgrade && $rem -> is_int();
             return $x, $rem;
         } else {
             if ($y -> is_inf()) {
@@ -1111,12 +1136,10 @@ sub bdiv {
     }
 
     if ($x -> is_zero()) {
-        $x = $x -> round(@r);
-        $x = $downgrade -> new($x, @r)
-          if $downgrade && $x -> is_int();
-        my $rem;
+        $x -> round(@r);
+        $x -> _dng() if $x -> downgrade() && $x -> is_int();
         if ($wantarray) {
-            $rem = $class -> bzero(@r);
+            my $rem = $class -> bzero(@r);
             return $x, $rem;
         }
         return $x;
@@ -1141,15 +1164,16 @@ sub bdiv {
     $x -> bnorm();
     if ($wantarray) {
         my $rem = $x -> copy();
-        $x = $x -> bfloor();
-        $x = $x -> round(@r);
-        $rem = $rem -> bsub($x -> copy()) -> bmul($y);
-        $x   = $downgrade -> new($x)   if $downgrade && $x -> is_int();
-        $rem = $downgrade -> new($rem) if $downgrade && $rem -> is_int();
+        $x -> bfloor();
+        $x -> round(@r);
+        $rem -> bsub($x -> copy()) -> bmul($y);
+        $x -> _dng() if $x -> downgrade() && $x -> is_int();
+        $rem -> _dng() if $rem -> downgrade() && $rem -> is_int();
         return $x, $rem;
-    } else {
-        return $x -> round(@r);
     }
+
+    $x -> _dng() if $x -> downgrade() && $x -> is_int();
+    return $x;
 }
 
 sub bmod {
@@ -1162,7 +1186,7 @@ sub bmod {
         ($class, $x, $y, @r) = objectify(2, @_);
     }
 
-    return $x if $x->modify('bmod');
+    return $x if $x -> modify('bmod');
 
     # At least one argument is NaN. This is handled the same way as in
     # Math::BigInt -> bmod().
@@ -1201,7 +1225,7 @@ sub bmod {
     # At this point, both the numerator and denominator are finite numbers, and
     # the denominator (divisor) is non-zero.
 
-    if ($x->is_zero()) {        # 0 / 7 = 0, mod 0
+    if ($x -> is_zero()) {        # 0 / 7 = 0, mod 0
         return $downgrade -> bzero() if $downgrade;
         return $x;
     }
@@ -1221,7 +1245,7 @@ sub bdec {
     my ($class, $x, @r) = ref($_[0]) ? (ref($_[0]), @_) : objectify(1, @_);
 
     if ($x->{sign} !~ /^[+-]$/) {       # NaN, inf, -inf
-        return $downgrade -> new($x) if $downgrade;
+        $x -> _dng();
         return $x;
     }
 
@@ -1237,7 +1261,7 @@ sub bdec {
             $x->{_n} = $LIB->_sub($x->{_n}, $x->{_d}); # 5/2 => 3/2
         }
     }
-    $x->bnorm()->round(@r);
+    $x -> bnorm() -> round(@r);
 }
 
 sub binc {
@@ -1260,7 +1284,7 @@ sub binc {
     } else {
         $x->{_n} = $LIB->_add($x->{_n}, $x->{_d}); # 5/2 => 7/2
     }
-    $x->bnorm()->round(@r);
+    $x -> bnorm() -> round(@r);
 }
 
 sub binv {
@@ -1334,9 +1358,9 @@ sub numerator {
     my ($class, $x) = ref($_[0]) ? (ref($_[0]), $_[0]) : objectify(1, @_);
 
     # NaN, inf, -inf
-    return Math::BigInt->new($x->{sign}) if ($x->{sign} !~ /^[+-]$/);
+    return Math::BigInt -> new($x->{sign}) if ($x->{sign} !~ /^[+-]$/);
 
-    my $n = Math::BigInt->new($LIB->_str($x->{_n}));
+    my $n = Math::BigInt -> new($LIB->_str($x->{_n}));
     $n->{sign} = $x->{sign};
     $n;
 }
@@ -1345,11 +1369,11 @@ sub denominator {
     my ($class, $x) = ref($_[0]) ? (ref($_[0]), $_[0]) : objectify(1, @_);
 
     # NaN
-    return Math::BigInt->new($x->{sign}) if $x->{sign} eq 'NaN';
+    return Math::BigInt -> new($x->{sign}) if $x->{sign} eq 'NaN';
     # inf, -inf
-    return Math::BigInt->bone() if $x->{sign} !~ /^[+-]$/;
+    return Math::BigInt -> bone() if $x->{sign} !~ /^[+-]$/;
 
-    Math::BigInt->new($LIB->_str($x->{_d}));
+    Math::BigInt -> new($LIB->_str($x->{_d}));
 }
 
 sub parts {
@@ -1357,13 +1381,13 @@ sub parts {
 
     my $c = 'Math::BigInt';
 
-    return ($c->bnan(), $c->bnan()) if $x->{sign} eq 'NaN';
-    return ($c->binf(), $c->binf()) if $x->{sign} eq '+inf';
-    return ($c->binf('-'), $c->binf()) if $x->{sign} eq '-inf';
+    return ($c -> bnan(), $c -> bnan()) if $x->{sign} eq 'NaN';
+    return ($c -> binf(), $c -> binf()) if $x->{sign} eq '+inf';
+    return ($c -> binf('-'), $c -> binf()) if $x->{sign} eq '-inf';
 
-    my $n = $c->new($LIB->_str($x->{_n}));
+    my $n = $c -> new($LIB->_str($x->{_n}));
     $n->{sign} = $x->{sign};
-    my $d = $c->new($LIB->_str($x->{_d}));
+    my $d = $c -> new($LIB->_str($x->{_d}));
     ($n, $d);
 }
 
@@ -1411,20 +1435,20 @@ sub fparts {
     $denom -> {_n} = $numer -> {_d};
     $numer -> {_d} = $LIB -> _one();
 
-    return ($numer, $denom);
+    return $numer, $denom;
 }
 
 sub length {
     my ($class, $x) = ref($_[0]) ? (undef, $_[0]) : objectify(1, @_);
 
-    return $nan unless $x->is_int();
+    return $nan unless $x -> is_int();
     $LIB->_len($x->{_n});       # length(-123/1) => length(123)
 }
 
 sub digit {
     my ($class, $x, $n) = ref($_[0]) ? (undef, $_[0], $_[1]) : objectify(1, @_);
 
-    return $nan unless $x->is_int();
+    return $nan unless $x -> is_int();
     $LIB->_digit($x->{_n}, $n || 0); # digit(-123/1, 2) => digit(123, 2)
 }
 
@@ -1488,12 +1512,12 @@ sub bfac {
 
     # if $x is not an integer
     if (($x->{sign} ne '+') || (!$LIB->_is_one($x->{_d}))) {
-        return $x->bnan();
+        return $x -> bnan();
     }
 
     $x->{_n} = $LIB->_fac($x->{_n});
     # since _d is 1, we don't need to reduce/norm the result
-    $x->round(@r);
+    $x -> round(@r);
 }
 
 sub bpow {
@@ -1507,31 +1531,31 @@ sub bpow {
         ($class, $x, $y, @r) = objectify(2, @_);
     }
 
-    return $x if $x->modify('bpow');
+    return $x if $x -> modify('bpow');
 
     # $x and/or $y is a NaN
-    return $x->bnan() if $x->is_nan() || $y->is_nan();
+    return $x -> bnan() if $x -> is_nan() || $y -> is_nan();
 
     # $x and/or $y is a +/-Inf
-    if ($x->is_inf("-")) {
-        return $x->bzero()   if $y->is_negative();
-        return $x->bnan()    if $y->is_zero();
-        return $x            if $y->is_odd();
-        return $x->bneg();
-    } elsif ($x->is_inf("+")) {
-        return $x->bzero()   if $y->is_negative();
-        return $x->bnan()    if $y->is_zero();
+    if ($x -> is_inf("-")) {
+        return $x -> bzero()   if $y -> is_negative();
+        return $x -> bnan()    if $y -> is_zero();
+        return $x            if $y -> is_odd();
+        return $x -> bneg();
+    } elsif ($x -> is_inf("+")) {
+        return $x -> bzero()   if $y -> is_negative();
+        return $x -> bnan()    if $y -> is_zero();
         return $x;
-    } elsif ($y->is_inf("-")) {
-        return $x->bnan()    if $x -> is_one("-");
-        return $x->binf("+") if $x > -1 && $x < 1;
-        return $x->bone()    if $x -> is_one("+");
-        return $x->bzero();
-    } elsif ($y->is_inf("+")) {
-        return $x->bnan()    if $x -> is_one("-");
-        return $x->bzero()   if $x > -1 && $x < 1;
-        return $x->bone()    if $x -> is_one("+");
-        return $x->binf("+");
+    } elsif ($y -> is_inf("-")) {
+        return $x -> bnan()    if $x -> is_one("-");
+        return $x -> binf("+") if $x > -1 && $x < 1;
+        return $x -> bone()    if $x -> is_one("+");
+        return $x -> bzero();
+    } elsif ($y -> is_inf("+")) {
+        return $x -> bnan()    if $x -> is_one("-");
+        return $x -> bzero()   if $x > -1 && $x < 1;
+        return $x -> bone()    if $x -> is_one("+");
+        return $x -> binf("+");
     }
 
     if ($x -> is_zero()) {
@@ -1558,7 +1582,7 @@ sub bpow {
     }
 
     # (a/b)^-(c/d) = (b/a)^(c/d)
-    ($x->{_n}, $x->{_d}) = ($x->{_d}, $x->{_n}) if $y->is_negative();
+    ($x->{_n}, $x->{_d}) = ($x->{_d}, $x->{_n}) if $y -> is_negative();
 
     unless ($LIB->_is_one($y->{_n})) {
         $x->{_n} = $LIB->_pow($x->{_n}, $y->{_n});
@@ -1567,11 +1591,11 @@ sub bpow {
     }
 
     unless ($LIB->_is_one($y->{_d})) {
-        return $x->bsqrt(@r) if $LIB->_is_two($y->{_d}); # 1/2 => sqrt
-        return $x->broot($LIB->_str($y->{_d}), @r);      # 1/N => root(N)
+        return $x -> bsqrt(@r) if $LIB->_is_two($y->{_d}); # 1/2 => sqrt
+        return $x -> broot($LIB->_str($y->{_d}), @r);      # 1/N => root(N)
     }
 
-    return $x->round(@r);
+    return $x -> round(@r);
 }
 
 sub blog {
@@ -1594,7 +1618,7 @@ sub blog {
           defined $_[1] ? objectify(2, @_) : objectify(1, @_);
     }
 
-    return $x if $x->modify('blog');
+    return $x if $x -> modify('blog');
 
     # Handle all exception cases and all trivial cases. I have used Wolfram Alpha
     # (http://www.wolframalpha.com) as the reference for these cases.
@@ -1685,8 +1709,8 @@ sub bexp {
         ($class, $x, $y, @r) = objectify(1, @_);
     }
 
-    return $x->binf(@r)  if $x->{sign} eq '+inf';
-    return $x->bzero(@r) if $x->{sign} eq '-inf';
+    return $x -> binf(@r)  if $x->{sign} eq '+inf';
+    return $x -> bzero(@r) if $x->{sign} eq '-inf';
 
     # we need to limit the accuracy to protect against overflow
     my $fallback = 0;
@@ -1699,7 +1723,7 @@ sub bexp {
     # no rounding at all, so must use fallback
     if (scalar @params == 0) {
         # simulate old behaviour
-        $params[0] = $class->div_scale(); # and round to it as accuracy
+        $params[0] = $class -> div_scale(); # and round to it as accuracy
         $params[1] = undef;              # P = undef
         $scale = $params[0]+4;           # at least four more for proper round
         $params[2] = $r[2];              # round mode by caller or undef
@@ -1709,12 +1733,12 @@ sub bexp {
         $scale = abs($params[0] || $params[1]) + 4; # take whatever is defined
     }
 
-    return $x->bone(@params) if $x->is_zero();
+    return $x -> bone(@params) if $x -> is_zero();
 
     # See the comments in Math::BigFloat on how this algorithm works.
     # Basically we calculate A and B (where B is faculty(N)) so that A/B = e
 
-    my $x_org = $x->copy();
+    my $x_org = $x -> copy();
     if ($scale <= 75) {
         # set $x directly from a cached string form
         $x->{_n} =
@@ -1750,17 +1774,17 @@ sub bexp {
     }
 
     # $x contains now an estimate of e, with some surplus digits, so we can round
-    if (!$x_org->is_one()) {
+    if (!$x_org -> is_one()) {
         # raise $x to the wanted power and round it in one step:
-        $x->bpow($x_org, @params);
+        $x -> bpow($x_org, @params);
     } else {
         # else just round the already computed result
         delete $x->{accuracy}; delete $x->{precision};
         # shortcut to not run through _find_round_parameters again
         if (defined $params[0]) {
-            $x->bround($params[0], $params[2]); # then round accordingly
+            $x -> bround($params[0], $params[2]); # then round accordingly
         } else {
-            $x->bfround($params[1], $params[2]); # then round accordingly
+            $x -> bfround($params[1], $params[2]); # then round accordingly
         }
     }
     if ($fallback) {
@@ -1780,9 +1804,9 @@ sub bnok {
         ($class, $x, $y, @r) = objectify(2, @_);
     }
 
-    return $x->bnan() if $x->is_nan() || $y->is_nan();
-    return $x->bnan() if (($x->is_finite() && !$x->is_int()) ||
-                          ($y->is_finite() && !$y->is_int()));
+    return $x -> bnan() if $x -> is_nan() || $y -> is_nan();
+    return $x -> bnan() if (($x -> is_finite() && !$x -> is_int()) ||
+                            ($y -> is_finite() && !$y -> is_int()));
 
     my $xint = Math::BigInt -> new($x -> bstr());
     my $yint = Math::BigInt -> new($y -> bstr());
@@ -1876,9 +1900,9 @@ sub bmodinv {
 sub bsqrt {
     my ($class, $x, @r) = ref($_[0]) ? (ref($_[0]), @_) : objectify(1, @_);
 
-    return $x->bnan() if $x->{sign} !~ /^[+]/; # NaN, -inf or < 0
+    return $x -> bnan() if $x->{sign} !~ /^[+]/; # NaN, -inf or < 0
     return $x if $x->{sign} eq '+inf';         # sqrt(inf) == inf
-    return $x->round(@r) if $x->is_zero() || $x->is_one();
+    return $x -> round(@r) if $x -> is_zero() || $x -> is_one();
 
     my $n = $x -> {_n};
     my $d = $x -> {_d};
@@ -1897,7 +1921,7 @@ sub bsqrt {
             if ($LIB -> _acmp($d, $d2) == 0) {
                 $x -> {_n} = $nsqrt;
                 $x -> {_d} = $dsqrt;
-                return $x->round(@r);
+                return $x -> round(@r);
             }
         }
     }
@@ -1919,7 +1943,7 @@ sub bsqrt {
     $x -> {_n}   = $xtmp -> {_n};
     $x -> {_d}   = $xtmp -> {_d};
 
-    $x->round(@r);
+    $x -> round(@r);
 }
 
 sub blsft {
@@ -1960,7 +1984,7 @@ sub brsft {
 
 sub bblsft {
     # We don't call objectify(), because the bitwise methods should not
-    # upgrade/downgrade, even when upgrading/downgrading is enabled.
+    # upgrade, even when upgrading is enabled.
 
     my ($class, $x, $y, @r) = ref($_[0]) ? (ref($_[0]), @_) : @_;
 
@@ -1992,8 +2016,9 @@ sub bblsft {
 
     # Now we might downgrade.
 
-    return $downgrade -> new($x) if $downgrade;
     $x -> round(@r);
+    $x -> _dng();
+    return $x;
 }
 
 # Bitwise right shift.
@@ -2032,8 +2057,9 @@ sub bbrsft {
 
     # Now we might downgrade.
 
-    return $downgrade -> new($x) if $downgrade;
     $x -> round(@r);
+    $x -> _dng();
+    return $x;
 }
 
 sub band {
@@ -2139,22 +2165,25 @@ sub bnot {
 
 sub round {
     my $x = shift;
-    return $downgrade -> new($x) if $downgrade &&
-      ($x -> is_int() || $x -> is_inf() || $x -> is_nan());
+    $x -> _dng() if ($x -> is_int() ||
+                     $x -> is_inf() ||
+                     $x -> is_nan());
     $x;
 }
 
 sub bround {
     my $x = shift;
-    return $downgrade -> new($x) if $downgrade &&
-      ($x -> is_int() || $x -> is_inf() || $x -> is_nan());
+    $x -> _dng() if ($x -> is_int() ||
+                     $x -> is_inf() ||
+                     $x -> is_nan());
     $x;
 }
 
 sub bfround {
     my $x = shift;
-    return $downgrade -> new($x) if $downgrade &&
-      ($x -> is_int() || $x -> is_inf() || $x -> is_nan());
+    $x -> _dng() if ($x -> is_int() ||
+                     $x -> is_inf() ||
+                     $x -> is_nan());
     $x;
 }
 
@@ -2353,7 +2382,7 @@ sub as_int {
 
     my $y;
     if ($x -> is_inf()) {
-        $y = Math::BigInt -> binf($x->sign());
+        $y = Math::BigInt -> binf($x -> sign());
     } elsif ($x -> is_nan()) {
         $y = Math::BigInt -> bnan();
     } else {
@@ -2420,7 +2449,7 @@ sub as_float {
 
     my $y;
     if ($x -> is_inf()) {
-        $y = Math::BigFloat -> binf($x->sign());
+        $y = Math::BigFloat -> binf($x -> sign());
     } elsif ($x -> is_nan()) {
         $y = Math::BigFloat -> bnan();
     } else {
@@ -2454,7 +2483,7 @@ sub to_hex {
         return 'inf';                                   # +inf
     }
 
-    return $nan unless $x->is_int();
+    return $nan unless $x -> is_int();
 
     my $str = $LIB->_to_hex($x->{_n});
     return $x->{sign} eq "-" ? "-$str" : $str;
@@ -2470,7 +2499,7 @@ sub to_oct {
         return 'inf';                                   # +inf
     }
 
-    return $nan unless $x->is_int();
+    return $nan unless $x -> is_int();
 
     my $str = $LIB->_to_oct($x->{_n});
     return $x->{sign} eq "-" ? "-$str" : $str;
@@ -2486,7 +2515,7 @@ sub to_bin {
         return 'inf';                                   # +inf
     }
 
-    return $nan unless $x->is_int();
+    return $nan unless $x -> is_int();
 
     my $str = $LIB->_to_bin($x->{_n});
     return $x->{sign} eq "-" ? "-$str" : $str;
@@ -2495,7 +2524,7 @@ sub to_bin {
 sub as_bin {
     my ($class, $x) = ref($_[0]) ? (undef, $_[0]) : objectify(1, @_);
 
-    return $x unless $x->is_int();
+    return $x unless $x -> is_int();
 
     my $s = $x->{sign};
     $s = '' if $s eq '+';
@@ -2505,7 +2534,7 @@ sub as_bin {
 sub as_hex {
     my ($class, $x) = ref($_[0]) ? (undef, $_[0]) : objectify(1, @_);
 
-    return $x unless $x->is_int();
+    return $x unless $x -> is_int();
 
     my $s = $x->{sign}; $s = '' if $s eq '+';
     $s . $LIB->_as_hex($x->{_n});
@@ -2514,7 +2543,7 @@ sub as_hex {
 sub as_oct {
     my ($class, $x) = ref($_[0]) ? (undef, $_[0]) : objectify(1, @_);
 
-    return $x unless $x->is_int();
+    return $x unless $x -> is_int();
 
     my $s = $x->{sign}; $s = '' if $s eq '+';
     $s . $LIB->_as_oct($x->{_n});
@@ -2569,7 +2598,7 @@ sub from_dec {
             $self->{_d} = $LIB -> _div($self->{_d}, $gcd);
         }
 
-        $self -> dng() if $downgrade && $self -> is_int();
+        $self -> _dng() if $self -> is_int();
         return $self;
     }
 
@@ -2625,7 +2654,7 @@ sub from_hex {
             }
         }
 
-        $self -> dng() if $downgrade && $self -> is_int();
+        $self -> _dng() if $self -> is_int();
         return $self;
     }
 
@@ -2681,7 +2710,7 @@ sub from_bin {
             }
         }
 
-        $self -> dng() if $downgrade && $self -> is_int();
+        $self -> _dng() if $self -> is_int();
         return $self;
     }
 
@@ -2737,7 +2766,7 @@ sub from_oct {
             }
         }
 
-        $self -> dng() if $downgrade && $self -> is_int();
+        $self -> _dng() if $self -> is_int();
         return $self;
     }
 
