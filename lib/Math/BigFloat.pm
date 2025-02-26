@@ -4080,15 +4080,13 @@ sub bfac {
     # set up parameters
     my ($class, $x, @r) = ref($_[0]) ? (ref($_[0]), @_) : objectify(1, @_);
 
-    # inf => inf
-    return $x if $x -> modify('bfac');
-
     return $x -> bnan(@r)      if $x -> is_nan()  || $x -> is_inf("-");
     return $x -> binf("+", @r) if $x -> is_inf("+");
+    return $x -> bnan(@r)      if $x -> is_neg() || !$x -> is_int();
     return $x -> bone(@r)      if $x -> is_zero() || $x -> is_one();
 
     if ($x -> is_neg() || !$x -> is_int()) {
-        return $x -> _upg() -> bfac(@r) if $upgrade;
+        return $x -> _upg() -> bfac(@r) if $class -> upgrade();
         return $x -> bnan(@r);
     }
 
@@ -4101,29 +4099,20 @@ sub bfac {
 
     $x -> bnorm();                      # norm again
     $x -> round(@r);
-    $x -> _dng() if ($x -> is_int() ||
-                     $x -> is_inf() ||
-                     $x -> is_nan());
+    $x -> _dng();
     return $x;
 }
 
 sub bdfac {
-    # compute double factorial
-
-    # set up parameters
+    # compute double factorial, modify $x in place
     my ($class, $x, @r) = ref($_[0]) ? (ref($_[0]), @_) : objectify(1, @_);
 
     return $x if $x -> modify('bdfac');
 
-    return $x -> bnan(@r)      if $x -> is_nan()  || $x -> is_inf("-");
+    return $x -> bnan(@r)      if $x -> is_nan() || $x -> is_inf("-");
     return $x -> binf("+", @r) if $x -> is_inf("+");
-
-    if ($x <= -2 || !$x -> is_int()) {
-        return $x -> _upg() -> bdfac(@r) if $upgrade;
-        return $x -> bnan(@r);
-    }
-
-    return $x -> bone() if $x <= 1;
+    return $x -> bnan(@r)      if $x <= -2 || !$x -> is_int();
+    return $x -> bone(@r)      if $x <= 1;
 
     croak("bdfac() requires a newer version of the $LIB library.")
         unless $LIB -> can('_dfac');
@@ -4137,9 +4126,7 @@ sub bdfac {
 
     $x -> bnorm();                      # norm again
     $x -> round(@r);
-    $x -> _dng() if ($x -> is_int() ||
-                                          $x -> is_inf() ||
-                                          $x -> is_nan());
+    $x -> _dng();
     return $x;
 }
 
@@ -4155,7 +4142,7 @@ sub btfac {
     return $x -> binf("+", @r) if $x -> is_inf("+");
 
     if ($x <= -3 || !$x -> is_int()) {
-        return $x -> _upg() -> btfac(@r) if $upgrade;
+        return $x -> _upg() -> btfac(@r) if $class -> upgrade();
         return $x -> bnan(@r);
     }
 
@@ -4171,9 +4158,7 @@ sub btfac {
     }
 
     $x -> round(@r);
-    $x -> _dng() if ($x -> is_int() ||
-                     $x -> is_inf() ||
-                     $x -> is_nan());
+    $x -> _dng();
     return $x;
 }
 
@@ -4184,18 +4169,22 @@ sub bmfac {
 
     return $x if $x -> modify('bmfac');
 
-    return $x -> bnan(@r) if $x -> is_nan() || $x -> is_inf("-") || !$k -> is_pos();
+    return $x -> bnan(@r)      if $x -> is_nan() || $x -> is_inf("-") ||
+                                  !$k -> is_pos();
     return $x -> binf("+", @r) if $x -> is_inf("+");
-
-    if ($x <= -$k || !$x -> is_int() ||
-        ($k -> is_finite() && !$k -> is_int()))
-    {
-        return $x -> _upg() -> bmfac($k, @r) if $upgrade;
-        return $x -> bnan(@r);
-    }
+    return $x -> bround(@r)    if $k -> is_inf("+");
+    return $x -> bnan(@r)      if !$x -> is_int() || !$k -> is_int();
+    return $x -> bnan(@r)      if $k < 1 || $x <= -$k;
 
     my $one = $class -> bone();
     return $x -> bone(@r) if $x <= $one;
+
+    # If called with "foreign" argument.
+
+    unless ($x -> isa(__PACKAGE__)) {
+        return $x -> _upg() -> bmfac(@r) if $class -> upgrade();
+        croak "Can't handle a ", ref($x), " in ", (caller(0))[3], "()";
+    }
 
     my $f = $x -> copy();
     while ($f -> bsub($k) > $one) {
@@ -4203,9 +4192,7 @@ sub bmfac {
     }
 
     $x -> round(@r);
-    $x -> _dng() if ($x -> is_int() ||
-                     $x -> is_inf() ||
-                     $x -> is_nan());
+    $x -> _dng();
     return $x;
 }
 
