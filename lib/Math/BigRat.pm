@@ -1795,6 +1795,122 @@ sub bexp {
     $x;
 }
 
+sub bilog2 {
+    my ($class, $x, @r) = ref($_[0]) ? (ref($_[0]), @_) : objectify(1, @_);
+
+    return $x if $x -> modify('bilog2');
+
+    return $x -> bnan(@r)        if $x -> is_nan();
+    return $x -> binf("+", @r)   if $x -> is_inf("+");
+    return $x -> binf("-", @r)   if $x -> is_zero();
+
+    # If called with "foreign" argument.
+
+    unless ($x -> isa(__PACKAGE__)) {
+        return $x -> _upg() -> bilog2(@r) if $class -> upgrade();
+        croak "Can't handle a ", ref($x), " in ", (caller(0))[3], "()";
+    }
+
+    if ($x -> is_neg()) {
+        return $x -> _upg() -> bilog2(@r) if $class -> upgrade();
+        return $x -> bnan(@r);
+    }
+
+    $x->{_n} = $LIB -> _div($x->{_n}, $x->{_d});
+    $x->{_n} = $LIB -> _ilog2($x->{_n});
+    $x->{_d} = $LIB -> _one();
+    $x -> bnorm() -> round(@r);
+    $x -> _dng();
+    return $x;
+}
+
+sub bilog10 {
+    my ($class, $x, @r) = ref($_[0]) ? (ref($_[0]), @_) : objectify(1, @_);
+
+    return $x if $x -> modify('bilog10');
+
+    return $x -> bnan(@r)        if $x -> is_nan();
+    return $x -> binf("+", @r)   if $x -> is_inf("+");
+    return $x -> binf("-", @r)   if $x -> is_zero();
+
+    # If called with "foreign" argument.
+
+    unless ($x -> isa(__PACKAGE__)) {
+        return $x -> _upg() -> bilog10(@r) if $class -> upgrade();
+        croak "Can't handle a ", ref($x), " in ", (caller(0))[3], "()";
+    }
+
+    if ($x -> is_neg()) {
+        return $x -> _upg() -> bilog10(@r) if $class -> upgrade();
+        return $x -> bnan(@r);
+    }
+
+    $x->{_n} = $LIB -> _div($x->{_n}, $x->{_d});
+    $x->{_n} = $LIB -> _ilog10($x->{_n});
+    $x->{_d} = $LIB -> _one();
+    $x -> bnorm() -> round(@r);
+    $x -> _dng();
+    return $x;
+}
+
+sub bclog2 {
+    my ($class, $x, @r) = ref($_[0]) ? (ref($_[0]), @_) : objectify(1, @_);
+
+    return $x if $x -> modify('bclog2');
+
+    return $x -> bnan(@r)        if $x -> is_nan();
+    return $x -> binf("+", @r)   if $x -> is_inf("+");
+    return $x -> binf("-", @r)   if $x -> is_zero();
+
+    # If called with "foreign" argument.
+
+    unless ($x -> isa(__PACKAGE__)) {
+        return $x -> _upg() -> bclog2(@r) if $class -> upgrade();
+        croak "Can't handle a ", ref($x), " in ", (caller(0))[3], "()";
+    }
+
+    if ($x -> is_neg()) {
+        return $x -> _upg() -> bclog2(@r) if $class -> upgrade();
+        return $x -> bnan(@r);
+    }
+
+    $x->{_n} = $LIB -> _div($x->{_n}, $x->{_d});
+    $x->{_n} = $LIB -> _clog2($x->{_n});
+    $x->{_d} = $LIB -> _one();
+    $x -> bnorm() -> round(@r);
+    $x -> _dng();
+    return $x;
+}
+
+sub bclog10 {
+    my ($class, $x, @r) = ref($_[0]) ? (ref($_[0]), @_) : objectify(1, @_);
+
+    return $x if $x -> modify('bclog10');
+
+    return $x -> bnan(@r)        if $x -> is_nan();
+    return $x -> binf("+", @r)   if $x -> is_inf("+");
+    return $x -> binf("-", @r)   if $x -> is_zero();
+
+    # If called with "foreign" argument.
+
+    unless ($x -> isa(__PACKAGE__)) {
+        return $x -> _upg() -> bclog10(@r) if $class -> upgrade();
+        croak "Can't handle a ", ref($x), " in ", (caller(0))[3], "()";
+    }
+
+    if ($x -> is_neg()) {
+        return $x -> _upg() -> bclog10(@r) if $class -> upgrade();
+        return $x -> bnan(@r);
+    }
+
+    $x->{_n} = $LIB -> _div($x->{_n}, $x->{_d});
+    $x->{_n} = $LIB -> _clog10($x->{_n});
+    $x->{_d} = $LIB -> _one();
+    $x -> bnorm() -> round(@r);
+    $x -> _dng();
+    return $x;
+}
+
 sub bnok {
     # set up parameters
     my ($class, $x, $y, @r) = (ref($_[0]), @_);
