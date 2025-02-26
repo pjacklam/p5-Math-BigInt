@@ -3084,19 +3084,139 @@ sub bexp {
 }
 
 sub bilog2 {
-    croak "Method ", (caller(0))[3], "() not implemented yet";
+    my ($class, $x, @r) = ref($_[0]) ? (ref($_[0]), @_) : objectify(1, @_);
+
+    return $x if $x -> modify('bilog2');
+
+    return $x -> bnan(@r)        if $x -> is_nan();
+    return $x -> binf("+", @r)   if $x -> is_inf("+");
+    return $x -> binf("-", @r)   if $x -> is_zero();
+
+    # If called with "foreign" argument.
+
+    unless ($x -> isa(__PACKAGE__)) {
+        return $x -> _upg() -> bilog2(@r) if $class -> upgrade();
+        croak "Can't handle a ", ref($x), " in ", (caller(0))[3], "()";
+    }
+
+    if ($x -> is_neg()) {
+        return $x -> _upg() -> bilog2(@r) if $class -> upgrade();
+        return $x -> bnan(@r);
+    }
+
+    if ($x->{_es} eq '-') {                     # exponent < 0
+        $x->{_m} = $LIB->_rsft($x->{_m}, $x->{_e}, 10);
+    } elsif (! $LIB->_is_zero($x->{_e})) {      # exponent > 0
+        $x->{_m} = $LIB->_lsft($x->{_m}, $x->{_e}, 10);
+    }
+
+    $x->{_m} = $LIB -> _ilog2($x->{_m});
+    $x->{_e} = $LIB -> _zero();
+    $x -> bnorm() -> round(@r);
+    $x -> _dng();
+    return $x;
 }
 
 sub bilog10 {
-    croak "Method ", (caller(0))[3], "() not implemented yet";
+    my ($class, $x, @r) = ref($_[0]) ? (ref($_[0]), @_) : objectify(1, @_);
+
+    return $x if $x -> modify('bilog10');
+
+    return $x -> bnan(@r)        if $x -> is_nan();
+    return $x -> binf("+", @r)   if $x -> is_inf("+");
+    return $x -> binf("-", @r)   if $x -> is_zero();
+
+    # If called with "foreign" argument.
+
+    unless ($x -> isa(__PACKAGE__)) {
+        return $x -> _upg() -> bilog10(@r) if $class -> upgrade();
+        croak "Can't handle a ", ref($x), " in ", (caller(0))[3], "()";
+    }
+
+    if ($x -> is_neg()) {
+        return $x -> _upg() -> bilog10(@r) if $class -> upgrade();
+        return $x -> bnan(@r);
+    }
+
+    if ($x->{_es} eq '-') {                     # exponent < 0
+        $x->{_m} = $LIB->_rsft($x->{_m}, $x->{_e}, 10);
+    } elsif (! $LIB->_is_zero($x->{_e})) {      # exponent > 0
+        $x->{_m} = $LIB->_lsft($x->{_m}, $x->{_e}, 10);
+    }
+
+    $x->{_m} = $LIB -> _ilog10($x->{_m});
+    $x->{_e} = $LIB -> _zero();
+    $x -> bnorm() -> round(@r);
+    $x -> _dng();
+    return $x;
 }
 
 sub bclog2 {
-    croak "Method ", (caller(0))[3], "() not implemented yet";
+    my ($class, $x, @r) = ref($_[0]) ? (ref($_[0]), @_) : objectify(1, @_);
+
+    return $x if $x -> modify('bclog2');
+
+    return $x -> bnan(@r)        if $x -> is_nan();
+    return $x -> binf("+", @r)   if $x -> is_inf("+");
+    return $x -> binf("-", @r)   if $x -> is_zero();
+
+    # If called with "foreign" argument.
+
+    unless ($x -> isa(__PACKAGE__)) {
+        return $x -> _upg() -> bclog2(@r) if $class -> upgrade();
+        croak "Can't handle a ", ref($x), " in ", (caller(0))[3], "()";
+    }
+
+    if ($x -> is_neg()) {
+        return $x -> _upg() -> bclog2(@r) if $class -> upgrade();
+        return $x -> bnan(@r);
+    }
+
+    if ($x->{_es} eq '-') {                     # exponent < 0
+        $x->{_m} = $LIB->_rsft($x->{_m}, $x->{_e}, 10);
+    } elsif (! $LIB->_is_zero($x->{_e})) {      # exponent > 0
+        $x->{_m} = $LIB->_lsft($x->{_m}, $x->{_e}, 10);
+    }
+
+    $x->{_m} = $LIB -> _clog2($x->{_m});
+    $x->{_e} = $LIB -> _zero();
+    $x -> bnorm() -> round(@r);
+    $x -> _dng();
+    return $x;
 }
 
 sub bclog10 {
-    croak "Method ", (caller(0))[3], "() not implemented yet";
+    my ($class, $x, @r) = ref($_[0]) ? (ref($_[0]), @_) : objectify(1, @_);
+
+    return $x if $x -> modify('bclog10');
+
+    return $x -> bnan(@r)        if $x -> is_nan();
+    return $x -> binf("+", @r)   if $x -> is_inf("+");
+    return $x -> binf("-", @r)   if $x -> is_zero();
+
+    # If called with "foreign" argument.
+
+    unless ($x -> isa(__PACKAGE__)) {
+        return $x -> _upg() -> bclog10(@r) if $class -> upgrade();
+        croak "Can't handle a ", ref($x), " in ", (caller(0))[3], "()";
+    }
+
+    if ($x -> is_neg()) {
+        return $x -> _upg() -> bclog10(@r) if $class -> upgrade();
+        return $x -> bnan(@r);
+    }
+
+    if ($x->{_es} eq '-') {                     # exponent < 0
+        $x->{_m} = $LIB->_rsft($x->{_m}, $x->{_e}, 10);
+    } elsif (! $LIB->_is_zero($x->{_e})) {      # exponent > 0
+        $x->{_m} = $LIB->_lsft($x->{_m}, $x->{_e}, 10);
+    }
+
+    $x->{_m} = $LIB -> _clog10($x->{_m});
+    $x->{_e} = $LIB -> _zero();
+    $x -> bnorm() -> round(@r);
+    $x -> _dng();
+    return $x;
 }
 
 sub bnok {
