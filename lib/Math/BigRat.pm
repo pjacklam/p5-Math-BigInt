@@ -1520,6 +1520,92 @@ sub bfac {
     $x -> round(@r);
 }
 
+sub bfib {
+    # compute Fibonacci number(s)
+    my ($class, $x, @r) = ref($_[0]) ? (ref($_[0]), @_) : objectify(1, @_);
+
+    croak("bfib() requires a newer version of the $LIB library.")
+        unless $LIB -> can('_fib');
+
+    return $x if $x -> modify('bfib');
+
+    # If called with "foreign" argument.
+
+    unless ($x -> isa(__PACKAGE__)) {
+        return $x -> _upg() -> bfib(@r) if $class -> upgrade();
+        croak "Can't handle a ", ref($x), " in ", (caller(0))[3], "()";
+    }
+
+    # List context.
+
+    if (wantarray) {
+        croak("bfib() can't return an infinitely long list of numbers")
+          if $x -> is_inf();
+
+        return if $x -> is_nan() || !$x -> is_int();
+
+        # The following places a limit on how large $x can be. Should this
+        # limit be removed? XXX
+
+        my $n = $x -> numify();
+
+        my @y;
+        {
+            $y[0] = $x -> copy() -> babs();
+            $y[0]{_n} = $LIB -> _zero();
+            $y[0]{_d} = $LIB -> _one();
+            last if $n == 0;
+
+            $y[1] = $y[0] -> copy();
+            $y[1]{_n} = $LIB -> _one();
+            $y[1]{_d} = $LIB -> _one();
+            last if $n == 1;
+
+            for (my $i = 2 ; $i <= abs($n) ; $i++) {
+                $y[$i] = $y[$i - 1] -> copy();
+                $y[$i]{_n} = $LIB -> _add($LIB -> _copy($y[$i - 1]{_n}),
+                                                        $y[$i - 2]{_n});
+            }
+
+            # If negative, insert sign as appropriate.
+
+            if ($x -> is_neg()) {
+                for (my $i = 2 ; $i <= $#y ; $i += 2) {
+                    $y[$i]{sign} = '-';
+                }
+            }
+
+            # The last element in the array is the invocand.
+
+            $x->{sign} = $y[-1]{sign};
+            $x->{_n}   = $y[-1]{_n};
+            $x->{_d}   = $y[-1]{_d};
+            $y[-1] = $x;
+        }
+
+        for (@y) {
+            $_ -> bnorm();
+            $_ -> round(@r);
+        }
+
+        return @y;
+    }
+
+    # Scalar context.
+
+    else {
+        return $x if $x -> is_inf('+');
+        return $x -> bnan() if $x -> is_nan() || $x -> is_inf('-') ||
+                              !$x -> is_int();
+
+        $x->{sign}  = $x -> is_neg() && $x -> is_even() ? '-' : '+';
+        $x->{_n} = $LIB -> _fib($x->{_n});
+        $x->{_d} = $LIB -> _one();
+        $x -> bnorm();
+        return $x -> round(@r);
+    }
+}
+
 sub bpow {
     # power ($x ** $y)
 
