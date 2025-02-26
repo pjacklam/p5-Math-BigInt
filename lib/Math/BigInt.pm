@@ -4047,16 +4047,17 @@ sub bfac {
 
     return $x if $x -> modify('bfac');
 
+    return $x -> bnan(@r)      if $x -> is_nan() || $x -> is_inf("-");;
+    return $x -> binf("+", @r) if $x -> is_inf("+");
+    return $x -> bnan(@r)      if $x -> is_neg();
+    return $x -> bone(@r)      if $x -> is_zero() || $x -> is_one();
+
     # If called with "foreign" argument.
 
     unless ($x -> isa(__PACKAGE__)) {
-        return $x -> _upg() -> bfac(@r) if $upgrade;
+        return $x -> _upg() -> bfac(@r) if $class -> upgrade();
         croak "Can't handle a ", ref($x), " in ", (caller(0))[3], "()";
     }
-
-    return $x if $x->{sign} eq '+inf'; # inf => inf
-
-    return $x -> bnan(@r) if $x->{sign} ne '+'; # NaN, <0 => NaN
 
     $x->{value} = $LIB->_fac($x->{value});
     $x -> round(@r);
@@ -4068,17 +4069,17 @@ sub bdfac {
 
     return $x if $x -> modify('bdfac');
 
+    return $x -> bnan(@r)      if $x -> is_nan() || $x -> is_inf("-");
+    return $x -> binf("+", @r) if $x -> is_inf("+");
+    return $x -> bnan(@r)      if $x <= -2;
+    return $x -> bone(@r)      if $x <= 1;
+
     # If called with "foreign" argument.
 
     unless ($x -> isa(__PACKAGE__)) {
-        return $x -> _upg() -> bdfac(@r) if $upgrade;
+        return $x -> _upg() -> bdfac(@r) if $class -> upgrade();
         croak "Can't handle a ", ref($x), " in ", (caller(0))[3], "()";
     }
-
-    return $x if $x->{sign} eq '+inf'; # inf => inf
-
-    return $x -> bnan(@r) if $x -> is_nan() || $x <= -2;
-    return $x -> bone(@r) if $x <= 1;
 
     croak("bdfac() requires a newer version of the $LIB library.")
         unless $LIB -> can('_dfac');
@@ -4091,22 +4092,23 @@ sub btfac {
     # compute triple factorial, modify $x in place
     my ($class, $x, @r) = ref($_[0]) ? (ref($_[0]), @_) : objectify(1, @_);
 
-    return $x if $x -> modify('btfac') || $x->{sign} eq '+inf'; # inf => inf
+    return $x if $x -> modify('btfac');
 
-    return $x -> bnan(@r) if $x -> is_nan();
-
-    # If called with "foreign" argument.
-
-    unless ($x -> isa(__PACKAGE__)) {
-        return $x -> _upg() -> bsqrt(@r) if $upgrade;
-        croak "Can't handle a ", ref($x), " in ", (caller(0))[3], "()";
-    }
+    return $x -> bnan(@r)      if $x -> is_nan();
+    return $x -> binf("+", @r) if $x -> is_inf("+");
 
     my $k = $class -> new("3");
     return $x -> bnan(@r) if $x <= -$k;
 
     my $one = $class -> bone();
     return $x -> bone(@r) if $x <= $one;
+
+    # If called with "foreign" argument.
+
+    unless ($x -> isa(__PACKAGE__)) {
+        return $x -> _upg() -> bdfac(@r) if $class -> upgrade();
+        croak "Can't handle a ", ref($x), " in ", (caller(0))[3], "()";
+    }
 
     my $f = $x -> copy();
     while ($f -> bsub($k) > $one) {
@@ -4121,16 +4123,20 @@ sub bmfac {
     my ($class, $x, $k, @r) = ref($_[0]) && ref($_[0]) eq ref($_[1])
                             ? (ref($_[0]), @_) : objectify(2, @_);
 
-    return $x if $x -> modify('bmfac') || $x->{sign} eq '+inf';
+    return $x if $x -> modify('bmfac');
+
+    return $x -> bnan(@r)      if $x -> is_nan();
+    return $x -> bnan(@r)      if $k -> is_nan();
+    return $x -> binf("+", @r) if $x -> is_inf("+");
 
     # If called with "foreign" argument.
 
     unless ($x -> isa(__PACKAGE__)) {
-        return $x -> _upg() -> bmfac(@r) if $upgrade;
+        return $x -> _upg() -> bmfac(@r) if $class -> upgrade();
         croak "Can't handle a ", ref($x), " in ", (caller(0))[3], "()";
     }
 
-    return $x -> bnan(@r) if $x -> is_nan() || $k -> is_nan() || $k < 1 || $x <= -$k;
+    return $x -> bnan(@r) if $k < 1 || $x <= -$k;
 
     my $one = $class -> bone();
     return $x -> bone(@r) if $x <= $one;
