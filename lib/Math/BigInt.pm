@@ -2380,56 +2380,25 @@ sub bmuladd {
 
     return $x if $x -> modify('bmuladd');
 
-    # If called with "foreign" arguments.
-
-    for my $arg ($x, $y, $z) {
-        unless ($arg -> isa(__PACKAGE__)) {
-            return $x -> _upg() -> bmuladd($y, $z, @r) if $upgrade;
-            croak "Can't handle a ", ref($arg), " in ", (caller(0))[3], "()";
-        }
-    }
-
-    # x, y, and z are finite numbers
-
-    if ($x->{sign} =~ /^[+-]$/ &&
-        $y->{sign} =~ /^[+-]$/ &&
-        $z->{sign} =~ /^[+-]$/)
-    {
-        # TODO: what if $y and $z have A or P set?
-        $r[3] = $z;             # no push here
-
-        my $zs = $z->{sign};
-        my $zv = $z->{value};
-        $zv = $LIB -> _copy($zv) if refaddr($x) eq refaddr($z);
-
-        $x->{sign} = $x->{sign} eq $y->{sign} ? '+' : '-'; # +1 * +1 or -1 * -1 => +
-        $x->{value} = $LIB->_mul($x->{value}, $y->{value}); # do actual math
-        $x->{sign} = '+' if $LIB->_is_zero($x->{value});    # no -0
-
-        ($x->{value}, $x->{sign})
-          = $LIB -> _sadd($x->{value}, $x->{sign}, $zv, $zs);
-        return $x -> round(@r);
-    }
-
     # At least one of x, y, and z is a NaN
 
-    return $x -> bnan(@r) if (($x->{sign} eq $nan) ||
-                              ($y->{sign} eq $nan) ||
-                              ($z->{sign} eq $nan));
+    return $x -> bnan(@r) if ($x -> is_nan() ||
+                              $y -> is_nan() ||
+                              $z -> is_nan());
 
     # At least one of x, y, and z is an Inf
 
-    if ($x->{sign} eq "-inf") {
+    if ($x -> is_inf("-")) {
 
-        if ($y -> is_neg()) {               # x = -inf, y < 0
-            if ($z->{sign} eq "-inf") {
+        if ($y -> is_neg()) {                   # x = -inf, y < 0
+            if ($z -> is_inf("-")) {
                 return $x -> bnan(@r);
             } else {
                 return $x -> binf("+", @r);
             }
-        } elsif ($y -> is_zero()) {         # x = -inf, y = 0
+        } elsif ($y -> is_zero()) {             # x = -inf, y = 0
             return $x -> bnan(@r);
-        } else {                            # x = -inf, y > 0
+        } else {                                # x = -inf, y > 0
             if ($z->{sign} eq "+inf") {
                 return $x -> bnan(@r);
             } else {
@@ -2439,16 +2408,16 @@ sub bmuladd {
 
     } elsif ($x->{sign} eq "+inf") {
 
-        if ($y -> is_neg()) {               # x = +inf, y < 0
+        if ($y -> is_neg()) {                   # x = +inf, y < 0
             if ($z->{sign} eq "+inf") {
                 return $x -> bnan(@r);
             } else {
                 return $x -> binf("-", @r);
             }
-        } elsif ($y -> is_zero()) {         # x = +inf, y = 0
+        } elsif ($y -> is_zero()) {             # x = +inf, y = 0
             return $x -> bnan(@r);
-        } else {                            # x = +inf, y > 0
-            if ($z->{sign} eq "-inf") {
+        } else {                                # x = +inf, y > 0
+            if ($z -> is_inf("-")) {
                 return $x -> bnan(@r);
             } else {
                 return $x -> binf("+", @r);
@@ -2457,20 +2426,20 @@ sub bmuladd {
 
     } elsif ($x -> is_neg()) {
 
-        if ($y->{sign} eq "-inf") {         # -inf < x < 0, y = -inf
-            if ($z->{sign} eq "-inf") {
+        if ($y -> is_inf("-")) {                # -inf < x < 0, y = -inf
+            if ($z -> is_inf("-")) {
                 return $x -> bnan(@r);
             } else {
                 return $x -> binf("+", @r);
             }
-        } elsif ($y->{sign} eq "+inf") {    # -inf < x < 0, y = +inf
+        } elsif ($y->{sign} eq "+inf") {        # -inf < x < 0, y = +inf
             if ($z->{sign} eq "+inf") {
                 return $x -> bnan(@r);
             } else {
                 return $x -> binf("-", @r);
             }
-        } else {                            # -inf < x < 0, -inf < y < +inf
-            if ($z->{sign} eq "-inf") {
+        } else {                                # -inf < x < 0, -inf < y < +inf
+            if ($z -> is_inf("-")) {
                 return $x -> binf("-", @r);
             } elsif ($z->{sign} eq "+inf") {
                 return $x -> binf("+", @r);
@@ -2479,12 +2448,12 @@ sub bmuladd {
 
     } elsif ($x -> is_zero()) {
 
-        if ($y->{sign} eq "-inf") {         # x = 0, y = -inf
+        if ($y -> is_inf("-")) {                # x = 0, y = -inf
             return $x -> bnan(@r);
-        } elsif ($y->{sign} eq "+inf") {    # x = 0, y = +inf
+        } elsif ($y->{sign} eq "+inf") {        # x = 0, y = +inf
             return $x -> bnan(@r);
-        } else {                            # x = 0, -inf < y < +inf
-            if ($z->{sign} eq "-inf") {
+        } else {                                # x = 0, -inf < y < +inf
+            if ($z -> is_inf("-")) {
                 return $x -> binf("-", @r);
             } elsif ($z->{sign} eq "+inf") {
                 return $x -> binf("+", @r);
@@ -2493,20 +2462,20 @@ sub bmuladd {
 
     } elsif ($x -> is_pos()) {
 
-        if ($y->{sign} eq "-inf") {         # 0 < x < +inf, y = -inf
+        if ($y -> is_inf("-")) {                # 0 < x < +inf, y = -inf
             if ($z->{sign} eq "+inf") {
                 return $x -> bnan(@r);
             } else {
                 return $x -> binf("-", @r);
             }
-        } elsif ($y->{sign} eq "+inf") {    # 0 < x < +inf, y = +inf
-            if ($z->{sign} eq "-inf") {
+        } elsif ($y->{sign} eq "+inf") {        # 0 < x < +inf, y = +inf
+            if ($z -> is_inf("-")) {
                 return $x -> bnan(@r);
             } else {
                 return $x -> binf("+", @r);
             }
-        } else {                            # 0 < x < +inf, -inf < y < +inf
-            if ($z->{sign} eq "-inf") {
+        } else {                                # 0 < x < +inf, -inf < y < +inf
+            if ($z -> is_inf("-")) {
                 return $x -> binf("-", @r);
             } elsif ($z->{sign} eq "+inf") {
                 return $x -> binf("+", @r);
@@ -2514,7 +2483,31 @@ sub bmuladd {
         }
     }
 
-    die "internal error: this should never happen";
+    # If called with "foreign" arguments.
+
+    for my $arg ($x, $y, $z) {
+        unless ($arg -> isa(__PACKAGE__)) {
+            return $x -> _upg() -> bmuladd($y, $z, @r) if $class -> upgrade();
+            croak "Can't handle a ", ref($arg), " in ", (caller(0))[3], "()";
+        }
+    }
+
+    # At this point, we know that x, y, and z are finite numbers
+
+    # TODO: what if $y and $z have A or P set?
+    $r[3] = $z;             # no push here
+
+    my $zs = $z->{sign};
+    my $zv = $z->{value};
+    $zv = $LIB -> _copy($zv) if refaddr($x) eq refaddr($z);
+
+    $x->{sign} = $x->{sign} eq $y->{sign} ? '+' : '-';
+    $x->{value} = $LIB->_mul($x->{value}, $y->{value}); # do actual math
+    $x->{sign} = '+' if $LIB->_is_zero($x->{value});    # no -0
+
+    ($x->{value}, $x->{sign})
+      = $LIB -> _sadd($x->{value}, $x->{sign}, $zv, $zs);
+    return $x -> round(@r);
 }
 
 *bdiv = \&bfdiv;

@@ -6,7 +6,11 @@ use warnings;
 use Test::More tests => 1012;
 use Scalar::Util qw< refaddr >;
 
+use Math::Complex;
 use Math::BigInt;
+
+my $inf = $Math::Complex::Inf;
+my $nan = $inf - $inf;
 
 my ($x, $y);
 
@@ -22,43 +26,61 @@ subtest '$x = Math::BigInt -> bmuladd("2", "3", "5");' => sub {
 note("bmuladd() as an instance method");
 
 $x = Math::BigInt -> new("2"); $y = $x -> bmuladd("3", "5");
-subtest '$x = Math::BigInt -> new("2"); $y = $x -> bmuladd("3", "5");' => sub {
-    plan tests => 4;
-    is(ref($x), 'Math::BigInt', '$x is a Math::BigInt');
-    is(ref($y), 'Math::BigInt', '$y is a Math::BigInt');
-    is(refaddr($x), refaddr($y), '$x and $y are the same object');
-    cmp_ok($x, "==", 11, '$x == 11');
+subtest '$x = Math::BigInt -> new("2"); $y = $x -> bmuladd("3", "5");'
+  => sub {
+      plan tests => 4;
+      is(ref($x), 'Math::BigInt', '$x is a Math::BigInt');
+      is(ref($y), 'Math::BigInt', '$y is a Math::BigInt');
+      is(refaddr($x), refaddr($y), '$x and $y are the same object');
+      cmp_ok($x, "==", 11, '$x == 11');
 };
 
-# Check consistency of bmuladd() vs. bmul() + badd()
+note <<'EOF';
 
-my @values = qw/ -Inf -3 -2 -1 0 1 2 3 Inf NaN /;
+Verify that these three expressions give the same result:
+
+    $x -> bmuladd($y, $z)
+    $x -> bmul($y) -> badd($z)
+    $x * $y + $z
+
+EOF
+
+my @values = qw< -Inf -3 -2 -1 0 1 2 3 Inf NaN >;
 for my $a (@values) {
     for my $b (@values) {
         for my $c (@values) {
 
-            my $test = qq|Math::BigInt -> new("$a") -> bmuladd("$b", "$c")|
-                     . qq| vs. Math::BigInt -> new("$a") -> bmul("$b")|
-                     . qq| -> badd("$c")|;
+            note <<"EOF";
 
-            $x = Math::BigInt -> new("$a") -> bmuladd("$b", "$c");
-            $y = Math::BigInt -> new("$a") -> bmul("$b") -> badd("$c");
+\$x = Math::BigInt -> new("$a") -> bmuladd("$b", "$c");
+\$y = Math::BigInt -> new("$a") -> bmul("$b") -> badd("$c");
+\$z = $a * $b + $c;
 
-            subtest $test => sub {
-                plan tests => 3;
+EOF
+
+            my $x = Math::BigInt -> new("$a") -> bmuladd("$b", "$c");
+            my $y = Math::BigInt -> new("$a") -> bmul("$b") -> badd("$c");
+            my $z = $a * $b + $c;
+            $z = lc($y) if $z =~ /inf/i;    # Math::Big* use "inf", not "Inf"
+
+            subtest "$a * $b + $c = $z" => sub {
+                plan tests => 4;
+
                 is(ref($x), 'Math::BigInt', '$x is a Math::BigInt');
-                is(ref($y), 'Math::BigInt', '$y is a Math::BigInt');
-                if ($x -> is_nan() && $y -> is_nan()) {
-                    is($x, $y, '$x == $y');
-                } else {
-                    cmp_ok($x, "==", $y, '$x == $y');
-                }
+                is($x, $z, qq|Math::BigInt -> new("$a") -> bmuladd("$b", "$c")|);
+
+                is(ref($y), 'Math::BigInt', '$x is a Math::BigInt');
+                is($y, $z, qq|Math::BigInt -> new("$a") -> bmul("$b") -> badd("$c")|);
             };
         }
     }
 }
 
-# Test when the same object appears more than once.
+note <<'EOF';
+
+Test when the same object appears more than once.
+
+EOF
 
 my $t;
 for my $a (-2, 2) {
