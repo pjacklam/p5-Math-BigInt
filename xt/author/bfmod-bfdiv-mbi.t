@@ -49,7 +49,7 @@ sub pl2mbi {
 sub fdiv {
     die "Usage: fdiv X Y\n" if @_ != 2;
 
-    no integer;
+    #no integer;
 
     my $x = shift;                          # numerator
     my $y = shift;                          # denominator
@@ -115,17 +115,23 @@ sub fdiv {
     #               5 % -Inf = -Inf
 
     if (isinf($y)) {
-        if ($x == 0 || ($x <=> 0) == ($y <=> 0)) {
-            return wantarray ? (0, $x) : 0;
+        if (wantarray) {
+            if ($x == 0 || ($x <=> 0) == ($y <=> 0)) {
+                return 0, $x;
+            } else {
+                return -1, ($y <=> 0) * $inf;
+            }
         } else {
-            return wantarray ? (-1, ($y <=> 0) * $inf) : -1;
+            return 0;
         }
     }
 
-    # First do a truncated division.
+    # First do a truncated division ...
 
     my $q = int($x / $y);
     my $r = $x - $y * $q;
+
+    # ... then convert it to a floored division.
 
     if ($y > 0 && $r < 0 ||
         $y < 0 && $r > 0)
@@ -149,12 +155,12 @@ for my $num (-$inf, -20 .. 20, $inf, $nan) {
         my ($quo, $rem) = fdiv($num, $den);
 
         #######################################################################
-        # bdiv() in list context.
+        # bfdiv() in list context.
         #######################################################################
 
         {
             note(qq|\n(\$quo, \$rem) = | .
-                 qq|Math::BigInt -> new("$num") -> bdiv("$den")\n\n|);
+                 qq|Math::BigInt -> new("$num") -> bfdiv("$den")\n\n|);
 
             # Input values as objects.
 
@@ -169,7 +175,7 @@ for my $num (-$inf, -20 .. 20, $inf, $nan) {
 
             # Compute actual output values.
 
-            my ($mbi_quo, $mbi_rem) = $mbi_num -> bdiv($mbi_den);
+            my ($mbi_quo, $mbi_rem) = $mbi_num -> bfdiv($mbi_den);
 
             # Check classes.
 
@@ -211,12 +217,12 @@ for my $num (-$inf, -20 .. 20, $inf, $nan) {
         }
 
         #######################################################################
-        # bdiv() in scalar context.
+        # bfdiv() in scalar context.
         #######################################################################
 
         {
             note(qq|\n\$quo = | .
-                 qq|Math::BigInt -> new("$num") -> bdiv("$den")\n\n|);
+                 qq|Math::BigInt -> new("$num") -> bfdiv("$den")\n\n|);
 
             # Input values as objects.
 
@@ -231,7 +237,7 @@ for my $num (-$inf, -20 .. 20, $inf, $nan) {
 
             # Compute actual output values.
 
-            my $mbi_quo = $mbi_num -> bdiv($mbi_den);
+            my $mbi_quo = $mbi_num -> bfdiv($mbi_den);
 
             # Check classes.
 
@@ -263,12 +269,12 @@ for my $num (-$inf, -20 .. 20, $inf, $nan) {
         }
 
         #######################################################################
-        # bmod() (scalar context only).
+        # bfmod() (scalar context only).
         #######################################################################
 
         {
             note(qq|\n\$quo = | .
-                 qq|Math::BigInt -> new("$num") -> bmod("$den")\n\n|);
+                 qq|Math::BigInt -> new("$num") -> bfmod("$den")\n\n|);
 
             # Input values as objects.
 
@@ -283,7 +289,7 @@ for my $num (-$inf, -20 .. 20, $inf, $nan) {
 
             # Compute actual output values.
 
-            my $mbi_rem = $mbi_num -> bmod($mbi_den);
+            my $mbi_rem = $mbi_num -> bfmod($mbi_den);
 
             # Check classes.
 
@@ -326,12 +332,12 @@ for my $num (-$inf, -20 .. -1, 1 .. 20, $inf, $nan) {
     my ($quo, $rem) = fdiv($num, $num);
 
     #######################################################################
-    # bdiv() in list context.
+    # bfdiv() in list context.
     #######################################################################
 
     {
         note(qq|\n\$x = Math::BigInt -> new("$num"); | .
-             qq|(\$quo, \$rem) = \$x -> bdiv("\$x")\n\n|);
+             qq|(\$quo, \$rem) = \$x -> bfdiv("\$x")\n\n|);
 
         # Input values as objects.
 
@@ -344,7 +350,7 @@ for my $num (-$inf, -20 .. -1, 1 .. 20, $inf, $nan) {
 
         # Compute actual output values.
 
-        my ($mbi_quo, $mbi_rem) = $mbi_num -> bdiv($mbi_num);
+        my ($mbi_quo, $mbi_rem) = $mbi_num -> bfdiv($mbi_num);
 
         # Check classes.
 
@@ -381,12 +387,12 @@ for my $num (-$inf, -20 .. -1, 1 .. 20, $inf, $nan) {
     }
 
     #######################################################################
-    # bdiv() in scalar context.
+    # bfdiv() in scalar context.
     #######################################################################
 
     {
         note(qq|\n\$x = Math::BigInt -> new("$num"); | .
-             qq|\$quo = \$x -> bdiv(\$x)\n\n|);
+             qq|\$quo = \$x -> bfdiv(\$x)\n\n|);
 
         # Input values as objects.
 
@@ -399,7 +405,7 @@ for my $num (-$inf, -20 .. -1, 1 .. 20, $inf, $nan) {
 
         # Compute actual output values.
 
-        my $mbi_quo = $mbi_num -> bdiv($mbi_num);
+        my $mbi_quo = $mbi_num -> bfdiv($mbi_num);
 
         # Check classes.
 
@@ -427,12 +433,12 @@ for my $num (-$inf, -20 .. -1, 1 .. 20, $inf, $nan) {
     }
 
     #######################################################################
-    # bmod() (scalar context only).
+    # bfmod() (scalar context only).
     #######################################################################
 
     {
         note(qq|\n\$x = Math::BigInt -> new("$num") | .
-             qq|\$quo = \$x -> bmod(\$x)\n\n|);
+             qq|\$quo = \$x -> bfmod(\$x)\n\n|);
 
         # Input values as objects.
 
@@ -445,7 +451,7 @@ for my $num (-$inf, -20 .. -1, 1 .. 20, $inf, $nan) {
 
         # Compute actual output values.
 
-        my $mbi_rem = $mbi_num -> bmod($mbi_num);
+        my $mbi_rem = $mbi_num -> bfmod($mbi_num);
 
         # Check classes.
 

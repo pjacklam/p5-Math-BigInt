@@ -7,9 +7,9 @@ use Test::More tests => 5;
 use Scalar::Util qw< refaddr >;
 
 use Math::BigInt;
-use Math::BigFloat;
+use Math::BigRat;
 
-Math::BigInt -> upgrade("Math::BigFloat");
+Math::BigInt -> upgrade("Math::BigRat");
 
 my ($x, $y);
 
@@ -25,8 +25,8 @@ subtest '$x = Math::BigInt -> new("2");' => sub {
 $x = Math::BigInt -> new("2.5");        # upgrades
 subtest '$x = Math::BigInt -> new("2.5");' => sub {
     plan tests => 2;
-    is(ref($x), 'Math::BigFloat', '$x is a Math::BigFloat');
-    cmp_ok($x, "==", 2.5, '$x == 2.5');
+    is(ref($x), 'Math::BigRat', '$x is a Math::BigRat');
+    cmp_ok($x, "==", "5/2", '$x == 5/2');
 };
 
 # brsft()
@@ -48,6 +48,6 @@ subtest '$x = Math::BigInt -> brsft(32, 0, 2);' => sub {
 $x = Math::BigInt -> brsft(32, 7, 2);   # doesn't upgrade
 subtest '$x = Math::BigInt -> brsft(32, 7, 2);' => sub {
     plan tests => 2;
-    is(ref($x), 'Math::BigFloat', '$x is a Math::BigFloat');
-    cmp_ok($x, "==", 0.25, '$x == 0.25');
+    is(ref($x), 'Math::BigRat', '$x is a Math::BigRat');
+    is($x, "1/4", '$x == 1/4');
 };

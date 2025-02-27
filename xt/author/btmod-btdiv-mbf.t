@@ -3,9 +3,9 @@
 use strict;
 use warnings;
 
-use Test::More tests => 41301;
+use Test::More tests => 19125;
 
-use Math::BigInt;
+use Math::BigFloat;
 
 use Math::Complex ();
 
@@ -32,16 +32,16 @@ sub isnan {
     return $x != $x;
 }
 
-# Convert a Perl scalar to a Math::BigInt object. This function is used for
+# Convert a Perl scalar to a Math::BigFloat object. This function is used for
 # consistent comparisons. For instance, a Not-a-Number might be stringified to
-# 'nan', but Math::BigInt uses 'NaN'.
+# 'nan', but Math::BigFloat uses 'NaN'.
 
-sub pl2mbi {
+sub pl2mbf {
     my $x = shift;
-    return Math::BigInt -> binf('+') if $x == $inf;
-    return Math::BigInt -> binf('-') if $x == -$inf;
-    return Math::BigInt -> bnan()    if isnan($x);
-    return Math::BigInt -> new($x);
+    return Math::BigFloat -> binf('+') if $x == $inf;
+    return Math::BigFloat -> binf('-') if $x == -$inf;
+    return Math::BigFloat -> bnan()    if isnan($x);
+    return Math::BigFloat -> new($x);
 }
 
 # Does a truncated division (T-division).
@@ -79,7 +79,7 @@ sub tdiv {
     if ($y == 0) {
 
         # Core Perl gives an "Illegal division by zero" error whenever the
-        # denominator is zero. Math::BigInt, however, has a different
+        # denominator is zero. Math::BigFloat, however, has a different
         # convention.
 
         my $q = $x < 0 ? -$inf
@@ -118,6 +118,8 @@ sub tdiv {
         return wantarray ? (0, $x) : 0;
     }
 
+    return $x / $y unless wantarray;
+
     # Do a truncated division.
 
     my $q = int($x / $y);
@@ -131,69 +133,71 @@ sub tdiv {
 #for my $num (-20 .. 20) {
 #    for my $den (-20 .. -1, 1 .. 20) {
 for my $num (-$inf, -20 .. 20, $inf, $nan) {
-    for my $den (-$inf, -20 .. 20, $inf, $nan) {
+    for my $den (-$inf, -20, -16, -10, -8, -5, -4, -2, -1,
+                 0, 1, 2, 4, 5, 8, 10, 16, 20, $inf, $nan)
+    {
 
         #######################################################################
         # btdiv() in list context.
         #######################################################################
 
         {
-            # Compute expected output values.
+            # Compute expected output.
 
             my ($quo, $rem) = tdiv($num, $den);
 
             note(qq|\n(\$quo, \$rem) = | .
-                 qq|Math::BigInt -> new("$num") -> btdiv("$den")\n\n|);
+                 qq|Math::BigFloat -> new("$num") -> btdiv("$den")\n\n|);
 
             # Input values as objects.
 
-            my $mbi_num = Math::BigInt -> new("$num");
-            my $mbi_den = Math::BigInt -> new("$den");
+            my $mbf_num = Math::BigFloat -> new("$num");
+            my $mbf_den = Math::BigFloat -> new("$den");
 
             # Get addresses for later tests.
 
-            my ($mbi_num_addr, $mbi_den_addr);
-            $mbi_num_addr = refaddr($mbi_num) if $scalar_util_ok;
-            $mbi_den_addr = refaddr($mbi_den) if $scalar_util_ok;
+            my ($mbf_num_addr, $mbf_den_addr);
+            $mbf_num_addr = refaddr($mbf_num) if $scalar_util_ok;
+            $mbf_den_addr = refaddr($mbf_den) if $scalar_util_ok;
 
             # Compute actual output values.
 
-            my ($mbi_quo, $mbi_rem) = $mbi_num -> btdiv($mbi_den);
+            my ($mbf_quo, $mbf_rem) = $mbf_num -> btdiv($mbf_den);
 
             # Check classes.
 
-            is(ref($mbi_num), 'Math::BigInt',
-               "class of numerator is still Math::BigInt");
-            is(ref($mbi_den), 'Math::BigInt',
-               "class of denominator is still Math::BigInt");
+            is(ref($mbf_num), 'Math::BigFloat',
+               "class of numerator is still Math::BigFloat");
+            is(ref($mbf_den), 'Math::BigFloat',
+               "class of denominator is still Math::BigFloat");
 
-            is(ref($mbi_quo), 'Math::BigInt',
-               "class of quotient is Math::BigInt");
-            is(ref($mbi_rem), 'Math::BigInt',
-               "class of remainder is Math::BigInt");
+            is(ref($mbf_quo), 'Math::BigFloat',
+               "class of quotient is Math::BigFloat");
+            is(ref($mbf_rem), 'Math::BigFloat',
+               "class of remainder is Math::BigFloat");
 
             # Check values.
 
-            is($mbi_quo, pl2mbi($quo), "$num / $den = $quo");
-            is($mbi_rem, pl2mbi($rem), "$num % $den = $rem");
+            is($mbf_quo, pl2mbf($quo), "$num / $den = $quo");
+            is($mbf_rem, pl2mbf($rem), "$num % $den = $rem");
 
-            is($mbi_den, pl2mbi($den), "value of denominator has not change");
+            is($mbf_den, pl2mbf($den), "value of denominator has not change");
 
             # Check addresses.
 
-            my ($mbi_quo_addr, $mbi_rem_addr);
-            $mbi_quo_addr = refaddr($mbi_quo) if $scalar_util_ok;
-            $mbi_rem_addr = refaddr($mbi_rem) if $scalar_util_ok;
+            my ($mbf_quo_addr, $mbf_rem_addr);
+            $mbf_quo_addr = refaddr($mbf_quo) if $scalar_util_ok;
+            $mbf_rem_addr = refaddr($mbf_rem) if $scalar_util_ok;
 
           SKIP: {
                 skip "Scalar::Util not available", 2 unless $scalar_util_ok;
 
-                is($mbi_quo_addr, $mbi_num_addr,
+                is($mbf_quo_addr, $mbf_num_addr,
                    "the quotient object is the numerator object");
 
-                ok($mbi_rem_addr != $mbi_num_addr &&
-                   $mbi_rem_addr != $mbi_den_addr &&
-                   $mbi_rem_addr != $mbi_quo_addr,
+                ok($mbf_rem_addr != $mbf_num_addr &&
+                   $mbf_rem_addr != $mbf_den_addr &&
+                   $mbf_rem_addr != $mbf_quo_addr,
                    "the remainder object is neither the numerator," .
                    " denominator, nor quotient object");
             }
@@ -204,53 +208,53 @@ for my $num (-$inf, -20 .. 20, $inf, $nan) {
         #######################################################################
 
         {
-            # Compute expected output values.
+            # Compute expected output.
 
             my $quo = tdiv($num, $den);
 
             note(qq|\n\$quo = | .
-                 qq|Math::BigInt -> new("$num") -> btdiv("$den")\n\n|);
+                 qq|Math::BigFloat -> new("$num") -> btdiv("$den")\n\n|);
 
             # Input values as objects.
 
-            my $mbi_num = Math::BigInt -> new("$num");
-            my $mbi_den = Math::BigInt -> new("$den");
+            my $mbf_num = Math::BigFloat -> new("$num");
+            my $mbf_den = Math::BigFloat -> new("$den");
 
             # Get addresses for later tests.
 
-            my ($mbi_num_addr, $mbi_den_addr);
-            $mbi_num_addr = refaddr($mbi_num) if $scalar_util_ok;
-            $mbi_den_addr = refaddr($mbi_den) if $scalar_util_ok;
+            my ($mbf_num_addr, $mbf_den_addr);
+            $mbf_num_addr = refaddr($mbf_num) if $scalar_util_ok;
+            $mbf_den_addr = refaddr($mbf_den) if $scalar_util_ok;
 
             # Compute actual output values.
 
-            my $mbi_quo = $mbi_num -> btdiv($mbi_den);
+            my $mbf_quo = $mbf_num -> btdiv($mbf_den);
 
             # Check classes.
 
-            is(ref($mbi_num), 'Math::BigInt',
-               "class of numerator is still Math::BigInt");
-            is(ref($mbi_den), 'Math::BigInt',
-               "class of denominator is still Math::BigInt");
+            is(ref($mbf_num), 'Math::BigFloat',
+               "class of numerator is still Math::BigFloat");
+            is(ref($mbf_den), 'Math::BigFloat',
+               "class of denominator is still Math::BigFloat");
 
-            is(ref($mbi_quo), 'Math::BigInt',
-               "class of quotient is Math::BigInt");
+            is(ref($mbf_quo), 'Math::BigFloat',
+               "class of quotient is Math::BigFloat");
 
             # Check values.
 
-            is($mbi_quo, pl2mbi($quo), "$num / $den = $quo");
+            is($mbf_quo, pl2mbf($quo), "$num / $den = $quo");
 
-            is($mbi_den, pl2mbi($den), "value of numerator has not change");
+            is($mbf_den, pl2mbf($den), "value of numerator has not change");
 
             # Check addresses.
 
-            my $mbi_quo_addr;
-            $mbi_quo_addr = refaddr($mbi_quo) if $scalar_util_ok;;
+            my $mbf_quo_addr;
+            $mbf_quo_addr = refaddr($mbf_quo) if $scalar_util_ok;;
 
           SKIP: {
                 skip "Scalar::Util not available", 1 unless $scalar_util_ok;
 
-                is($mbi_quo_addr, $mbi_num_addr,
+                is($mbf_quo_addr, $mbf_num_addr,
                    "the quotient object is the numerator object");
             }
         }
@@ -260,53 +264,53 @@ for my $num (-$inf, -20 .. 20, $inf, $nan) {
         #######################################################################
 
         {
-            # Compute expected output values.
+            # Compute expected output.
 
             my (undef, $rem) = tdiv($num, $den);
 
             note(qq|\n\$quo = | .
-                 qq|Math::BigInt -> new("$num") -> btmod("$den")\n\n|);
+                 qq|Math::BigFloat -> new("$num") -> btmod("$den")\n\n|);
 
             # Input values as objects.
 
-            my $mbi_num = Math::BigInt -> new("$num");
-            my $mbi_den = Math::BigInt -> new("$den");
+            my $mbf_num = Math::BigFloat -> new("$num");
+            my $mbf_den = Math::BigFloat -> new("$den");
 
             # Get addresses for later tests.
 
-            my ($mbi_num_addr, $mbi_den_addr);
-            $mbi_num_addr = refaddr($mbi_num) if $scalar_util_ok;
-            $mbi_den_addr = refaddr($mbi_den) if $scalar_util_ok;
+            my ($mbf_num_addr, $mbf_den_addr);
+            $mbf_num_addr = refaddr($mbf_num) if $scalar_util_ok;
+            $mbf_den_addr = refaddr($mbf_den) if $scalar_util_ok;
 
             # Compute actual output values.
 
-            my $mbi_rem = $mbi_num -> btmod($mbi_den);
+            my $mbf_rem = $mbf_num -> btmod($mbf_den);
 
             # Check classes.
 
-            is(ref($mbi_num), 'Math::BigInt',
-               "class of numerator is still Math::BigInt");
-            is(ref($mbi_den), 'Math::BigInt',
-               "class of denominator is still Math::BigInt");
+            is(ref($mbf_num), 'Math::BigFloat',
+               "class of numerator is still Math::BigFloat");
+            is(ref($mbf_den), 'Math::BigFloat',
+               "class of denominator is still Math::BigFloat");
 
-            is(ref($mbi_rem), 'Math::BigInt',
-               "class of remainder is Math::BigInt");
+            is(ref($mbf_rem), 'Math::BigFloat',
+               "class of remainder is Math::BigFloat");
 
             # Check values.
 
-            is($mbi_rem, pl2mbi($rem), "$num % $den = $rem");
+            is($mbf_rem, pl2mbf($rem), "$num % $den = $rem");
 
-            is($mbi_den, pl2mbi($den), "value of denominator has not change");
+            is($mbf_den, pl2mbf($den), "value of denominator has not change");
 
             # Check addresses.
 
-            my $mbi_rem_addr;
-            $mbi_rem_addr = refaddr($mbi_rem) if $scalar_util_ok;
+            my $mbf_rem_addr;
+            $mbf_rem_addr = refaddr($mbf_rem) if $scalar_util_ok;
 
           SKIP: {
                 skip "Scalar::Util not available", 1 unless $scalar_util_ok;
 
-                is($mbi_rem_addr, $mbi_num_addr,
+                is($mbf_rem_addr, $mbf_num_addr,
                    "the remainder object is the numerator object");
             }
         }
@@ -322,55 +326,55 @@ for my $num (-$inf, -20 .. -1, 1 .. 20, $inf, $nan) {
     #######################################################################
 
     {
-        # Compute expected output values.
+        # Compute expected output.
 
         my ($quo, $rem) = tdiv($num, $num);
 
-        note(qq|\n\$x = Math::BigInt -> new("$num"); | .
+        note(qq|\n\$x = Math::BigFloat -> new("$num"); | .
              qq|(\$quo, \$rem) = \$x -> btdiv("\$x")\n\n|);
 
         # Input values as objects.
 
-        my $mbi_num = Math::BigInt -> new("$num");
+        my $mbf_num = Math::BigFloat -> new("$num");
 
         # Get addresses for later tests.
 
-        my $mbi_num_addr;
-        $mbi_num_addr = refaddr($mbi_num) if $scalar_util_ok;
+        my $mbf_num_addr;
+        $mbf_num_addr = refaddr($mbf_num) if $scalar_util_ok;
 
         # Compute actual output values.
 
-        my ($mbi_quo, $mbi_rem) = $mbi_num -> btdiv($mbi_num);
+        my ($mbf_quo, $mbf_rem) = $mbf_num -> btdiv($mbf_num);
 
         # Check classes.
 
-        is(ref($mbi_num), 'Math::BigInt',
-           "class of numerator is still Math::BigInt");
+        is(ref($mbf_num), 'Math::BigFloat',
+           "class of numerator is still Math::BigFloat");
 
-        is(ref($mbi_quo), 'Math::BigInt',
-           "class of quotient is Math::BigInt");
-        is(ref($mbi_rem), 'Math::BigInt',
-           "class of remainder is Math::BigInt");
+        is(ref($mbf_quo), 'Math::BigFloat',
+           "class of quotient is Math::BigFloat");
+        is(ref($mbf_rem), 'Math::BigFloat',
+           "class of remainder is Math::BigFloat");
 
         # Check values.
 
-        is($mbi_quo, pl2mbi($quo), "$num / $num = $quo");
-        is($mbi_rem, pl2mbi($rem), "$num % $num = $rem");
+        is($mbf_quo, pl2mbf($quo), "$num / $num = $quo");
+        is($mbf_rem, pl2mbf($rem), "$num % $num = $rem");
 
         # Check addresses.
 
-        my ($mbi_quo_addr, $mbi_rem_addr);
-        $mbi_quo_addr = refaddr($mbi_quo) if $scalar_util_ok;
-        $mbi_rem_addr = refaddr($mbi_rem) if $scalar_util_ok;
+        my ($mbf_quo_addr, $mbf_rem_addr);
+        $mbf_quo_addr = refaddr($mbf_quo) if $scalar_util_ok;
+        $mbf_rem_addr = refaddr($mbf_rem) if $scalar_util_ok;
 
-        is($mbi_quo_addr, $mbi_num_addr,
+        is($mbf_quo_addr, $mbf_num_addr,
            "the quotient object is the numerator object");
 
       SKIP: {
             skip "Scalar::Util not available", 1 unless $scalar_util_ok;
 
-            ok($mbi_rem_addr != $mbi_num_addr &&
-               $mbi_rem_addr != $mbi_quo_addr,
+            ok($mbf_rem_addr != $mbf_num_addr &&
+               $mbf_rem_addr != $mbf_quo_addr,
                "the remainder object is neither the numerator," .
                " denominator, nor quotient object");
         }
@@ -381,47 +385,47 @@ for my $num (-$inf, -20 .. -1, 1 .. 20, $inf, $nan) {
     #######################################################################
 
     {
-        # Compute expected output values.
+        # Compute expected output.
 
         my $quo = tdiv($num, $num);
 
-         note(qq|\n\$x = Math::BigInt -> new("$num"); | .
+        note(qq|\n\$x = Math::BigFloat -> new("$num"); | .
              qq|\$quo = \$x -> btdiv(\$x)\n\n|);
 
         # Input values as objects.
 
-        my $mbi_num = Math::BigInt -> new("$num");
+        my $mbf_num = Math::BigFloat -> new("$num");
 
         # Get addresses for later tests.
 
-        my $mbi_num_addr;
-        $mbi_num_addr = refaddr($mbi_num) if $scalar_util_ok;
+        my $mbf_num_addr;
+        $mbf_num_addr = refaddr($mbf_num) if $scalar_util_ok;
 
         # Compute actual output values.
 
-        my $mbi_quo = $mbi_num -> btdiv($mbi_num);
+        my $mbf_quo = $mbf_num -> btdiv($mbf_num);
 
         # Check classes.
 
-        is(ref($mbi_num), 'Math::BigInt',
-           "class of numerator is still Math::BigInt");
+        is(ref($mbf_num), 'Math::BigFloat',
+           "class of numerator is still Math::BigFloat");
 
-        is(ref($mbi_quo), 'Math::BigInt',
-           "class of quotient is Math::BigInt");
+        is(ref($mbf_quo), 'Math::BigFloat',
+           "class of quotient is Math::BigFloat");
 
         # Check values.
 
-        is($mbi_quo, pl2mbi($quo), "$num / $num = $quo");
+        is($mbf_quo, pl2mbf($quo), "$num / $num = $quo");
 
         # Check addresses.
 
-        my $mbi_quo_addr;
-        $mbi_quo_addr = refaddr($mbi_quo) if $scalar_util_ok;
+        my $mbf_quo_addr;
+        $mbf_quo_addr = refaddr($mbf_quo) if $scalar_util_ok;
 
       SKIP: {
             skip "Scalar::Util not available", 1 unless $scalar_util_ok;
 
-            is($mbi_quo_addr, $mbi_num_addr,
+            is($mbf_quo_addr, $mbf_num_addr,
                "the quotient object is the numerator object");
         }
     }
@@ -431,47 +435,47 @@ for my $num (-$inf, -20 .. -1, 1 .. 20, $inf, $nan) {
     #######################################################################
 
     {
-        # Compute expected output values.
+        # Compute expected output.
 
         my (undef, $rem) = tdiv($num, $num);
 
-         note(qq|\n\$x = Math::BigInt -> new("$num") | .
+        note(qq|\n\$x = Math::BigFloat -> new("$num") | .
              qq|\$quo = \$x -> btmod(\$x)\n\n|);
 
         # Input values as objects.
 
-        my $mbi_num = Math::BigInt -> new("$num");
+        my $mbf_num = Math::BigFloat -> new("$num");
 
         # Get addresses for later tests.
 
-        my $mbi_num_addr;
-        $mbi_num_addr = refaddr($mbi_num) if $scalar_util_ok;
+        my $mbf_num_addr;
+        $mbf_num_addr = refaddr($mbf_num) if $scalar_util_ok;
 
         # Compute actual output values.
 
-        my $mbi_rem = $mbi_num -> btmod($mbi_num);
+        my $mbf_rem = $mbf_num -> btmod($mbf_num);
 
         # Check classes.
 
-        is(ref($mbi_num), 'Math::BigInt',
-           "class of numerator is still Math::BigInt");
+        is(ref($mbf_num), 'Math::BigFloat',
+           "class of numerator is still Math::BigFloat");
 
-        is(ref($mbi_rem), 'Math::BigInt',
-           "class of remainder is Math::BigInt");
+        is(ref($mbf_rem), 'Math::BigFloat',
+           "class of remainder is Math::BigFloat");
 
         # Check values.
 
-        is($mbi_rem, pl2mbi($rem), "$num % $num = $rem");
+        is($mbf_rem, pl2mbf($rem), "$num % $num = $rem");
 
         # Check addresses.
 
-        my $mbi_rem_addr;
-        $mbi_rem_addr = refaddr($mbi_rem) if $scalar_util_ok;
+        my $mbf_rem_addr;
+        $mbf_rem_addr = refaddr($mbf_rem) if $scalar_util_ok;
 
       SKIP: {
             skip "Scalar::Util not available", 1 unless $scalar_util_ok;
 
-            is($mbi_rem_addr, $mbi_num_addr,
+            is($mbf_rem_addr, $mbf_num_addr,
                "the remainder object is the numerator object");
         }
     }

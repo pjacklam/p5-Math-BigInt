@@ -2125,21 +2125,32 @@ sub bmuladd {
     return $x;
 }
 
-sub bdiv {
-    # (dividend: BFLOAT or num_str, divisor: BFLOAT or num_str) return
-    # (BFLOAT, BFLOAT) (quo, rem) or BFLOAT (only quo)
+*bdiv = \&bfdiv;
+*bmod = \&bfmod;
+
+sub bfdiv {
+    # This does floored division (or floor division) where the quotient is
+    # rounded towards minus infinity.
+    #
+    # ($q, $r) = $x -> btdiv($y) returns $q and $r so that $q is floor($x / $y)
+    # and $q * $y + $r = $x.
 
     # Set up parameters.
     my ($class, $x, $y, @r) = ref($_[0]) && ref($_[0]) eq ref($_[1])
                             ? (ref($_[0]), @_)
                             : objectify(2, @_);
 
-    return $x if $x -> modify('bdiv');
+    ###########################################################################
+    # Code for all classes that share the common interface.
+    ###########################################################################
 
-    my $wantarray = wantarray;  # call only once
+    return $x if $x -> modify('bfdiv');
+
+    my $wantarray = wantarray;          # call only once
 
     # At least one argument is NaN. This is handled the same way as in
-    # Math::BigInt -> bdiv().
+    # Math::BigInt -> bdiv(). See the comment in the code for Math::BigInt ->
+    # bdiv() for further details.
 
     if ($x -> is_nan() || $y -> is_nan()) {
         return $wantarray ? ($x -> bnan(@r), $class -> bnan(@r))
@@ -2182,9 +2193,10 @@ sub bdiv {
 
     # Denominator (divisor) is +/-inf. This is handled the same way as in
     # Math::BigInt -> bdiv(), with one exception: In scalar context,
-    # Math::BigFloat does true division (although rounded), not floored division
-    # (F-division), so a finite number divided by +/-inf is always zero. See the
-    # comment in the code for Math::BigInt -> bdiv() for further details.
+    # Math::BigFloat does true division (although rounded), not floored
+    # division (F-division), so a finite number divided by +/-inf is always
+    # zero. See the comment in the code for Math::BigInt -> bdiv() for further
+    # details.
 
     if ($y -> is_inf()) {
         my $rem;
@@ -2197,34 +2209,14 @@ sub bdiv {
                 $rem = $class -> binf($y -> {sign}, @r);
                 $x -> bone('-', @r);
             }
-            return $x, $rem;
         } else {
-            if ($x -> is_nan() || $x -> is_inf()) {
-                return $x -> bnan(@r);
-            } else {
-                return $x -> bzero(@r);
-            }
+            $x -> bzero(@r);
         }
-    }
-
-    if ($x -> is_zero()) {
-        $x -> round(@r);
-        $x -> _dng() if $x -> is_int();
-        if ($wantarray) {
-            my $rem = $class -> bzero(@r);
-            return $x, $rem;
-        }
-        return $x;
+        return $wantarray ? ($x, $rem) : $x;
     }
 
     # At this point, both the numerator and denominator are finite, non-zero
     # numbers.
-
-    # Division might return a value that we can not represent exactly, so
-    # upgrade, if upgrading is enabled.
-
-    return $x -> _upg() -> bdiv($y, @r)
-      if $upgrade && !$wantarray && (!$y -> is_one() && !$y -> is_one("-"));
 
     # we need to limit the accuracy to protect against overflow
     my $fallback = 0;
@@ -2291,17 +2283,18 @@ sub bdiv {
 
         # calculate the result to $scale digits and then round it
         # (a * 10 ** b) / (c * 10 ** d) => (a/c) * 10 ** (b-d)
-        $x->{_m} = $LIB->_lsft($x->{_m}, $LIB->_new($scale), 10);
-        $x->{_m} = $LIB->_div($x->{_m}, $y->{_m}); # a/c
+        $x->{_m} = $LIB->_lsft($x->{_m}, $LIB->_new($scale), 10);   # scale up
+        $x->{_m} = $LIB->_div($x->{_m}, $y->{_m});                  # divide
 
         # correct exponent of $x
         ($x->{_e}, $x->{_es})
           = $LIB -> _ssub($x->{_e}, $x->{_es}, $y->{_e}, $y->{_es});
+
         # correct for 10**scale
         ($x->{_e}, $x->{_es})
           = $LIB -> _ssub($x->{_e}, $x->{_es}, $LIB->_new($scale), '+');
 
-        $x -> bnorm();   # remove trailing 0's
+        $x -> bnorm();          # remove trailing zeros
     }
 
     # shortcut to not run through _find_round_parameters again
@@ -2324,7 +2317,7 @@ sub bdiv {
 
     if ($wantarray) {
         $x -> bfloor();
-        $rem -> bmod($y, @params);      # copy already done
+        $rem -> bfmod($y, @params);      # copy already done
         if ($fallback) {
             # clear a/p after round, since user did not request it
             $rem->{accuracy} = undef;
@@ -2335,40 +2328,266 @@ sub bdiv {
         return $x, $rem;
     }
 
-    $x -> _dng() if $downgrade && $x -> is_int();
+    $x -> _dng() if $x -> is_int();
     $x;         # rounding already done above
 }
 
-sub bmod {
-    # (dividend: BFLOAT or num_str, divisor: BFLOAT or num_str) return remainder
+sub btdiv {
+    # This does truncated division, where the quotient is truncted, i.e.,
+    # rounded towards zero.
+    #
+    # ($q, $r) = $x -> btdiv($y) returns $q and $r so that $q is int($x / $y)
+    # and $q * $y + $r = $x.
+
+    # Set up parameters
+    my ($class, $x, $y, @r) = ref($_[0]) && ref($_[0]) eq ref($_[1])
+                            ? (ref($_[0]), @_)
+                            : objectify(2, @_);
+
+    ###########################################################################
+    # Code for all classes that share the common interface.
+    ###########################################################################
+
+    return $x if $x -> modify('btdiv');
+
+    my $wantarray = wantarray;          # call only once
+
+    # At least one argument is NaN. Return NaN for both quotient and the
+    # modulo/remainder.
+
+    if ($x -> is_nan() || $y -> is_nan()) {
+        return $wantarray ? ($x -> bnan(@r), $class -> bnan(@r))
+                          : $x -> bnan(@r);
+    }
+
+    # Divide by zero and modulo zero.
+    #
+    # Division: Use the common convention that x / 0 is inf with the same sign
+    # as x, except when x = 0, where we return NaN. This is also what earlier
+    # versions did.
+    #
+    # Modulo: In modular arithmetic, the congruence relation z = x (mod y)
+    # means that there is some integer k such that z - x = k y. If y = 0, we
+    # get z - x = 0 or z = x. This is also what earlier versions did, except
+    # that 0 % 0 returned NaN.
+    #
+    #     inf / 0 =  inf                     inf % 0 =  inf
+    #       5 / 0 =  inf                       5 % 0 =    5
+    #       0 / 0 =  NaN                       0 % 0 =    0
+    #      -5 / 0 = -inf                      -5 % 0 =   -5
+    #    -inf / 0 = -inf                    -inf % 0 = -inf
+
+    if ($y -> is_zero()) {
+        my $rem;
+        if ($wantarray) {
+            $rem = $x -> copy(@r);
+        }
+        if ($x -> is_zero()) {
+            $x -> bnan(@r);
+        } else {
+            $x -> binf($x -> {sign}, @r);
+        }
+        return $wantarray ? ($x, $rem) : $x;
+    }
+
+    # Numerator (dividend) is +/-inf, and denominator is finite and non-zero.
+    # The divide by zero cases are covered above. In all of the cases listed
+    # below we return the same as core Perl.
+    #
+    #     inf / -inf =  NaN                  inf % -inf =  NaN
+    #     inf /   -5 = -inf                  inf %   -5 =  NaN
+    #     inf /    5 =  inf                  inf %    5 =  NaN
+    #     inf /  inf =  NaN                  inf %  inf =  NaN
+    #
+    #    -inf / -inf =  NaN                 -inf % -inf =  NaN
+    #    -inf /   -5 =  inf                 -inf %   -5 =  NaN
+    #    -inf /    5 = -inf                 -inf %    5 =  NaN
+    #    -inf /  inf =  NaN                 -inf %  inf =  NaN
+
+    if ($x -> is_inf()) {
+        my $rem;
+        $rem = $class -> bnan(@r) if $wantarray;
+        if ($y -> is_inf()) {
+            $x -> bnan(@r);
+        } else {
+            my $sign = $x -> bcmp(0) == $y -> bcmp(0) ? '+' : '-';
+            $x -> binf($sign,@r );
+        }
+        return $wantarray ? ($x, $rem) : $x;
+    }
+
+    # Denominator (divisor) is +/-inf. The cases when the numerator is +/-inf
+    # are covered above. In the modulo cases (in the right column) we return
+    # the same as core Perl, which does floored division, so for consistency we
+    # also do floored division in the division cases (in the left column).
+    #
+    #      -5 /  inf =    0                   -5 %  inf =  -5
+    #       0 /  inf =    0                    0 %  inf =   0
+    #       5 /  inf =    0                    5 %  inf =   5
+    #
+    #      -5 / -inf =    0                   -5 % -inf =  -5
+    #       0 / -inf =    0                    0 % -inf =   0
+    #       5 / -inf =    0                    5 % -inf =   5
+
+    if ($y -> is_inf()) {
+        my $rem;
+        if ($wantarray) {
+            $rem = $x -> copy() -> round(@r);
+            $rem -> _dng() if $rem -> is_int();
+        }
+        $x -> bzero(@r);
+        return $wantarray ? ($x, $rem) : $x;
+    }
+
+    # At this point, both the numerator and denominator are finite, non-zero
+    # numbers.
+
+    # we need to limit the accuracy to protect against overflow
+    my $fallback = 0;
+    my (@params, $scale);
+    ($x, @params) = $x->_find_round_parameters($r[0], $r[1], $r[2], $y);
+
+    if ($x -> is_nan()) {       # error in _find_round_parameters?
+        $x -> round(@r);
+        return $wantarray ? ($x, $class -> bnan(@r)) : $x;
+    }
+
+    # no rounding at all, so must use fallback
+    if (scalar @params == 0) {
+        # simulate old behaviour
+        $params[0] = $class -> div_scale(); # and round to it as accuracy
+        $scale = $params[0]+4;            # at least four more for proper round
+        $params[2] = $r[2];               # round mode by caller or undef
+        $fallback = 1;                    # to clear a/p afterwards
+    } else {
+        # the 4 below is empirical, and there might be cases where it is not
+        # enough...
+        $scale = abs($params[0] || $params[1]) + 4; # take whatever is defined
+    }
+
+    # Temporarily disable downgrading
+
+    my $dng = Math::BigFloat -> downgrade();
+    Math::BigFloat -> downgrade(undef);
+
+    my $rem;
+    $rem = $class -> bzero() if $wantarray;
+
+    $y = $class -> new($y) unless $y -> isa('Math::BigFloat');
+
+    my $lx = $LIB -> _len($x->{_m});
+    my $ly = $LIB -> _len($y->{_m});
+    $scale = $lx if $lx > $scale;
+    $scale = $ly if $ly > $scale;
+    my $diff = $ly - $lx;
+    $scale += $diff if $diff > 0; # if lx << ly, but not if ly << lx!
+
+    # Are both operands the same object, i.e., like $x -> bdiv($x)? If so,
+    # flipping the sign of $y also flips the sign of $x.
+
+    my $xsign = $x -> {sign};
+    my $ysign = $y -> {sign};
+
+    $y -> {sign} =~ tr/+-/-+/;            # Flip the sign of $y, and see ...
+    my $same = $xsign ne $x -> {sign};    # ... if that changed the sign of $x.
+    $y -> {sign} = $ysign;                # Re-insert the original sign.
+
+    if ($same) {                          # $x -> bdiv($x)
+        $x -> bone();
+    } else {
+        # make copy of $x in case of list context for later remainder
+        # calculation
+        $rem = $x -> copy() if $wantarray;
+
+        $x->{sign} = $x->{sign} ne $y->{sign} ? '-' : '+';
+
+        # promote Math::BigInt and its subclasses (except when already a
+        # Math::BigFloat)
+        $y = $class -> new($y) unless $y -> isa('Math::BigFloat');
+
+        # calculate the result to $scale digits and then round it
+        # (a * 10 ** b) / (c * 10 ** d) => (a/c) * 10 ** (b-d)
+        $x->{_m} = $LIB->_lsft($x->{_m}, $LIB->_new($scale), 10);   # scale up
+        $x->{_m} = $LIB->_div($x->{_m}, $y->{_m});                  # divide
+
+        # correct exponent of $x
+        ($x->{_e}, $x->{_es})
+          = $LIB -> _ssub($x->{_e}, $x->{_es}, $y->{_e}, $y->{_es});
+
+        # correct for 10**scale
+        ($x->{_e}, $x->{_es})
+          = $LIB -> _ssub($x->{_e}, $x->{_es}, $LIB->_new($scale), '+');
+
+        $x -> bnorm();          # remove trailing zeros in mantissa
+    }
+
+    # shortcut to not run through _find_round_parameters again
+    if (defined $params[0]) {
+        $x->{accuracy} = undef;               # clear before round
+        $x -> bround($params[0], $params[2]); # then round accordingly
+    } else {
+        $x->{precision} = undef;               # clear before round
+        $x -> bfround($params[1], $params[2]); # then round accordingly
+    }
+    if ($fallback) {
+        # clear a/p after round, since user did not request it
+        $x->{accuracy} = undef;
+        $x->{precision} = undef;
+    }
+
+    # Restore downgrading
+
+    Math::BigFloat -> downgrade($dng);
+
+    if ($wantarray) {
+        $x -> bint();
+        $rem -> btmod($y, @params);      # copy already done
+
+        if ($fallback) {
+            # clear a/p after round, since user did not request it
+            $rem->{accuracy} = undef;
+            $rem->{precision} = undef;
+        }
+        $x -> _dng()   if $x -> is_int();
+        $rem -> _dng() if $rem -> is_int();
+        return $x, $rem;
+    }
+
+    $x -> _dng() if $x -> is_int();
+    $x;         # rounding already done above
+}
+
+sub bfmod {
+    # (dividend: BFLOAT or num_str, divisor: BFLOAT or num_str) return
+    # remainder
 
     # set up parameters
     my ($class, $x, $y, @r) = ref($_[0]) && ref($_[0]) eq ref($_[1])
                             ? (ref($_[0]), @_)
                             : objectify(2, @_);
 
-    return $x if $x -> modify('bmod');
+    return $x if $x -> modify('bfmod');
 
     # At least one argument is NaN. This is handled the same way as in
-    # Math::BigInt -> bmod().
+    # Math::BigInt -> bfmod().
 
     return $x -> bnan(@r) if $x -> is_nan() || $y -> is_nan();
 
-    # Modulo zero. This is handled the same way as in Math::BigInt -> bmod().
+    # Modulo zero. This is handled the same way as in Math::BigInt -> bfmod().
 
     if ($y -> is_zero()) {
         return $x -> round(@r);
     }
 
     # Numerator (dividend) is +/-inf. This is handled the same way as in
-    # Math::BigInt -> bmod().
+    # Math::BigInt -> bfmod().
 
     if ($x -> is_inf()) {
         return $x -> bnan(@r);
     }
 
     # Denominator (divisor) is +/-inf. This is handled the same way as in
-    # Math::BigInt -> bmod().
+    # Math::BigInt -> bfmod().
 
     if ($y -> is_inf()) {
         if ($x -> is_zero() || $x -> bcmp(0) == $y -> bcmp(0)) {
@@ -2378,73 +2597,196 @@ sub bmod {
         }
     }
 
+    # Modulo is zero if $x is zero or if $x is an integer and $y is +/-1.
+
     return $x -> bzero(@r) if $x -> is_zero()
       || ($x -> is_int() &&
           # check that $y == +1 or $y == -1:
           ($LIB->_is_zero($y->{_e}) && $LIB->_is_one($y->{_m})));
 
-    my $cmp = $x -> bacmp($y);    # equal or $x < $y?
-    if ($cmp == 0) {            # $x == $y => result 0
+    # Numerator (dividend) and denominator (divisor) are identical. Return zero.
+
+    my $cmp = $x -> bacmp($y);          # $x <=> $y
+    if ($cmp == 0) {                    # $x == $y => result 0
         return $x -> bzero(@r);
     }
 
-    # only $y of the operands negative?
-    my $neg = $x->{sign} ne $y->{sign} ? 1 : 0;
+    # Compare the exponents of $x and $y.
 
-    $x->{sign} = $y->{sign};     # calc sign first
-    if ($cmp < 0 && $neg == 0) { # $x < $y => result $x
+    my $ecmp = $LIB->_scmp($x->{_e}, $x->{_es}, $y->{_e}, $y->{_es});
+
+    my $ym = $y->{_m};          # mantissa of y, scaled if necessary
+
+    if ($ecmp > 0) {
+
+        # $x has a larger exponent than $y, so shift the mantissa of $x by the
+        # difference between the exponents of $x and $y.
+        #
+        # 123e+2 % 456e+1 =>    1230 % 456 (+2 - +1 = 1)
+        # 123e+2 % 456e-1 =>  123000 % 456 (+2 - -1 = 3)
+        # 456e-1 % 123e-3 =>   12300 % 456 (-1 - -3 = 2)
+
+        # get the difference between exponents; $ds is always "+" here
+        my ($de, $ds) = $LIB->_ssub($LIB->_copy($x->{_e}), $x->{_es},
+                                    $y->{_e}, $y->{_es});
+
+        # adjust the mantissa of x by the difference between exponents
+        $x->{_m} = $LIB->_lsft($x->{_m}, $de, 10);
+
+        # compute the modulus
+        $x->{_m} = $LIB->_mod($x->{_m}, $ym);
+
+        # adjust the exponent of x to correct for the ajustment of the mantissa
+        ($x->{_e}, $x->{_es}) = $LIB->_ssub($x->{_e}, $x->{_es}, $de, $ds);
+
+    } elsif ($ecmp < 0) {
+
+        # $x has a smaller exponent than $y, so shift the mantissa of $y by the
+        # difference between the exponents of $x and $y.
+        #
+        # 123456e+1 % 78e+2 =>  123456 % 780   (+2 - +1 = 1)
+        # 123456e-2 % 78e+1 =>  123456 % 78000 (+1 - -2 = 3)
+
+        # get the difference between exponents; $ds is always "+" here
+        my ($de, $ds) = $LIB->_ssub($LIB->_copy($y->{_e}), $y->{_es},
+                                    $x->{_e}, $x->{_es});
+
+        # adjust the mantissa of y by the difference between exponents
+        $ym = $LIB->_lsft($LIB->_copy($ym), $de, 10);
+
+        # compute the modulus
+        $x->{_m} = $LIB->_mod($x->{_m}, $ym);
+
+    } else {
+
+        # $x has the same exponent as $y, so compute the modulus directly
+
+        # compute the modulus
+        $x->{_m} = $LIB->_mod($x->{_m}, $ym);
+    }
+
+    if ($LIB->_is_zero($x->{_m})) {
+        $x->{sign} = '+';
+    } else {
+        # adjust for floored division/modulus
+        $x->{_m} = $LIB->_sub($ym, $x->{_m}, 1)
+          if $x->{sign} ne $y->{sign};
+        $x->{sign} = $y->{sign};
+    }
+
+    $x -> bnorm();
+    $x -> round($r[0], $r[1], $r[2], $y);
+    $x -> _dng() if $x -> is_int();
+    return $x;
+}
+
+sub btmod {
+    # (dividend: BFLOAT or num_str, divisor: BFLOAT or num_str) return
+    # remainder
+
+    # set up parameters
+    my ($class, $x, $y, @r) = ref($_[0]) && ref($_[0]) eq ref($_[1])
+                            ? (ref($_[0]), @_)
+                            : objectify(2, @_);
+
+    return $x if $x -> modify('btmod');
+
+    # At least one argument is NaN. This is handled the same way as in
+    # Math::BigInt -> btmod().
+
+    return $x -> bnan(@r) if $x -> is_nan() || $y -> is_nan();
+
+    # Modulo zero. This is handled the same way as in Math::BigInt -> btmod().
+
+    if ($y -> is_zero()) {
         return $x -> round(@r);
     }
 
-    my $ym = $LIB->_copy($y->{_m});
+    # Numerator (dividend) is +/-inf. This is handled the same way as in
+    # Math::BigInt -> btmod().
 
-    # 2e1 => 20
-    $ym = $LIB->_lsft($ym, $y->{_e}, 10)
-      if $y->{_es} eq '+' && !$LIB->_is_zero($y->{_e});
-
-    # if $y has digits after dot
-    my $shifty = 0;             # correct _e of $x by this
-    if ($y->{_es} eq '-')       # has digits after dot
-    {
-        # 123 % 2.5 => 1230 % 25 => 5 => 0.5
-        $shifty = $LIB->_num($y->{_e});  # no more digits after dot
-        # 123 => 1230, $y->{_m} is already 25
-        $x->{_m} = $LIB->_lsft($x->{_m}, $y->{_e}, 10);
-    }
-    # $ym is now mantissa of $y based on exponent 0
-    my $shiftx = 0;             # correct _e of $x by this
-    if ($x->{_es} eq '-')       # has digits after dot
-    {
-        # 123.4 % 20 => 1234 % 200
-        $shiftx = $LIB->_num($x->{_e}); # no more digits after dot
-        $ym = $LIB->_lsft($ym, $x->{_e}, 10); # 123 => 1230
-    }
-    # 123e1 % 20 => 1230 % 20
-    if ($x->{_es} eq '+' && !$LIB->_is_zero($x->{_e})) {
-        $x->{_m} = $LIB->_lsft($x->{_m}, $x->{_e}, 10); # es => '+' here
+    if ($x -> is_inf()) {
+        return $x -> bnan(@r);
     }
 
-    $x->{_e} = $LIB->_new($shiftx);
-    $x->{_es} = '+';
-    $x->{_es} = '-' if $shiftx != 0 || $shifty != 0;
-    $x->{_e} = $LIB->_add($x->{_e}, $LIB->_new($shifty)) if $shifty != 0;
+    # Denominator (divisor) is +/-inf. This is handled the same way as in
+    # Math::BigInt -> btmod().
 
-    # now mantissas are equalized, exponent of $x is adjusted, so calc result
+    if ($y -> is_inf()) {
+        return $x -> round(@r);
+    }
 
-    $x->{_m} = $LIB->_mod($x->{_m}, $ym);
+    # Modulo is zero if $x is zero or if $x is an integer and $y is +/-1.
 
-    $x->{sign} = '+' if $LIB->_is_zero($x->{_m}); # fix sign for -0
+    return $x -> bzero(@r) if $x -> is_zero()
+      || ($x -> is_int() &&
+          # check that $y == +1 or $y == -1:
+          ($LIB->_is_zero($y->{_e}) && $LIB->_is_one($y->{_m})));
+
+    # Numerator (dividend) and denominator (divisor) are identical. Return zero.
+
+    my $cmp = $x -> bacmp($y);      # $x <=> $y
+    if ($cmp == 0) {                # $x == $y => result 0
+        return $x -> bzero(@r);
+    }
+
+    # Compare the exponents of $x and $y.
+
+    my $ecmp = $LIB->_scmp($x->{_e}, $x->{_es}, $y->{_e}, $y->{_es});
+
+    if ($ecmp > 0) {
+
+        # $x has a larger exponent than $y, so shift the mantissa of $x by the
+        # difference between the exponents of $x and $y.
+        #
+        # 123e+2 % 456e+1 =>    1230 % 456 (+2 - +1 = 1)
+        # 123e+2 % 456e-1 =>  123000 % 456 (+2 - -1 = 3)
+        # 456e-1 % 123e-3 =>   12300 % 456 (-1 - -3 = 2)
+
+        # get the difference between exponents; $ds is always "+" here
+        my ($de, $ds) = $LIB->_ssub($LIB->_copy($x->{_e}), $x->{_es},
+                                    $y->{_e}, $y->{_es});
+
+        # adjust the mantissa of x by the difference between exponents
+        $x->{_m} = $LIB->_lsft($x->{_m}, $de, 10);
+
+        # compute the modulus
+        $x->{_m} = $LIB->_mod($x->{_m}, $y->{_m});
+
+        # adjust the exponent of x to correct for the ajustment of the mantissa
+        ($x->{_e}, $x->{_es}) = $LIB->_ssub($x->{_e}, $x->{_es}, $de, $ds);
+
+    } elsif ($ecmp < 0) {
+
+        # $x has a smaller exponent than $y, so shift the mantissa of $y by the
+        # difference between the exponents of $x and $y.
+        #
+        # 123456e+1 % 78e+2 =>  123456 % 780   (+2 - +1 = 1)
+        # 123456e-2 % 78e+1 =>  123456 % 78000 (+1 - -2 = 3)
+
+        # get the difference between exponents; $ds is always "+" here
+        my ($de, $ds) = $LIB->_ssub($LIB->_copy($y->{_e}), $y->{_es},
+                                    $x->{_e}, $x->{_es});
+
+        # adjust the mantissa of y by the difference between exponents
+        my $ym = $LIB->_lsft($LIB->_copy($y->{_m}), $de, 10);
+
+        # compute the modulus
+        $x->{_m} = $LIB->_mod($x->{_m}, $ym);
+
+    } else {
+
+        # $x has the same exponent as $y, so compute the modulus directly
+
+        # compute the modulus
+        $x->{_m} = $LIB->_mod($x->{_m}, $y->{_m});
+    }
+
+    $x->{sign} = '+' if $LIB->_is_zero($x->{_m});       # fix sign for -0
+
     $x -> bnorm();
-
-    # if one of them negative => correct in place
-    if ($neg != 0 && ! $x -> is_zero()) {
-        $x -> bneg() -> badd($y);       # $y - $x;
-    }
-
     $x -> round($r[0], $r[1], $r[2], $y);
-    $x -> _dng() if ($x -> is_int() ||
-                     $x -> is_inf() ||
-                     $x -> is_nan());
+    $x -> _dng() if $x -> is_int();
     return $x;
 }
 

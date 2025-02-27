@@ -2517,26 +2517,25 @@ sub bmuladd {
     die "internal error: this should never happen";
 }
 
-sub bdiv {
+*bdiv = \&bfdiv;
+*bmod = \&bfmod;
+
+sub bfdiv {
     # This does floored division, where the quotient is floored, i.e., rounded
     # towards negative infinity. As a consequence, the remainder has the same
     # sign as the divisor.
+    #
+    # ($q, $r) = $x -> btdiv($y) returns $q and $r so that $q is floor($x / $y)
+    # and $q * $y + $r = $x.
 
     # Set up parameters.
     my ($class, $x, $y, @r) = ref($_[0]) && ref($_[0]) eq ref($_[1])
                             ? (ref($_[0]), @_)
                             : objectify(2, @_);
 
-    return $x if $x -> modify('bdiv');
+    # Code for all classes that share the common interface.
 
-    # If called with "foreign" arguments.
-
-    for my $arg ($x, $y) {
-        unless ($arg -> isa(__PACKAGE__)) {
-            return $x -> _upg() -> bdiv($y, @r) if $upgrade;
-            croak "Can't handle a ", ref($arg), " in ", (caller(0))[3], "()";
-        }
-    }
+    return $x if $x -> modify('bfdiv');
 
     my $wantarray = wantarray;          # call only once
 
@@ -2629,30 +2628,13 @@ sub bdiv {
         return $wantarray ? ($x, $rem) : $x;
     }
 
-    if ($x -> is_zero()) {
-        $x -> round(@r);
-        my $rem;
-        if ($wantarray) {
-            $rem = $class -> bzero(@r);
-            return $x, $rem;
-        }
-        return $x;
-    }
+    # Code for things that aren't Math::BigInt
 
     # At this point, both the numerator and denominator are finite, non-zero
     # numbers.
 
-    # Division in scalar context *might* return a non-integer result, so
-    # upgrade if upgrading is enabled. However, if the result turns out to be
-    # an integer, replace invocand as if there hadn't been any upgrading. In
-    # list context, we return the quotient and the remainder, which are both
-    # integers, so upgrading is not necessary.
-    #
-    # An idea is to compute the quotient and remainder also in scalar context,
-    # and upgrade only if the remainder is non-zero. XXX
-
-    if ($upgrade && !$wantarray) {
-        my $tmp = $upgrade -> bdiv($x, $y, @r);
+    if ($class -> upgrade() && !$wantarray) {
+        my $tmp = $class -> upgrade() -> bfdiv($x, $y, @r);
         if ($tmp -> is_int()) {
             $tmp = $tmp -> as_int();
             %$x = %$tmp;
@@ -2663,14 +2645,24 @@ sub bdiv {
         return $x;
     }
 
+    # If called with "foreign" arguments.
+
+    for my $arg ($x, $y) {
+        unless ($arg -> isa(__PACKAGE__)) {
+            return $x -> _upg() -> bfdiv($y, @r) if $class -> upgrade();
+            croak "Can't handle a ", ref($arg), " in ", (caller(0))[3], "()";
+        }
+    }
+
+    # Code for Math::BigInt objects
+
     $r[3] = $y;                                   # no push!
 
     # Initialize remainder.
 
-    my $rem;
-    $rem = $class -> bzero() if $wantarray;
+    my $rem = $class -> bzero();
 
-    # Are both operands the same object, i.e., like $x -> bdiv($x)? If so,
+    # Are both operands the same object, i.e., like $x -> bfdiv($x)? If so,
     # flipping the sign of $y also flips the sign of $x.
 
     my $xsign = $x -> {sign};
@@ -2678,49 +2670,66 @@ sub bdiv {
 
     $y -> {sign} =~ tr/+-/-+/;            # Flip the sign of $y, and see ...
     my $same = $xsign ne $x -> {sign};    # ... if that changed the sign of $x.
-    $y -> {sign} = $ysign;                # Re-insert the original sign.
+    $y -> {sign} = $ysign;                # Restore the original sign.
 
-    if ($same) {                          # $x -> bdiv($x)
+    if ($same) {                          # $x -> bfdiv($x)
         $x -> bone();
     } else {
+
+        # Compute quotient and remainder, ignoring signs.
+
         ($x -> {value}, $rem -> {value}) =
           $LIB -> _div($x -> {value}, $y -> {value});
 
-        if ($LIB -> _is_zero($rem -> {value})) {
-            if ($xsign eq $ysign || $LIB -> _is_zero($x -> {value})) {
-                $x -> {sign} = '+';
-            } else {
-                $x -> {sign} = '-';
-            }
-        } else {
-            if ($xsign eq $ysign) {
-                $x -> {sign} = '+';
-            } else {
-                if ($xsign eq '+') {
-                    $x -> badd(1);
-                } else {
-                    $x -> bsub(1);
-                }
-                $x -> {sign} = '-';
-            }
+        #   x    y     q  r
+        #  23 /  7 =>  3  2
+        # -23 /  7 => -4  5
+        #  23 / -7 => -4 -5
+        # -23 / -7 =>  3 -2
+
+        # We are doing floored division, so adjust quotient and remainder as
+        # necessary.
+
+        if ($xsign ne $ysign && !$LIB -> _is_zero($rem -> {value})) {
+            $x -> {value}   = $LIB -> _inc($x -> {value});
+            $rem -> {value} = $LIB -> _sub($LIB -> _copy($y -> {value}),
+                                           $rem -> {value});
         }
+
+        # Now do the signs.
+
+        $x -> {sign} = $xsign eq $ysign || $LIB -> _is_zero($x -> {value})
+                         ? '+' : '-';
+        $rem -> {sign} = $ysign eq '+' || $LIB -> _is_zero($rem -> {value})
+                         ? '+' : '-';
     }
 
-    $x -> round(@r);
+    # List context.
 
     if ($wantarray) {
-        unless ($LIB -> _is_zero($rem -> {value})) {
-            if ($xsign ne $ysign) {
-                $rem = $y -> copy() -> babs() -> bsub($rem);
-            }
-            $rem -> {sign} = $ysign;
-        }
         $rem -> {accuracy} = $x -> {accuracy};
         $rem -> {precision} = $x -> {precision};
+        $x -> round(@r);
         $rem -> round(@r);
         return $x, $rem;
     }
 
+    # Scalar context.
+
+    return $x -> round(@r) if $LIB -> _is_zero($rem -> {value});
+
+    # We could use this instead of the upgrade code above, but this code gives
+    # more decimals when the integer part is non-zero. This is because the
+    # fraction part is divided separately and the rounding is done on that part
+    # separeately before the integer part is added.
+    #
+    #if ($class -> upgrade()) {
+    #    $rem -> _upg() -> bfdiv($y);
+    #    $x -> _upg() -> badd($rem, @r);
+    #    return $x;
+    #}
+
+    $x -> round(@r);
     return $x;
 }
 
@@ -2736,16 +2745,9 @@ sub btdiv {
                             ? (ref($_[0]), @_)
                             : objectify(2, @_);
 
+    # Code for all classes that share the common interface.
+
     return $x if $x -> modify('btdiv');
-
-    # If called with "foreign" arguments.
-
-    for my $arg ($x, $y) {
-        unless ($arg -> isa(__PACKAGE__)) {
-            return $x -> _upg() -> btdiv($y, @r) if $upgrade;
-            croak "Can't handle a ", ref($arg), " in ", (caller(0))[3], "()";
-        }
-    }
 
     my $wantarray = wantarray;          # call only once
 
@@ -2833,11 +2835,13 @@ sub btdiv {
         return $wantarray ? ($x, $rem) : $x;
     }
 
+    # Code for things that aren't Math::BigInt
+
     # Division might return a non-integer result, so upgrade, if upgrading is
     # enabled.
 
     if ($upgrade && !$wantarray) {
-        my $tmp = $upgrade -> bdiv($x, $y, @r);
+        my $tmp = $upgrade -> btdiv($x, $y, @r);
         if ($tmp -> is_int()) {
             $tmp = $tmp -> as_int();
             %$x = %$tmp;
@@ -2848,13 +2852,24 @@ sub btdiv {
         return $x;
     }
 
+    # If called with "foreign" arguments.
+
+    for my $arg ($x, $y) {
+        unless ($arg -> isa(__PACKAGE__)) {
+            return $x -> _upg() -> btdiv($y, @r) if $class -> upgrade();
+            croak "Can't handle a ", ref($arg), " in ", (caller(0))[3], "()";
+        }
+    }
+
+    # Code for Math::BigInt objects objects
+
     $r[3] = $y;                 # no push!
 
     # Initialize remainder.
 
     my $rem = $class -> bzero();
 
-    # Are both operands the same object, i.e., like $x -> bdiv($x)? If so,
+    # Are both operands the same object, i.e., like $x -> btdiv($x)? If so,
     # flipping the sign of $y also flips the sign of $x.
 
     my $xsign = $x -> {sign};
@@ -2887,7 +2902,7 @@ sub btdiv {
     return $x;
 }
 
-sub bmod {
+sub bfmod {
     # This is the remainder after floored division.
 
     # Set up parameters.
@@ -2895,16 +2910,9 @@ sub bmod {
                             ? (ref($_[0]), @_)
                             : objectify(2, @_);
 
-    return $x if $x -> modify('bmod');
+    # Code for all classes that share the common interface.
 
-    # If called with "foreign" arguments.
-
-    for my $arg ($x, $y) {
-        unless ($arg -> isa(__PACKAGE__)) {
-            return $x -> _upg() -> bmod($y, @r) if $upgrade;
-            croak "Can't handle a ", ref($arg), " in ", (caller(0))[3], "()";
-        }
-    }
+    return $x if $x -> modify('bfmod');
 
     $r[3] = $y;                 # no push!
 
@@ -2914,7 +2922,7 @@ sub bmod {
         return $x -> bnan(@r);
     }
 
-    # Modulo zero. See documentation for bdiv().
+    # Modulo zero. See documentation for bfdiv().
 
     if ($y -> is_zero()) {
         return $x -> round(@r);
@@ -2935,6 +2943,19 @@ sub bmod {
             return $x -> binf($y -> sign(), @r);
         }
     }
+
+    # Code for things that aren't Math::BigInt
+
+    # If called with "foreign" arguments.
+
+    for my $arg ($x, $y) {
+        unless ($arg -> isa(__PACKAGE__)) {
+            return $x -> _upg() -> bfmod($y, @r) if $class -> upgrade();
+            croak "Can't handle a ", ref($arg), " in ", (caller(0))[3], "()";
+        }
+    }
+
+    # Code for Math::BigInt objects
 
     # Calc new sign and in case $y == +/- 1, return $x.
 
@@ -2958,16 +2979,13 @@ sub btmod {
                             ? (ref($_[0]), @_)
                             : objectify(2, @_);
 
+    # Code for all classes that share the common interface.
+
     return $x if $x -> modify('btmod');
 
-    # If called with "foreign" arguments.
+    # Code for all classes that share the common interface.
 
-    for my $arg ($x, $y) {
-        unless ($arg -> isa(__PACKAGE__)) {
-            return $x -> _upg() -> btmod($y, @r) if $upgrade;
-            croak "Can't handle a ", ref($arg), " in ", (caller(0))[3], "()";
-        }
-    }
+    $r[3] = $y;                 # no push!
 
     # At least one argument is NaN.
 
@@ -2993,7 +3011,18 @@ sub btmod {
         return $x -> round(@r);
     }
 
-    $r[3] = $y;                 # no push!
+    # Code for things that aren't Math::BigInt
+
+    # If called with "foreign" arguments.
+
+    for my $arg ($x, $y) {
+        unless ($arg -> isa(__PACKAGE__)) {
+            return $x -> _upg() -> btmod($y, @r) if $class -> upgrade();
+            croak "Can't handle a ", ref($arg), " in ", (caller(0))[3], "()";
+        }
+    }
+
+    # Code for Math::BigInt objects
 
     my $xsign = $x -> {sign};
 

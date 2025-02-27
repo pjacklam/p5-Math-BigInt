@@ -1049,7 +1049,10 @@ sub bmul {
     $x -> bnorm() -> round(@r);
 }
 
-sub bdiv {
+*bdiv = \&bfdiv;
+*bmod = \&bfmod;
+
+sub bfdiv {
     # (dividend: BRAT or num_str, divisor: BRAT or num_str) return
     # (BRAT, BRAT) (quo, rem) or BRAT (only rem)
 
@@ -1058,16 +1061,16 @@ sub bdiv {
                             ? (ref($_[0]), @_)
                             : objectify(2, @_);
 
-    return $x if $x -> modify('bdiv');
+    ###########################################################################
+    # Code for all classes that share the common interface.
+    ###########################################################################
 
-    my $wantarray = wantarray;  # call only once
+    return $x if $x -> modify('bfdiv');
+
+    my $wantarray = wantarray;          # call only once
 
     # At least one argument is NaN. This is handled the same way as in
-    # Math::BigInt -> bdiv(). See the comments in the code implementing that
-    # method.
-
-    # At least one argument is NaN. This is handled the same way as in
-    # Math::BigInt -> bdiv().
+    # Math::BigInt -> bfdiv().
 
     if ($x -> is_nan() || $y -> is_nan()) {
         return $wantarray ? ($x -> bnan(@r), $class -> bnan(@r))
@@ -1075,14 +1078,14 @@ sub bdiv {
     }
 
     # Divide by zero and modulo zero. This is handled the same way as in
-    # Math::BigInt -> bdiv(). See the comments in the code implementing that
+    # Math::BigInt -> bfdiv(). See the comments in the code implementing that
     # method.
 
     if ($y -> is_zero()) {
         my $rem;
         if ($wantarray) {
             $rem = $x -> copy() -> round(@r);
-            $rem -> _dng() if $rem -> downgrade() && $rem -> is_int();
+            $rem -> _dng() if $rem -> is_int();
         }
         if ($x -> is_zero()) {
             $x -> bnan(@r);
@@ -1093,8 +1096,8 @@ sub bdiv {
     }
 
     # Numerator (dividend) is +/-inf. This is handled the same way as in
-    # Math::BigInt -> bdiv(). See the comment in the code for Math::BigInt ->
-    # bdiv() for further details.
+    # Math::BigInt -> bfdiv(). See the comment in the code for Math::BigInt ->
+    # bfdiv() for further details.
 
     if ($x -> is_inf()) {
         my $rem;
@@ -1109,20 +1112,126 @@ sub bdiv {
     }
 
     # Denominator (divisor) is +/-inf. This is handled the same way as in
-    # Math::BigFloat -> bdiv(). See the comments in the code implementing that
+    # Math::BigFloat -> bfdiv(). See the comments in the code implementing that
     # method.
 
     if ($y -> is_inf()) {
         my $rem;
         if ($wantarray) {
             if ($x -> is_zero() || $x -> bcmp(0) == $y -> bcmp(0)) {
-                $rem = $x -> copy();
-                $rem -> _dng() if $downgrade && $rem -> is_int();
-                $x -> bzero();
+                $rem = $x -> copy() -> round(@r);
+                $rem -> _dng() if $rem -> is_int();
+                $x -> bzero(@r);
             } else {
-                $rem = $class -> binf($y -> {sign});
-                $x -> bone('-');
+                $rem = $class -> binf($y -> {sign}, @r);
+                $x -> bone('-', @r);
             }
+        } else {
+            $x -> bzero(@r);
+        }
+        return $wantarray ? ($x, $rem) : $x;
+    }
+
+    # At this point, both the numerator and denominator are finite, non-zero
+    # numbers.
+
+    # According to Knuth, this can be optimized by doing gcd twice (for d and n)
+    # and reducing in one step. This would save us the bnorm().
+    #
+    # p   r    p * s    (p / gcd(p, r)) * (s / gcd(s, q))
+    # - / -  = ----- =  ---------------------------------
+    # q   s    q * r    (q / gcd(s, q)) * (r / gcd(p, r))
+
+    $x->{_n} = $LIB->_mul($x->{_n}, $y->{_d});
+    $x->{_d} = $LIB->_mul($x->{_d}, $y->{_n});
+
+    # compute new sign
+    $x->{sign} = $x->{sign} eq $y->{sign} ? '+' : '-';
+
+    $x -> bnorm();
+    if ($wantarray) {
+        my $rem = $x -> copy();
+        $x -> bfloor();
+        $x -> round(@r);
+        $rem -> bsub($x -> copy()) -> bmul($y);
+        $x -> _dng() if $x -> is_int();
+        $rem -> _dng() if $rem -> is_int();
+        return $x, $rem;
+    }
+
+    $x -> _dng() if $x -> is_int();
+    return $x;
+}
+
+sub btdiv {
+    # (dividend: BRAT or num_str, divisor: BRAT or num_str) return
+    # (BRAT, BRAT) (quo, rem) or BRAT (only rem)
+
+    # Set up parameters.
+    my ($class, $x, $y, @r) = ref($_[0]) && ref($_[0]) eq ref($_[1])
+                            ? (ref($_[0]), @_)
+                            : objectify(2, @_);
+
+    ###########################################################################
+    # Code for all classes that share the common interface.
+    ###########################################################################
+
+    return $x if $x -> modify('btdiv');
+
+    my $wantarray = wantarray;          # call only once
+
+    # At least one argument is NaN. This is handled the same way as in
+    # Math::BigInt -> btdiv().
+
+    if ($x -> is_nan() || $y -> is_nan()) {
+        return $wantarray ? ($x -> bnan(@r), $class -> bnan(@r))
+                          : $x -> bnan(@r);
+    }
+
+    # Divide by zero and modulo zero. This is handled the same way as in
+    # Math::BigInt -> btdiv(). See the comments in the code implementing that
+    # method.
+
+    if ($y -> is_zero()) {
+        my $rem;
+        if ($wantarray) {
+            $rem = $x -> copy() -> round(@r);
+            $rem -> _dng() if $rem -> is_int();
+        }
+        if ($x -> is_zero()) {
+            $x -> bnan(@r);
+        } else {
+            $x -> binf($x -> {sign}, @r);
+        }
+        return $wantarray ? ($x, $rem) : $x;
+    }
+
+    # Numerator (dividend) is +/-inf. This is handled the same way as in
+    # Math::BigInt -> btdiv(). See the comment in the code for Math::BigInt ->
+    # btdiv() for further details.
+
+    if ($x -> is_inf()) {
+        my $rem;
+        $rem = $class -> bnan(@r) if $wantarray;
+        if ($y -> is_inf()) {
+            $x -> bnan(@r);
+        } else {
+            my $sign = $x -> bcmp(0) == $y -> bcmp(0) ? '+' : '-';
+            $x -> binf($sign, @r);
+        }
+        return $wantarray ? ($x, $rem) : $x;
+    }
+
+    # Denominator (divisor) is +/-inf. This is handled the same way as in
+    # Math::BigFloat -> btdiv(). See the comments in the code implementing that
+    # method.
+
+    if ($y -> is_inf()) {
+        my $rem;
+        if ($wantarray) {
+            $rem = $x -> copy();
+            $rem -> _dng() if $rem -> is_int();
+            $x -> bzero();
             return $x, $rem;
         } else {
             if ($y -> is_inf()) {
@@ -1137,7 +1246,7 @@ sub bdiv {
 
     if ($x -> is_zero()) {
         $x -> round(@r);
-        $x -> _dng() if $x -> downgrade() && $x -> is_int();
+        $x -> _dng() if $x -> is_int();
         if ($wantarray) {
             my $rem = $class -> bzero(@r);
             return $x, $rem;
@@ -1164,60 +1273,60 @@ sub bdiv {
     $x -> bnorm();
     if ($wantarray) {
         my $rem = $x -> copy();
-        $x -> bfloor();
+        $x -> bint();
         $x -> round(@r);
         $rem -> bsub($x -> copy()) -> bmul($y);
-        $x -> _dng() if $x -> downgrade() && $x -> is_int();
-        $rem -> _dng() if $rem -> downgrade() && $rem -> is_int();
+        $x -> _dng() if $x -> is_int();
+        $rem -> _dng() if $rem -> is_int();
         return $x, $rem;
     }
 
-    $x -> _dng() if $x -> downgrade() && $x -> is_int();
+    $x -> _dng() if $x -> is_int();
     return $x;
 }
 
-sub bmod {
-    # compute "remainder" (in Perl way) of $x / $y
+sub bfmod {
+    # This is the remainder after floored division.
 
-    # set up parameters
-    my ($class, $x, $y, @r) = (ref($_[0]), @_);
-    # objectify is costly, so avoid it
-    if ((!ref($_[0])) || (ref($_[0]) ne ref($_[1]))) {
-        ($class, $x, $y, @r) = objectify(2, @_);
-    }
+    # Set up parameters.
+    my ($class, $x, $y, @r) = ref($_[0]) && ref($_[0]) eq ref($_[1])
+                            ? (ref($_[0]), @_)
+                            : objectify(2, @_);
 
-    return $x if $x -> modify('bmod');
+    ###########################################################################
+    # Code for all classes that share the common interface.
+    ###########################################################################
+
+    return $x if $x -> modify('bfmod');
 
     # At least one argument is NaN. This is handled the same way as in
-    # Math::BigInt -> bmod().
+    # Math::BigInt -> bfmod().
 
     if ($x -> is_nan() || $y -> is_nan()) {
         return $x -> bnan();
     }
 
-    # Modulo zero. This is handled the same way as in Math::BigInt -> bmod().
+    # Modulo zero. This is handled the same way as in Math::BigInt -> bfmod().
 
     if ($y -> is_zero()) {
-        return $downgrade -> bzero() if $downgrade;
-        return $x;
+        return $x -> round();
     }
 
     # Numerator (dividend) is +/-inf. This is handled the same way as in
-    # Math::BigInt -> bmod().
+    # Math::BigInt -> bfmod().
 
     if ($x -> is_inf()) {
         return $x -> bnan();
     }
 
     # Denominator (divisor) is +/-inf. This is handled the same way as in
-    # Math::BigInt -> bmod().
+    # Math::BigInt -> bfmod().
 
     if ($y -> is_inf()) {
         if ($x -> is_zero() || $x -> bcmp(0) == $y -> bcmp(0)) {
-            return $downgrade -> new($x) if $downgrade && $x -> is_int();
+            $x -> _dng() if $x -> is_int();
             return $x;
         } else {
-            return $downgrade -> binf($y -> sign()) if $downgrade;
             return $x -> binf($y -> sign());
         }
     }
@@ -1226,14 +1335,92 @@ sub bmod {
     # the denominator (divisor) is non-zero.
 
     if ($x -> is_zero()) {        # 0 / 7 = 0, mod 0
-        return $downgrade -> bzero() if $downgrade;
+        return $x -> bzero();
+    }
+
+    # Compute $x - $y * floor($x / $y). This can be optimized by working on the
+    # library thingies directly. XXX
+
+    $x -> bsub($x -> copy() -> bfdiv($y) -> bfloor() -> bmul($y));
+    return $x -> round(@r);
+}
+
+sub btmod {
+    # This is the remainder after floored division.
+
+    # Set up parameters.
+    my ($class, $x, $y, @r) = ref($_[0]) && ref($_[0]) eq ref($_[1])
+                            ? (ref($_[0]), @_)
+                            : objectify(2, @_);
+
+    ###########################################################################
+    # Code for all classes that share the common interface.
+    ###########################################################################
+
+    return $x if $x -> modify('btmod');
+
+    # At least one argument is NaN. This is handled the same way as in
+    # Math::BigInt -> btmod().
+
+    if ($x -> is_nan() || $y -> is_nan()) {
+        return $x -> bnan();
+    }
+
+    # Modulo zero. This is handled the same way as in Math::BigInt -> btmod().
+
+    if ($y -> is_zero()) {
+        return $x -> round();
+    }
+
+    # Numerator (dividend) is +/-inf. This is handled the same way as in
+    # Math::BigInt -> btmod().
+
+    if ($x -> is_inf()) {
+        return $x -> bnan();
+    }
+
+    # Denominator (divisor) is +/-inf. This is handled the same way as in
+    # Math::BigInt -> btmod().
+
+    if ($y -> is_inf()) {
+        $x -> _dng() if $x -> is_int();
         return $x;
     }
 
-    # Compute $x - $y * floor($x/$y). This can probably be optimized by working
-    # on a lower level.
+    # At this point, both the numerator and denominator are finite numbers, and
+    # the denominator (divisor) is non-zero.
 
-    $x -> bsub($x -> copy() -> bdiv($y) -> bfloor() -> bmul($y));
+    if ($x -> is_zero()) {        # 0 / 7 = 0, mod 0
+        return $x -> bzero();
+    }
+
+    # Compute $x - $y * int($x / $y).
+    #
+    # p     r   (p * s / gcd(q, s)) mod (r * q / gcd(q, s))
+    # - mod - = -------------------------------------------
+    # q     s                q * s / gcd(q, s)
+    #
+    #   u mod v         u = p * (s / gcd(q, s))
+    # = -------  where  v = r * (q / gcd(q, s))
+    #      w            w = q * (s / gcd(q, s))
+
+    my $p = $x -> {_n};
+    my $q = $x -> {_d};
+    my $r = $y -> {_n};
+    my $s = $y -> {_d};
+
+    my $gcd_qs      = $LIB -> _gcd($LIB -> _copy($q), $s);
+    my $s_by_gcd_qs = $LIB -> _div($LIB -> _copy($s), $gcd_qs);
+    my $q_by_gcd_qs = $LIB -> _div($LIB -> _copy($q), $gcd_qs);
+
+    my $u = $LIB -> _mul($LIB -> _copy($p), $s_by_gcd_qs);
+    my $v = $LIB -> _mul($LIB -> _copy($r), $q_by_gcd_qs);
+    my $w = $LIB -> _mul($LIB -> _copy($q), $s_by_gcd_qs);
+
+    $x->{_n} = $LIB -> _mod($u, $v);
+    $x->{_d} = $w;
+
+    $x -> bnorm();
     return $x -> round(@r);
 }
 
