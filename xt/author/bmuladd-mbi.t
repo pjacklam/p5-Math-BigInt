@@ -3,7 +3,7 @@
 use strict;
 use warnings;
 
-use Test::More tests => 1012;
+use Test::More tests => 9012;
 use Scalar::Util qw< refaddr >;
 
 use Math::Complex;
@@ -110,4 +110,44 @@ for my $a (-2, 2) {
         is(ref($x), 'Math::BigInt', 'class of $x');
         cmp_ok($x, "==", $a * $a + $a, 'value of $x');
     };
+}
+
+# Some random tests.
+
+for (1 .. 20) {
+    for (1 .. 20) {
+        for (1 .. 20) {
+
+            my $x = int(rand(2 ** int(rand(24))));
+            $x = -$x if rand() < 0.5;
+            $x = Math::BigInt -> new($x);
+
+            my $y = int(rand(2 ** int(rand(24))));
+            $y = -$y if rand() < 0.5;
+            $y = Math::BigInt -> new($y);
+            my $y_orig = $y -> copy();
+
+            my $z = int(rand(2 ** int(rand(24))));
+            $z = -$z if rand() < 0.5;
+            $z = Math::BigInt -> new($z);
+            my $z_orig = $z -> copy();
+
+            note <<"EOF";
+
+\$w1 = Math::BigInt -> new("$x") -> bmuladd("$y", "$z");
+\$w2 = Math::BigInt -> new("$x") -> bmul("$y") -> badd("$z");
+
+EOF
+
+            my $w1 = $x -> copy() -> bmul($y -> copy()) -> badd($z -> copy());
+            my $w2 = $x -> copy() -> bmuladd($y, $z);
+            subtest "$x * $y + $z" => sub {
+                plan tests => 3;
+
+                is($w1, $w2, '$w1 and $w2 are identical');
+                is($y, $y_orig, '$y is unmodified');
+                is($z, $z_orig, '$z is unmodified');
+            };
+        }
+    }
 }
