@@ -2053,20 +2053,125 @@ sub bmuladd {
 
     return $x if $x -> modify('bmuladd');
 
-    return $x -> bnan(@r) if (($x->{sign} eq $nan) ||
-                            ($y->{sign} eq $nan) ||
-                            ($z->{sign} eq $nan));
+    # At least one of x, y, and z is a NaN
 
-    # inf handling
-    if (($x->{sign} =~ /^[+-]inf$/) || ($y->{sign} =~ /^[+-]inf$/)) {
-        return $x -> bnan(@r) if $x -> is_zero() || $y -> is_zero();
-        # result will always be +-inf:
-        # +inf * +/+inf => +inf, -inf * -/-inf => +inf
-        # +inf * -/-inf => -inf, -inf * +/+inf => -inf
-        return $x -> binf(@r) if ($x->{sign} =~ /^\+/ && $y->{sign} =~ /^\+/);
-        return $x -> binf(@r) if ($x->{sign} =~ /^-/ && $y->{sign} =~ /^-/);
-        return $x -> binf('-', @r);
+    return $x -> bnan(@r) if ($x -> is_nan() ||
+                              $y -> is_nan() ||
+                              $z -> is_nan());
+
+    # At least one of x, y, and z is an Inf
+
+    if ($x -> is_inf("-")) {
+
+        if ($y -> is_neg()) {                   # x = -inf, y < 0
+            if ($z -> is_inf("-")) {
+                return $x -> bnan(@r);
+            } else {
+                return $x -> binf("+", @r);
+            }
+        } elsif ($y -> is_zero()) {             # x = -inf, y = 0
+            return $x -> bnan(@r);
+        } else {                                # x = -inf, y > 0
+            if ($z->{sign} eq "+inf") {
+                return $x -> bnan(@r);
+            } else {
+                return $x -> binf("-", @r);
+            }
+        }
+
+    } elsif ($x->{sign} eq "+inf") {
+
+        if ($y -> is_neg()) {                   # x = +inf, y < 0
+            if ($z->{sign} eq "+inf") {
+                return $x -> bnan(@r);
+            } else {
+                return $x -> binf("-", @r);
+            }
+        } elsif ($y -> is_zero()) {             # x = +inf, y = 0
+            return $x -> bnan(@r);
+        } else {                                # x = +inf, y > 0
+            if ($z -> is_inf("-")) {
+                return $x -> bnan(@r);
+            } else {
+                return $x -> binf("+", @r);
+            }
+        }
+
+    } elsif ($x -> is_neg()) {
+
+        if ($y -> is_inf("-")) {                # -inf < x < 0, y = -inf
+            if ($z -> is_inf("-")) {
+                return $x -> bnan(@r);
+            } else {
+                return $x -> binf("+", @r);
+            }
+        } elsif ($y->{sign} eq "+inf") {        # -inf < x < 0, y = +inf
+            if ($z->{sign} eq "+inf") {
+                return $x -> bnan(@r);
+            } else {
+                return $x -> binf("-", @r);
+            }
+        } else {                                # -inf < x < 0, -inf < y < +inf
+            if ($z -> is_inf("-")) {
+                return $x -> binf("-", @r);
+            } elsif ($z->{sign} eq "+inf") {
+                return $x -> binf("+", @r);
+            }
+        }
+
+    } elsif ($x -> is_zero()) {
+
+        if ($y -> is_inf("-")) {                # x = 0, y = -inf
+            return $x -> bnan(@r);
+        } elsif ($y->{sign} eq "+inf") {        # x = 0, y = +inf
+            return $x -> bnan(@r);
+        } else {                                # x = 0, -inf < y < +inf
+            if ($z -> is_inf("-")) {
+                return $x -> binf("-", @r);
+            } elsif ($z->{sign} eq "+inf") {
+                return $x -> binf("+", @r);
+            }
+        }
+
+    } elsif ($x -> is_pos()) {
+
+        if ($y -> is_inf("-")) {                # 0 < x < +inf, y = -inf
+            if ($z->{sign} eq "+inf") {
+                return $x -> bnan(@r);
+            } else {
+                return $x -> binf("-", @r);
+            }
+        } elsif ($y->{sign} eq "+inf") {        # 0 < x < +inf, y = +inf
+            if ($z -> is_inf("-")) {
+                return $x -> bnan(@r);
+            } else {
+                return $x -> binf("+", @r);
+            }
+        } else {                                # 0 < x < +inf, -inf < y < +inf
+            if ($z -> is_inf("-")) {
+                return $x -> binf("-", @r);
+            } elsif ($z->{sign} eq "+inf") {
+                return $x -> binf("+", @r);
+            }
+        }
     }
+
+    # If called with "foreign" arguments.
+
+    for my $arg ($x, $y, $z) {
+        unless ($arg -> isa(__PACKAGE__)) {
+            return $x -> _upg() -> bmuladd($y, $z, @r) if $class -> upgrade();
+            croak "Can't handle a ", ref($arg), " in ", (caller(0))[3], "()";
+        }
+    }
+
+    # At this point, we know that x, y, and z are finite numbers
+
+    # Rather than copying $y and/or $z, perhaps we should assign the output to
+    # a temporary $x value, and assign the final result to $x? XXX
+
+    $y = $y -> copy() if refaddr($y) eq refaddr($x);
+    $z = $z -> copy() if refaddr($z) eq refaddr($x);
 
     # aEb * cEd = (a*c)E(b+d)
     $x->{_m} = $LIB->_mul($x->{_m}, $y->{_m});
@@ -2077,15 +2182,6 @@ sub bmuladd {
 
     # adjust sign:
     $x->{sign} = $x->{sign} ne $y->{sign} ? '-' : '+';
-
-    # z=inf handling (z=NaN handled above)
-    if ($z->{sign} =~ /^[+-]inf$/) {
-        $x->{sign} = $z->{sign};
-        $x -> _dng() if ($x -> is_int() ||
-                         $x -> is_inf() ||
-                         $x -> is_nan());
-        return $x -> round(@r);
-    }
 
     # take lower of the two e's and adapt m1 to it to match m2
     my $e = $z->{_e};
