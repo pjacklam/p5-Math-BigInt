@@ -837,8 +837,8 @@ sub new {
 
     if (defined(blessed($wanted)) && $wanted -> isa(__PACKAGE__)) {
 
-        # Don't copy the accuracy and precision, because a new object should get
-        # them from the global configuration.
+        # Don't copy the accuracy and precision, because a new object should
+        # get them from the global configuration.
 
         $self -> {sign}  = $wanted -> {sign};
         $self -> {value} = $LIB -> _copy($wanted -> {value});
@@ -896,8 +896,8 @@ sub new {
     my @parts;
 
     if (
-        # Handle hexadecimal numbers. We auto-detect hexadecimal numbers if they
-        # have a "0x", "0X", "x", or "X" prefix, cf. CORE::oct().
+        # Handle hexadecimal numbers. We auto-detect hexadecimal numbers if
+        # they have a "0x", "0X", "x", or "X" prefix, cf. CORE::oct().
 
         $wanted =~ /^\s*[+-]?0?[Xx]/ and
         @parts = $class -> _hex_str_to_flt_lib_parts($wanted)
@@ -922,7 +922,8 @@ sub new {
 
         # At this point, what is left are decimal numbers that aren't handled
         # above and octal floating point numbers that don't have any of the
-        # "0o", "0O", "o", or "O" prefixes. First see if it is a decimal number.
+        # "0o", "0O", "o", or "O" prefixes. First see if it is a decimal
+        # number.
 
         @parts = $class -> _dec_str_to_flt_lib_parts($wanted)
           or
@@ -1849,9 +1850,9 @@ sub bcmp {
     # Code for Math::BigInt
     ###########################################################################
 
-    # have same sign, so compare absolute values.  Don't make tests for zero
-    # here because it's actually slower than testing in Calc (especially w/ Pari
-    # et al)
+    # have same sign, so compare absolute values. Don't make tests for zero
+    # here because it's actually slower than testing in Calc (especially w/
+    # Pari et al)
 
     # post-normalized compare for internal use (honors signs)
     if ($x->{sign} eq '+') {
@@ -1859,8 +1860,8 @@ sub bcmp {
         return $LIB->_acmp($x->{value}, $y->{value});
     }
 
-    # $x && $y both < 0
-    $LIB->_acmp($y->{value}, $x->{value}); # swapped acmp (lib returns 0, 1, -1)
+    # $x && $y both < 0; use swapped acmp (lib returns 0, 1, -1)
+    $LIB->_acmp($y->{value}, $x->{value});
 }
 
 sub bacmp {
@@ -3158,8 +3159,8 @@ sub bmodpow {
     }
 
     # Compute 'a (mod m)', ignoring the signs on 'a' and 'm'. If the resulting
-    # value is zero, the output is also zero, regardless of the signs on 'a' and
-    # 'm'.
+    # value is zero, the output is also zero, regardless of the signs on 'a'
+    # and 'm'.
 
     my $value = $LIB->_modpow($num->{value}, $exp->{value}, $mod->{value});
     my $sign  = '+';
@@ -3174,8 +3175,8 @@ sub bmodpow {
 
         if ($num->{sign} eq '-' && $exp -> is_odd()) {
 
-            # When both the number 'a' and the modulus 'm' have a negative sign,
-            # use this relation:
+            # When both the number 'a' and the modulus 'm' have a negative
+            # sign, use this relation:
             #
             #    -a (mod -m) = -(a (mod m))
 
@@ -3287,8 +3288,8 @@ sub bpow {
     return $x -> _upg() -> bpow($y, @r) if $upgrade;
 
     # We don't support finite non-integers, so return zero. The reason for
-    # returning zero, not NaN, is that all output is in the open interval (0,1),
-    # and truncating that to integer gives zero.
+    # returning zero, not NaN, is that all output is in the open interval
+    # (0,1), and truncating that to integer gives zero.
 
     if ($y->{sign} eq '-' || !$y -> isa(__PACKAGE__)) {
         return $x -> bzero(@r);
@@ -4968,7 +4969,8 @@ sub bround {
     return $x if !defined $scale; # no-op
 
     if ($x -> is_zero() || $scale == 0) {
-        $x->{accuracy} = $scale if !defined $x->{accuracy} || $x->{accuracy} > $scale; # 3 > 2
+        $x->{accuracy} = $scale
+          if !defined $x->{accuracy} || $x->{accuracy} > $scale; # 3 > 2
         return $x;
     }
     return $x if $x->{sign} !~ /^[+-]$/; # inf, NaN
@@ -4982,7 +4984,8 @@ sub bround {
 
     # scale < 0, but > -len (not >=!)
     if (($scale < 0 && $scale < -$len-1) || ($scale >= $len)) {
-        $x->{accuracy} = $scale if !defined $x->{accuracy} || $x->{accuracy} > $scale; # 3 > 2
+        $x->{accuracy} = $scale
+          if !defined $x->{accuracy} || $x->{accuracy} > $scale; # 3 > 2
         return $x;
     }
 
@@ -5035,8 +5038,8 @@ sub bround {
         $put_back = 1;                               # need to put back
         $pad = $len, $xs = '0' x $pad if $scale < 0; # tlr: whack 0.51=>1.0
 
-        # we modify directly the string variant instead of creating a number and
-        # adding it, since that is faster (we already have the string)
+        # we modify directly the string variant instead of creating a number
+        # and adding it, since that is faster (we already have the string)
         my $c = 0;
         $pad ++;                # for $pad == $len case
         while ($pad <= $len) {
@@ -5434,9 +5437,9 @@ sub nparts {
     return $mant, $expo;
 }
 
-# Parts used for engineering notation with significand/mantissa as either 0 or a
-# number in the semi-open interval [1,1000) and the exponent is a multiple of 3.
-# E.g., "12345.6789" is returned as "12.3456789" and "3".
+# Parts used for engineering notation with significand/mantissa as either 0 or
+# a number in the semi-open interval [1,1000) and the exponent is a multiple of
+# 3. E.g., "12345.6789" is returned as "12.3456789" and "3".
 
 sub eparts {
     my ($class, $x, @r) = ref($_[0]) ? (ref($_[0]), @_) : objectify(1, @_);
@@ -6194,8 +6197,9 @@ sub import {
                 },
 
                 binary  => sub {
-                    # E.g., a literal 0377 shall result in an object whose value
-                    # is decimal 255, but new("0377") returns decimal 377.
+                    # E.g., a literal 0377 shall result in an object whose
+                    # value is decimal 255, but new("0377") returns decimal
+                    # 377.
                     return $class -> from_oct($_[0]) if $_[0] =~ /^0_*[0-7]/;
                     $class -> new(shift);
                 };
@@ -6310,7 +6314,8 @@ sub import {
             next if defined $LIB;
 
             # No library has been loaded, and none of the requested libraries
-            # could be loaded, and fallback and the user doesn't allow fallback.
+            # could be loaded, and fallback and the user doesn't allow
+            # fallback.
 
             if ($param eq 'only') {
                 croak "Couldn't load the specified math lib(s) ",
@@ -6399,8 +6404,8 @@ sub _find_round_parameters {
     # duplicated in round. Otherwise, it is tested by the testsuite and used
     # by bdiv().
 
-    # returns ($self) or ($self, $a, $p, $r) - sets $self to NaN of both A and P
-    # were requested/defined (locally or globally or both)
+    # returns ($self) or ($self, $a, $p, $r) - sets $self to NaN of both A and
+    # P were requested/defined (locally or globally or both)
 
     my ($self, $a, $p, $r, @args) = @_;
     # $a accuracy, if given by caller
@@ -6564,8 +6569,8 @@ sub _dec_str_to_dec_str_parts {
 
 # Takes any string representing a valid hexadecimal number and splits it into
 # four strings: the sign of the significand, the absolute value of the
-# significand, the sign of the exponent, and the absolute value of the exponent.
-# The significand is in base 16, and the exponent is in base 2.
+# significand, the sign of the exponent, and the absolute value of the
+# exponent. The significand is in base 16, and the exponent is in base 2.
 #
 # Perl accepts literals like the following. The "x" might be a capital "X". The
 # value is 32.0078125.
@@ -6737,8 +6742,8 @@ sub _bin_str_to_bin_str_parts {
 }
 
 # Takes any string representing a valid decimal number and splits it into four
-# parts: the sign of the significand, the absolute value of the significand as a
-# libray thingy, the sign of the exponent, and the absolute value of the
+# parts: the sign of the significand, the absolute value of the significand as
+# a libray thingy, the sign of the exponent, and the absolute value of the
 # exponent as a library thingy.
 
 sub _dec_str_parts_to_flt_lib_parts {
@@ -6806,8 +6811,8 @@ sub _dec_str_parts_to_flt_lib_parts {
 }
 
 # Takes any string representing a valid binary number and splits it into four
-# parts: the sign of the significand, the absolute value of the significand as a
-# libray thingy, the sign of the exponent, and the absolute value of the
+# parts: the sign of the significand, the absolute value of the significand as
+# a libray thingy, the sign of the exponent, and the absolute value of the
 # exponent as a library thingy.
 
 sub _bin_str_parts_to_flt_lib_parts {
@@ -6923,50 +6928,53 @@ sub _bin_str_parts_to_flt_lib_parts {
 }
 
 # Takes any string representing a valid hexadecimal number and splits it into
-# four parts: the sign of the significand, the absolute value of the significand
-# as a libray thingy, the sign of the exponent, and the absolute value of the
-# exponent as a library thingy.
+# four parts: the sign of the significand, the absolute value of the
+# significand as a libray thingy, the sign of the exponent, and the absolute
+# value of the exponent as a library thingy.
 
 sub _hex_str_to_flt_lib_parts {
     my $class = shift;
     my $str   = shift;
     if (my @parts = $class -> _hex_str_to_hex_str_parts($str)) {
-        return $class -> _bin_str_parts_to_flt_lib_parts(@parts, 4);  # 4 bits pr. chr
+        # 4 bits pr. chr
+        return $class -> _bin_str_parts_to_flt_lib_parts(@parts, 4);
     }
     return;
 }
 
 # Takes any string representing a valid octal number and splits it into four
-# parts: the sign of the significand, the absolute value of the significand as a
-# libray thingy, the sign of the exponent, and the absolute value of the
+# parts: the sign of the significand, the absolute value of the significand as
+# a libray thingy, the sign of the exponent, and the absolute value of the
 # exponent as a library thingy.
 
 sub _oct_str_to_flt_lib_parts {
     my $class = shift;
     my $str   = shift;
     if (my @parts = $class -> _oct_str_to_oct_str_parts($str)) {
-        return $class -> _bin_str_parts_to_flt_lib_parts(@parts, 3);  # 3 bits pr. chr
+        # 3 bits pr. chr
+        return $class -> _bin_str_parts_to_flt_lib_parts(@parts, 3);
     }
     return;
 }
 
 # Takes any string representing a valid binary number and splits it into four
-# parts: the sign of the significand, the absolute value of the significand as a
-# libray thingy, the sign of the exponent, and the absolute value of the
+# parts: the sign of the significand, the absolute value of the significand as
+# a libray thingy, the sign of the exponent, and the absolute value of the
 # exponent as a library thingy.
 
 sub _bin_str_to_flt_lib_parts {
     my $class = shift;
     my $str   = shift;
     if (my @parts = $class -> _bin_str_to_bin_str_parts($str)) {
-        return $class -> _bin_str_parts_to_flt_lib_parts(@parts, 1);  # 1 bit pr. chr
+        # 1 bit pr. chr
+        return $class -> _bin_str_parts_to_flt_lib_parts(@parts, 1);
     }
     return;
 }
 
-# Decimal string is split into the sign of the signficant, the absolute value of
-# the significand as library thingy, the sign of the exponent, and the absolute
-# value of the exponent as a a library thingy.
+# Decimal string is split into the sign of the signficant, the absolute value
+# of the significand as library thingy, the sign of the exponent, and the
+# absolute value of the exponent as a a library thingy.
 
 sub _dec_str_to_flt_lib_parts {
     my $class = shift;
@@ -7404,8 +7412,9 @@ number.
 
 =item *
 
-If the string has a "0o" or "0O" prefix, it is interpreted as an octal number. A
-floating point literal with a "0" prefix is also interpreted as an octal number.
+If the string has a "0o" or "0O" prefix, it is interpreted as an octal number.
+A floating point literal with a "0" prefix is also interpreted as an octal
+number.
 
 =item *
 
@@ -8997,12 +9006,12 @@ These utility methods are made public
 
 =item dec_str_to_dec_flt_str()
 
-Takes a string representing any valid number using decimal notation and converts
-it to a string representing the same number using decimal floating point
-notation. The output consists of five parts joined together: the sign of the
-significand, the absolute value of the significand as the smallest possible
-integer, the letter "e", the sign of the exponent, and the absolute value of the
-exponent. If the input is invalid, nothing is returned.
+Takes a string representing any valid number using decimal notation and
+converts it to a string representing the same number using decimal floating
+point notation. The output consists of five parts joined together: the sign of
+the significand, the absolute value of the significand as the smallest possible
+integer, the letter "e", the sign of the exponent, and the absolute value of
+the exponent. If the input is invalid, nothing is returned.
 
     $str2 = $class -> dec_str_to_dec_flt_str($str1);
 
@@ -9049,25 +9058,25 @@ L</dec_str_to_dec_flt_str()>.
 
 =item dec_str_to_dec_str()
 
-Takes a string representing any valid number using decimal notation and converts
-it to a string representing the same number using decimal notation. If the
-number represents an integer, the output consists of a sign and the absolute
-value. If the number represents a non-integer, the output consists of a sign,
-the integer part of the number, the decimal point ".", and the fraction part of
-the number without any trailing zeros. If the input is invalid, nothing is
-returned.
+Takes a string representing any valid number using decimal notation and
+converts it to a string representing the same number using decimal notation. If
+the number represents an integer, the output consists of a sign and the
+absolute value. If the number represents a non-integer, the output consists of
+a sign, the integer part of the number, the decimal point ".", and the fraction
+part of the number without any trailing zeros. If the input is invalid, nothing
+is returned.
 
 =item hex_str_to_dec_str()
 
 Takes a string representing any valid number using hexadecimal notation and
-converts it to a string representing the same number using decimal notation. The
-output has the same format as that of L</dec_str_to_dec_str()>.
+converts it to a string representing the same number using decimal notation.
+The output has the same format as that of L</dec_str_to_dec_str()>.
 
 =item oct_str_to_dec_str()
 
 Takes a string representing any valid number using octal notation and converts
-it to a string representing the same number using decimal notation. The
-output has the same format as that of L</dec_str_to_dec_str()>.
+it to a string representing the same number using decimal notation. The output
+has the same format as that of L</dec_str_to_dec_str()>.
 
 =item bin_str_to_dec_str()
 
@@ -9511,8 +9520,8 @@ fallback library is used, specify them using "lib",
 
     use Math::BigInt lib => 'GMP,Pari';
 
-The following first tries to find Math::BigInt::Foo, then Math::BigInt::Bar, and
-if this also fails, reverts to Math::BigInt::Calc:
+The following first tries to find Math::BigInt::Foo, then Math::BigInt::Bar,
+and if this also fails, reverts to Math::BigInt::Calc:
 
     use Math::BigInt try => 'Foo,Math::BigInt::Bar';
 
@@ -9523,9 +9532,9 @@ use; let the script author decide which is best.
 
 L<Math::BigInt::GMP>, L<Math::BigInt::Pari>, and L<Math::BigInt::GMPz> are in
 cases involving big numbers much faster than L<Math::BigInt::Calc>. However
-these libraries are slower when dealing with very small numbers (less than about
-20 digits) and when converting very large numbers to decimal (for instance for
-printing, rounding, calculating their length in decimal etc.).
+these libraries are slower when dealing with very small numbers (less than
+about 20 digits) and when converting very large numbers to decimal (for
+instance for printing, rounding, calculating their length in decimal etc.).
 
 So please select carefully what library you want to use.
 
@@ -9538,9 +9547,10 @@ See the respective math library module documentation for further details.
 =head3 Loading multiple libraries
 
 The first library that is successfully loaded is the one that will be used. Any
-further attempts at loading a different module will be ignored. This is to avoid
-the situation where module A requires math library X, and module B requires math
-library Y, causing modules A and B to be incompatible. For example,
+further attempts at loading a different module will be ignored. This is to
+avoid the situation where module A requires math library X, and module B
+requires math library Y, causing modules A and B to be incompatible. For
+example,
 
     use Math::BigInt;                   # loads default "Calc"
     use Math::BigFloat only => "GMP";   # ignores "GMP"
@@ -9641,9 +9651,9 @@ at run time, which results in an inaccurate result.
 =head2 Hexadecimal, octal, and binary floating point literals
 
 Perl (and this module) accepts hexadecimal, octal, and binary floating point
-literals, but use them with care with Perl versions before v5.32.0, because some
-versions of Perl silently give the wrong result. Below are some examples of
-different ways to write the number decimal 314.
+literals, but use them with care with Perl versions before v5.32.0, because
+some versions of Perl silently give the wrong result. Below are some examples
+of different ways to write the number decimal 314.
 
 Hexadecimal floating point literals:
 

@@ -347,11 +347,8 @@ sub config {
 ###############################################################################
 
 sub new {
-    # Create a new Math::BigFloat object from a string or another bigfloat
-    # object.
-    # _e: exponent
-    # _m: mantissa
-    # sign  => ("+", "-", "+inf", "-inf", or "NaN")
+    # Create a new Math::BigFloat object from a string or another
+    # Math::BigFloat object. See hash keys documented at top.
 
     my $self    = shift;
     my $selfref = ref $self;
@@ -361,8 +358,8 @@ sub new {
 
     $class -> import() if $IMPORT == 0;
 
-    # Although this use has been discouraged for more than 10 years, people
-    # apparently still use it, so we still support it.
+    # Calling new() with no input arguments has been discouraged for more than
+    # 10 years, but people apparently still use it, so we still support it.
 
     return $class -> bzero() unless @_;
 
@@ -393,8 +390,8 @@ sub new {
 
     if (defined(blessed($wanted)) && $wanted -> isa(__PACKAGE__)) {
 
-        # Don't copy the accuracy and precision, because a new object should get
-        # them from the global configuration.
+        # Don't copy the accuracy and precision, because a new object should
+        # get them from the global configuration.
 
         $self -> {sign} = $wanted -> {sign};
         $self -> {_m}   = $LIB -> _copy($wanted -> {_m});
@@ -425,8 +422,8 @@ sub new {
         }
     }
 
-    # Shortcut for simple forms like '123' that have no trailing zeros. Trailing
-    # zeros would require a non-zero exponent.
+    # Shortcut for simple forms like '123' that have no trailing zeros.
+    # Trailing zeros would require a non-zero exponent.
 
     if ($wanted =~
         / ^
@@ -479,8 +476,8 @@ sub new {
     my @parts;
 
     if (
-        # Handle hexadecimal numbers. We auto-detect hexadecimal numbers if they
-        # have a "0x", "0X", "x", or "X" prefix, cf. CORE::oct().
+        # Handle hexadecimal numbers. We auto-detect hexadecimal numbers if
+        # they have a "0x", "0X", "x", or "X" prefix, cf. CORE::oct().
 
         $wanted =~ /^\s*[+-]?0?[Xx]/ and
         @parts = $class -> _hex_str_to_flt_lib_parts($wanted)
@@ -505,7 +502,8 @@ sub new {
 
         # At this point, what is left are decimal numbers that aren't handled
         # above and octal floating point numbers that don't have any of the
-        # "0o", "0O", "o", or "O" prefixes. First see if it is a decimal number.
+        # "0o", "0O", "o", or "O" prefixes. First see if it is a decimal
+        # number.
 
         @parts = $class -> _dec_str_to_flt_lib_parts($wanted)
           or
@@ -1563,8 +1561,8 @@ sub bcmp {
     my $cmp;
 
     # The next step is to compare the exponents, but since each mantissa is an
-    # integer of arbitrary value, the exponents must be normalized by the length
-    # of the mantissas before we can compare them.
+    # integer of arbitrary value, the exponents must be normalized by the
+    # length of the mantissas before we can compare them.
 
     my $mxl = $LIB->_len($x->{_m});
     my $myl = $LIB->_len($y->{_m});
@@ -1819,15 +1817,16 @@ sub binc {
         return $x -> badd($class -> bone(), @r);
     }
 
-    # If the exponent is non-zero, convert the internal representation, so that,
-    # e.g., 12e+3 becomes 12000e+0 and we can easily increment the mantissa.
+    # If the exponent is non-zero, convert the internal representation, so
+    # that, e.g., 12e+3 becomes 12000e+0 and we can easily increment the
+    # mantissa.
 
     if (!$LIB->_is_zero($x->{_e})) {
         $x->{_m} = $LIB->_lsft($x->{_m}, $x->{_e}, 10); # 1e2 => 100
         $x->{_e} = $LIB->_zero();                       # normalize
         $x->{_es} = '+';
-        # we know that the last digit of $x will be '1' or '9', depending on the
-        # sign
+        # we know that the last digit of $x will be '1' or '9', depending on
+        # the sign
     }
 
     # now $x->{_e} == 0
@@ -1866,8 +1865,9 @@ sub bdec {
         return $x -> badd($class -> bone('-'), @r);
     }
 
-    # If the exponent is non-zero, convert the internal representation, so that,
-    # e.g., 12e+3 becomes 12000e+0 and we can easily increment the mantissa.
+    # If the exponent is non-zero, convert the internal representation, so
+    # that, e.g., 12e+3 becomes 12000e+0 and we can easily increment the
+    # mantissa.
 
     if (!$LIB->_is_zero($x->{_e})) {
         $x->{_m} = $LIB->_lsft($x->{_m}, $x->{_e}, 10); # 1e2 => 100
@@ -2700,7 +2700,8 @@ sub bfmod {
           # check that $y == +1 or $y == -1:
           ($LIB->_is_zero($y->{_e}) && $LIB->_is_one($y->{_m})));
 
-    # Numerator (dividend) and denominator (divisor) are identical. Return zero.
+    # Numerator (dividend) and denominator (divisor) are identical. Return
+    # zero.
 
     my $cmp = $x -> bacmp($y);          # $x <=> $y
     if ($cmp == 0) {                    # $x == $y => result 0
@@ -2819,7 +2820,8 @@ sub btmod {
           # check that $y == +1 or $y == -1:
           ($LIB->_is_zero($y->{_e}) && $LIB->_is_one($y->{_m})));
 
-    # Numerator (dividend) and denominator (divisor) are identical. Return zero.
+    # Numerator (dividend) and denominator (divisor) are identical. Return
+    # zero.
 
     my $cmp = $x -> bacmp($y);      # $x <=> $y
     if ($cmp == 0) {                # $x == $y => result 0
@@ -3139,8 +3141,8 @@ sub blog {
     $class -> precision(undef);
 
     # Disabling upgrading and downgrading is no longer necessary to avoid an
-    # infinite recursion, but it avoids unnecessary upgrading and downgrading in
-    # the intermediate computations.
+    # infinite recursion, but it avoids unnecessary upgrading and downgrading
+    # in the intermediate computations.
 
     my $upg = $class -> upgrade();
     my $dng = $class -> downgrade();
@@ -3279,8 +3281,8 @@ sub bexp {
     $class -> precision(undef);
 
     # Disabling upgrading and downgrading is no longer necessary to avoid an
-    # infinite recursion, but it avoids unnecessary upgrading and downgrading in
-    # the intermediate computations.
+    # infinite recursion, but it avoids unnecessary upgrading and downgrading
+    # in the intermediate computations.
 
     my $upg = $class -> upgrade();
     my $dng = $class -> downgrade();
@@ -3658,8 +3660,8 @@ sub bclog10 {
 }
 
 sub bnok {
-    # Calculate n over k (binomial coefficient or "choose" function) as integer.
-    # set up parameters
+    # Calculate n over k (binomial coefficient or "choose" function) as
+    # integer. set up parameters
     my ($class, $x, $y, @r) = ref($_[0]) && ref($_[0]) eq ref($_[1])
                             ? (ref($_[0]), @_)
                             : objectify(2, @_);
@@ -3751,8 +3753,8 @@ sub bsin {
     $class -> precision(undef);
 
     # Disabling upgrading and downgrading is no longer necessary to avoid an
-    # infinite recursion, but it avoids unnecessary upgrading and downgrading in
-    # the intermediate computations.
+    # infinite recursion, but it avoids unnecessary upgrading and downgrading
+    # in the intermediate computations.
 
     my $upg = $class -> upgrade();
     my $dng = $class -> downgrade();
@@ -3914,8 +3916,8 @@ sub bcos {
     $class -> precision(undef);
 
     # Disabling upgrading and downgrading is no longer necessary to avoid an
-    # infinite recursion, but it avoids unnecessary upgrading and downgrading in
-    # the intermediate computations.
+    # infinite recursion, but it avoids unnecessary upgrading and downgrading
+    # in the intermediate computations.
 
     my $upg = $class -> upgrade();
     my $dng = $class -> downgrade();
@@ -4368,7 +4370,8 @@ sub broot {
                               $y->{sign} !~ /^\+$/);
 
     # Trivial cases.
-    return $x if $x -> is_zero() || $x -> is_one() || $x -> is_inf() || $y -> is_one();
+    return $x if ($x -> is_zero() || $x -> is_one() ||
+                  $x -> is_inf()  || $y -> is_one());
 
     # we need to limit the accuracy to protect against overflow
     my $fallback = 0;
@@ -4399,8 +4402,8 @@ sub broot {
     $class -> precision(undef);
 
     # Disabling upgrading and downgrading is no longer necessary to avoid an
-    # infinite recursion, but it avoids unnecessary upgrading and downgrading in
-    # the intermediate computations.
+    # infinite recursion, but it avoids unnecessary upgrading and downgrading
+    # in the intermediate computations.
 
     my $upg = $class -> upgrade();
     my $dng = $class -> downgrade();
@@ -5106,10 +5109,10 @@ sub bround {
         return $x;
     }
 
-    # Scale is now either $x->{accuracy}, $accuracy, or the input argument. Test
-    # whether $x already has lower accuracy, do nothing in this case but do
-    # round if the accuracy is the same, since a math operation might want to
-    # round a number with A=5 to 5 digits afterwards again
+    # Scale is now either $x->{accuracy}, $accuracy, or the input argument.
+    # Test whether $x already has lower accuracy, do nothing in this case but
+    # do round if the accuracy is the same, since a math operation might want
+    # to round a number with A=5 to 5 digits afterwards again
 
     if (defined $x->{accuracy} && $x->{accuracy} < $scale) {
         $x -> _dng() if ($x -> is_int() ||
@@ -5145,7 +5148,8 @@ sub bround {
     $x->{accuracy} = $scale;            # remember rounding
     $x->{precision} = undef;            # and clear P
 
-    # bnorm() downgrades if necessary, so no need to check whether to downgrade.
+    # bnorm() downgrades if necessary, so no need to check whether to
+    # downgrade.
     $x -> bnorm();                # del trailing zeros gen. by bround()
 }
 
@@ -5287,7 +5291,8 @@ sub bfround {
     $m = $m -> bround($scale, $mode);
     $x->{_m} = $m->{value};     # get our mantissa back
 
-    # bnorm() downgrades if necessary, so no need to check whether to downgrade.
+    # bnorm() downgrades if necessary, so no need to check whether to
+    # downgrade.
     $x -> bnorm();
 }
 
@@ -5589,9 +5594,9 @@ sub nparts {
     return $mant, $expo;
 }
 
-# Parts used for engineering notation with significand/mantissa as either 0 or a
-# number in the semi-open interval [1,1000) and the exponent is a multiple of 3.
-# E.g., "12345.6789" is returned as "12.3456789" and "3".
+# Parts used for engineering notation with significand/mantissa as either 0 or
+# a number in the semi-open interval [1,1000) and the exponent is a multiple of
+# 3. E.g., "12345.6789" is returned as "12.3456789" and "3".
 
 sub eparts {
     my ($class, $x, @r) = ref($_[0]) ? (ref($_[0]), @_) : objectify(1, @_);
@@ -6495,8 +6500,9 @@ sub import {
                 },
 
                 binary  => sub {
-                    # E.g., a literal 0377 shall result in an object whose value
-                    # is decimal 255, but new("0377") returns decimal 377.
+                    # E.g., a literal 0377 shall result in an object whose
+                    # value is decimal 255, but new("0377") returns decimal
+                    # 377.
                     return $class -> from_oct($_[0]) if $_[0] =~ /^0_*[0-7]/;
                     $class -> new(shift);
                 };
@@ -6596,8 +6602,8 @@ sub _len_to_steps {
     $lg2 = $lg2 -> numify if ref($lg2);
     $lg10 = $lg10 -> numify if ref($lg10);
 
-    # binary search for the right value (could this be written as the reverse of
-    # lg(n!)?)
+    # binary search for the right value (could this be written as the reverse
+    # of lg(n!)?)
     while ($r - $l > 1) {
         my $n = int(($r - $l) / 2) + $l;
         my $ramanujan
@@ -6685,17 +6691,17 @@ sub _log_10 {
     my ($x, $scale) = @_;
     my $class = ref $x;
 
-    # Taking blog() from numbers greater than 10 takes a *very long* time, so we
-    # break the computation down into parts based on the observation that:
+    # Taking blog() from numbers greater than 10 takes a *very long* time, so
+    # we break the computation down into parts based on the observation that:
     #  blog(X*Y) = blog(X) + blog(Y)
     # We set Y here to multiples of 10 so that $x becomes below 1 - the smaller
-    # $x is the faster it gets. Since 2*$x takes about 10 times as
-    # long, we make it faster by about a factor of 100 by dividing $x by 10.
+    # $x is the faster it gets. Since 2*$x takes about 10 times as long, we
+    # make it faster by about a factor of 100 by dividing $x by 10.
 
-    # The same observation is valid for numbers smaller than 0.1, e.g. computing
-    # log(1) is fastest, and the further away we get from 1, the longer it
-    # takes. So we also 'break' this down by multiplying $x with 10 and subtract
-    # the log(10) afterwards to get the correct result.
+    # The same observation is valid for numbers smaller than 0.1, e.g.
+    # computing log(1) is fastest, and the further away we get from 1, the
+    # longer it takes. So we also 'break' this down by multiplying $x with 10
+    # and subtract the log(10) afterwards to get the correct result.
 
     # To get $x even closer to 1, we also divide by 2 and then use log(2) to
     # correct for this. For instance if $x is 2.4, we use the formula:
@@ -6784,8 +6790,8 @@ sub _log_10 {
     # $x == 2 => 1, $x == 13 => 2, $x == 0.1 => 0, $x == 0.01 => -1
     # so don't do this shortcut for 1 or 0
     if (($dbd > 1) || ($dbd < 0)) {
-        # convert our cached value to an object if not already (avoid doing this
-        # at import() time, since not everybody needs this)
+        # convert our cached value to an object if not already (avoid doing
+        # this at import() time, since not everybody needs this)
         $LOG_10 = $class -> new($LOG_10, undef, undef) unless ref $LOG_10;
 
         # got more than one digit before the dot, or more than one zero after
@@ -6938,8 +6944,8 @@ sub _pow {
     $class -> precision(undef);
 
     # Disabling upgrading and downgrading is no longer necessary to avoid an
-    # infinite recursion, but it avoids unnecessary upgrading and downgrading in
-    # the intermediate computations.
+    # infinite recursion, but it avoids unnecessary upgrading and downgrading
+    # in the intermediate computations.
 
     my $upg = $class -> upgrade();
     my $dng = $class -> downgrade();
@@ -7252,8 +7258,9 @@ number.
 
 =item *
 
-If the string has a "0o" or "0O" prefix, it is interpreted as an octal number. A
-floating point literal with a "0" prefix is also interpreted as an octal number.
+If the string has a "0o" or "0O" prefix, it is interpreted as an octal number.
+A floating point literal with a "0" prefix is also interpreted as an octal
+number.
 
 =item *
 
@@ -7617,9 +7624,9 @@ supplied to the operation after the I<scale>:
 
 Note that C<< Math::BigFloat->accuracy() >> and
 C<< Math::BigFloat->precision() >> set the global variables, and thus B<any>
-newly created number will be subject to the global rounding B<immediately>. This
-means that in the examples above, the C<3> as argument to C<bdiv()> will also
-get an accuracy of B<5>.
+newly created number will be subject to the global rounding B<immediately>.
+This means that in the examples above, the C<3> as argument to C<bdiv()> will
+also get an accuracy of B<5>.
 
 It is less confusing to either calculate the result fully, and afterwards
 round it explicitly, or use the additional parameters to the math
@@ -7724,9 +7731,9 @@ runtime, which results in an inaccurate result.
 =head2 Hexadecimal, octal, and binary floating point literals
 
 Perl (and this module) accepts hexadecimal, octal, and binary floating point
-literals, but use them with care with Perl versions before v5.32.0, because some
-versions of Perl silently give the wrong result. Below are some examples of
-different ways to write the number decimal 314.
+literals, but use them with care with Perl versions before v5.32.0, because
+some versions of Perl silently give the wrong result. Below are some examples
+of different ways to write the number decimal 314.
 
 Hexadecimal floating point literals:
 
@@ -7777,8 +7784,8 @@ the code will die:
 
     use Math::BigFloat only => "GMP,Pari";
 
-The following would first try to find Math::BigInt::Foo, then Math::BigInt::Bar,
-and when this also fails, revert to Math::BigInt::Calc:
+The following would first try to find Math::BigInt::Foo, then
+Math::BigInt::Bar, and when this also fails, revert to Math::BigInt::Calc:
 
     use Math::BigFloat lib => "Foo,Math::BigInt::Bar";
 
