@@ -240,25 +240,18 @@ sub isa {
 ##############################################################################
 
 sub new {
-    my $proto    = shift;
-    my $protoref = ref $proto;
-    my $class    = $protoref || $proto;
+    my $self    = shift;
+    my $selfref = ref $self;
+    my $class   = $selfref || $self;
 
     # Make "require" work.
 
     $class -> import() if $IMPORT == 0;
 
-    # Check the way we are called.
+    # Calling new() with no input arguments has been discouraged for more than
+    # 10 years, but people apparently still use it, so we still support it.
 
-    if ($protoref) {
-        croak("new() is a class method, not an instance method");
-    }
-
-    if (@_ < 1) {
-        #carp("Using new() with no argument is deprecated;",
-        #           " use bzero() or new(0) instead");
-        return $class -> bzero();
-    }
+    return $class -> bzero() unless @_;
 
     if (@_ > 2) {
         carp("Superfluous arguments to new() ignored.");
@@ -278,7 +271,7 @@ sub new {
 
     # Initialize a new object.
 
-    my $self = bless {}, $class;
+    $self = bless {}, $class;
 
     # One or two input arguments may be given. First handle the numerator $n.
 

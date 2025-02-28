@@ -384,7 +384,7 @@ sub new {
 
     # Initialize a new object.
 
-    $self = bless {}, $class unless $selfref;
+    $self = bless {}, $class;
 
     # Math::BigFloat or subclass
 
