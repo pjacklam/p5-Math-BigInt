@@ -4269,35 +4269,40 @@ sub blucas {
         croak("bfib() can't return an infinitely long list of numbers")
           if $x -> is_inf();
 
+        # The following places a limit on how large $x can be. Should this
+        # limit be removed? XXX
+
         my $n = $x -> numify();
 
         my @y;
+        {
+            $y[0] = $x -> copy() -> babs();
+            $y[0]{value} = $LIB -> _two();
+            last if $n == 0;
 
-        $y[0] = $x -> copy() -> babs();
-        $y[0]{value} = $LIB -> _two();
-        return @y if $n == 0;
+            $y[1] = $y[0] -> copy();
+            $y[1]{value} = $LIB -> _one();
+            last if $n == 1;
 
-        $y[1] = $y[0] -> copy();
-        $y[1]{value} = $LIB -> _one();
-        return @y if $n == 1;
-
-        for (my $i = 2 ; $i <= abs($n) ; $i++) {
-            $y[$i] = $y[$i - 1] -> copy();
-            $y[$i]{value} = $LIB -> _add($LIB -> _copy($y[$i - 1]{value}),
-                                           $y[$i - 2]{value});
-        }
-
-        # The last element in the array is the invocand.
-
-        $x->{value} = $y[-1]{value};
-        $y[-1] = $x;
-
-        # If negative, insert sign as appropriate.
-
-        if ($x -> is_neg()) {
-            for (my $i = 2 ; $i <= $#y ; $i += 2) {
-                $y[$i]{sign} = '-';
+            for (my $i = 2 ; $i <= abs($n) ; $i++) {
+                $y[$i] = $y[$i - 1] -> copy();
+                $y[$i]{value} = $LIB -> _add($LIB -> _copy($y[$i - 1]{value}),
+                                                           $y[$i - 2]{value});
             }
+
+            # If negative, insert sign as appropriate.
+
+            if ($x -> is_neg()) {
+                for (my $i = 2 ; $i <= $#y ; $i += 2) {
+                    $y[$i]{sign} = '-';
+                }
+            }
+
+            # The last element in the array is the invocand.
+
+            $x->{value} = $y[-1]{value};
+            $x->{sign}  = $y[-1]{sign};
+            $y[-1] = $x;
         }
 
         @y = map { $_ -> round(@r) } @y;
