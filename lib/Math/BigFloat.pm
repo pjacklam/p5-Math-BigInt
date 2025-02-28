@@ -4725,6 +4725,97 @@ sub bfib {
     }
 }
 
+sub blucas {
+    # compute Lucas number(s)
+    my ($class, $x, @r) = ref($_[0]) ? (ref($_[0]), @_) : objectify(1, @_);
+
+    croak("blucas() requires a newer version of the $LIB library.")
+        unless $LIB -> can('_lucas');
+
+    return $x if $x -> modify('blucas');
+
+    # If called with "foreign" argument.
+
+    unless ($x -> isa(__PACKAGE__)) {
+        return $x -> _upg() -> blucas(@r) if $class -> upgrade();
+        croak "Can't handle a ", ref($x), " in ", (caller(0))[3], "()";
+    }
+
+    # List context.
+
+    if (wantarray) {
+        croak("blucas() can't return an infinitely long list of numbers")
+          if $x -> is_inf();
+
+        return if $x -> is_nan() || !$x -> is_int();
+
+        # The following places a limit on how large $x can be. Should this
+        # limit be removed? XXX
+
+        my $n = $x -> numify();
+
+        my @y;
+        {
+            $y[0] = $x -> copy() -> babs();
+            $y[0]{_m} = $LIB -> _two();
+            $y[0]{_e} = $LIB -> _zero();
+            last if $n == 0;
+
+            $y[1] = $y[0] -> copy();
+            $y[1]{_m} = $LIB -> _one();
+            $y[1]{_e} = $LIB -> _zero();
+            last if $n == 1;
+
+            for (my $i = 2 ; $i <= abs($n) ; $i++) {
+                $y[$i] = $y[$i - 1] -> copy();
+                $y[$i]{_m} = $LIB -> _add($LIB -> _copy($y[$i - 1]{_m}),
+                                                        $y[$i - 2]{_m});
+            }
+
+            # If negative, insert sign as appropriate.
+
+            if ($x -> is_neg()) {
+                for (my $i = 2 ; $i <= $#y ; $i += 2) {
+                    $y[$i]{sign} = '-';
+                }
+            }
+
+            # The last element in the array is the invocand.
+
+            $x->{sign} = $y[-1]{sign};
+            $x->{_m}   = $y[-1]{_m};
+            $x->{_es}  = $y[-1]{_es};
+            $x->{_e}   = $y[-1]{_e};
+            $y[-1] = $x;
+        }
+
+        for (@y) {
+            $_ -> bnorm();
+            $_ -> round(@r);
+        }
+
+        return @y;
+    }
+
+    # Scalar context.
+
+    else {
+        return $x if $x -> is_inf('+');
+        return $x -> bnan() if $x -> is_nan() || $x -> is_inf('-');
+
+        if ($x -> is_int()) {
+
+            $x->{sign}  = $x -> is_neg() && $x -> is_even() ? '-' : '+';
+            $x->{_m} = $LIB -> _lsft($x->{_m}, $x -> {_e}, 10);
+            $x->{_e} = $LIB -> _zero();
+            $x->{_m} = $LIB -> _lucas($x->{_m});
+            $x -> bnorm();
+        }
+
+        return $x -> round(@r);
+    }
+}
+
 sub blsft {
     # shift left by $y in base $b, i.e., multiply by $b ** $y
 
