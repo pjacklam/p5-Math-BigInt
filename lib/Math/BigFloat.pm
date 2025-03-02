@@ -1348,8 +1348,9 @@ sub copy {
     $copy->{_es}  = $x->{_es};
     $copy->{_m}   = $LIB->_copy($x->{_m});
     $copy->{_e}   = $LIB->_copy($x->{_e});
-    $copy->{accuracy}   = $x->{accuracy} if exists $x->{accuracy};
-    $copy->{precision}   = $x->{precision} if exists $x->{precision};
+
+    $copy->{accuracy}  = $x->{accuracy} if exists $x->{accuracy};
+    $copy->{precision} = $x->{precision} if exists $x->{precision};
 
     return $copy;
 }
@@ -1476,43 +1477,49 @@ sub is_zero {
     # return true if arg (BFLOAT or num_str) is zero
     my (undef, $x) = ref($_[0]) ? (undef, @_) : objectify(1, @_);
 
-    ($x->{sign} eq '+' && $LIB->_is_zero($x->{_m})) ? 1 : 0;
+    return 0 if $x->{sign} ne '+';
+    return 1 if $LIB->_is_zero($x->{_m});
+    return 0;
 }
 
 sub is_one {
     # return true if arg (BFLOAT or num_str) is +1 or -1 if signis given
     my (undef, $x, $sign) = ref($_[0]) ? (undef, @_) : objectify(1, @_);
 
-    $sign = '+' if !defined $sign || $sign ne '-';
+    if (defined($sign)) {
+        croak 'is_one(): sign argument must be "+" or "-"'
+          unless $sign eq '+' || $sign eq '-';
+    } else {
+        $sign = '+';
+    }
 
-    ($x->{sign} eq $sign &&
-     $LIB->_is_zero($x->{_e}) &&
-     $LIB->_is_one($x->{_m})) ? 1 : 0;
+    return 0 if $x->{sign} ne $sign;
+    $LIB->_is_zero($x->{_e}) && $LIB->_is_one($x->{_m}) ? 1 : 0;
 }
 
 sub is_odd {
     # return true if arg (BFLOAT or num_str) is odd or false if even
     my (undef, $x) = ref($_[0]) ? (undef, @_) : objectify(1, @_);
 
-    (($x->{sign} =~ /^[+-]$/) && # NaN & +-inf aren't
-     ($LIB->_is_zero($x->{_e})) &&
-     ($LIB->_is_odd($x->{_m}))) ? 1 : 0;
+    return 0 unless $x -> is_finite();
+    $LIB->_is_zero($x->{_e}) && $LIB->_is_odd($x->{_m}) ? 1 : 0;
 }
 
 sub is_even {
     # return true if arg (BINT or num_str) is even or false if odd
     my (undef, $x) = ref($_[0]) ? (undef, @_) : objectify(1, @_);
 
-    (($x->{sign} =~ /^[+-]$/) &&        # NaN & +-inf aren't
-     ($x->{_es} eq '+') &&              # 123.45 isn't
-     ($LIB->_is_even($x->{_m}))) ? 1 : 0; # but 1200 is
+    return 0 unless $x -> is_finite();
+    ($x->{_es} eq '+') &&                       # 123.45 isn't
+      ($LIB->_is_even($x->{_m})) ? 1 : 0;       # but 1200 is
 }
 
 sub is_int {
     # return true if arg (BFLOAT or num_str) is an integer
     my (undef, $x) = ref($_[0]) ? (undef, @_) : objectify(1, @_);
-    (($x->{sign} =~ /^[+-]$/) && # NaN and +-inf aren't
-     ($x->{_es} eq '+')) ? 1 : 0; # 1e-1 => no integer
+
+    return 0 unless $x -> is_finite();
+    return $x->{_es} eq '+' ? 1 : 0;            # 1e-1 => no integer
 }
 
 ###############################################################################
@@ -1531,16 +1538,16 @@ sub bcmp {
 
     # Handle all 'nan' cases.
 
-    return    if ($x->{sign} eq $nan) || ($y->{sign} eq $nan);
+    return    if $x -> is_nan() || $y -> is_nan();
 
     # Handle all '+inf' and '-inf' cases.
 
-    return  0 if ($x->{sign} eq '+inf' && $y->{sign} eq '+inf' ||
-                  $x->{sign} eq '-inf' && $y->{sign} eq '-inf');
-    return +1 if $x->{sign} eq '+inf'; # x = +inf and y < +inf
-    return -1 if $x->{sign} eq '-inf'; # x = -inf and y > -inf
-    return -1 if $y->{sign} eq '+inf'; # x < +inf and y = +inf
-    return +1 if $y->{sign} eq '-inf'; # x > -inf and y = -inf
+    return  0 if ($x -> is_inf("+") && $y -> is_inf("+") ||
+                  $x -> is_inf("-") && $y -> is_inf("-"));
+    return +1 if $x -> is_inf("+"); # x = +inf and y < +inf
+    return -1 if $x -> is_inf("-"); # x = -inf and y > -inf
+    return -1 if $y -> is_inf("+"); # x < +inf and y = +inf
+    return +1 if $y -> is_inf("-"); # x > -inf and y = -inf
 
     # Handle all cases with opposite signs.
 
@@ -1685,9 +1692,9 @@ sub bacmp {
 
     carp "Rounding is not supported for ", (caller(0))[3], "()" if @r;
 
-    # handle +-inf and NaN's
+    # handle +-inf and NaN
     if ($x->{sign} !~ /^[+-]$/ || $y->{sign} !~ /^[+-]$/) {
-        return    if (($x->{sign} eq $nan) || ($y->{sign} eq $nan));
+        return    if ($x -> is_nan() || $y -> is_nan());
         return  0 if ($x -> is_inf() && $y -> is_inf());
         return  1 if ($x -> is_inf() && !$y -> is_inf());
         return -1;
@@ -1696,9 +1703,9 @@ sub bacmp {
     # shortcut
     my $xz = $x -> is_zero();
     my $yz = $y -> is_zero();
-    return 0 if $xz && $yz;     # 0 <=> 0
+    return  0 if $xz && $yz;    # 0 <=> 0
     return -1 if $xz && !$yz;   # 0 <=> +y
-    return 1 if $yz && !$xz;    # +x <=> 0
+    return  1 if $yz && !$xz;   # +x <=> 0
 
     # adjust so that exponents are equal
     my $lxm = $LIB->_len($x->{_m});
@@ -2021,7 +2028,7 @@ sub bmul {
 
     return $x if $x -> modify('bmul');
 
-    return $x -> bnan(@r) if ($x->{sign} eq $nan) || ($y->{sign} eq $nan);
+    return $x -> bnan(@r) if $x -> is_nan() || $y -> is_nan();
 
     # inf handling
     if (($x->{sign} =~ /^[+-]inf$/) || ($y->{sign} =~ /^[+-]inf$/)) {
@@ -3253,8 +3260,8 @@ sub bexp {
     return $x if $x -> modify('bexp');
 
     return $x -> bnan(@r)  if $x -> is_nan();
-    return $x -> binf(@r)  if $x->{sign} eq '+inf';
-    return $x -> bzero(@r) if $x->{sign} eq '-inf';
+    return $x -> binf(@r)  if $x -> is_inf("+");
+    return $x -> bzero(@r) if $x -> is_inf("-");
 
     # Get the rounding parameters, if any.
 
@@ -3263,8 +3270,7 @@ sub bexp {
     ($x, @params) = $x -> _find_round_parameters(@r);
 
     # Error in _find_round_parameters?
-
-    return $x -> bnan(@r) if $x->{sign} eq 'NaN';
+    return $x -> bnan(@r) if $x -> is_nan();
 
     return $x -> bone(@r) if $x -> is_zero();
 
@@ -4230,7 +4236,7 @@ sub batan2 {
     return $y if $y -> modify('batan2');
 
     # Handle all NaN cases.
-    return $y -> bnan() if $x->{sign} eq $nan || $y->{sign} eq $nan;
+    return $y -> bnan() if $x -> is_nan() || $y -> is_nan();
 
     # We need to limit the accuracy to protect against overflow.
     my $fallback = 0;
@@ -4320,7 +4326,7 @@ sub bsqrt {
     # Handle trivial cases.
 
     return $x -> bnan(@r)      if $x -> is_nan();
-    return $x -> binf("+", @r) if $x->{sign} eq '+inf';
+    return $x -> binf("+", @r) if $x -> is_inf("+");
     return $x -> round(@r)     if $x -> is_zero() || $x -> is_one();
 
     # We don't support complex numbers.
@@ -5398,7 +5404,7 @@ sub bfloor {
 
     return $x -> bnan(@r) if $x -> is_nan();
 
-    if ($x->{sign} =~ /^[+-]$/) {               # finite number
+    if ($x -> is_finite()) {
         # if $x has digits after dot, remove them
         if ($x->{_es} eq '-') {
             $x->{_m} = $LIB->_rsft($x->{_m}, $x->{_e}, 10);
@@ -5424,7 +5430,7 @@ sub bceil {
 
     return $x -> bnan(@r) if $x -> is_nan();
 
-    if ($x->{sign} =~ /^[+-]$/) {               # finite number
+    if ($x -> is_finite()) {
         # if $x has digits after dot, remove them
         if ($x->{_es} eq '-') {
             $x->{_m} = $LIB->_rsft($x->{_m}, $x->{_e}, 10);
@@ -5453,7 +5459,7 @@ sub bint {
 
     return $x -> bnan(@r) if $x -> is_nan();
 
-    if ($x->{sign} =~ /^[+-]$/) {               # finite number
+    if ($x -> is_finite()) {
         # if $x has digits after the decimal point
         if ($x->{_es} eq '-') {
             $x->{_m} = $LIB->_rsft($x->{_m}, $x->{_e}, 10); # remove frac part
@@ -5885,7 +5891,7 @@ sub bstr {
     # Inf and NaN
 
     if ($x->{sign} ne '+' && $x->{sign} ne '-') {
-        return $x->{sign} unless $x->{sign} eq '+inf';  # -inf, NaN
+        return $x->{sign} unless $x -> is_inf("+");     # -inf, NaN
         return 'inf';                                   # +inf
     }
 
@@ -5948,7 +5954,7 @@ sub bdstr {
     # Inf and NaN
 
     if ($x->{sign} ne '+' && $x->{sign} ne '-') {
-        return $x->{sign} unless $x->{sign} eq '+inf';  # -inf, NaN
+        return $x->{sign} unless $x -> is_inf("+");     # -inf, NaN
         return 'inf';                                   # +inf
     }
 
@@ -5999,7 +6005,7 @@ sub bsstr {
     # Inf and NaN
 
     if ($x->{sign} ne '+' && $x->{sign} ne '-') {
-        return $x->{sign} unless $x->{sign} eq '+inf';  # -inf, NaN
+        return $x->{sign} unless $x -> is_inf("+");     # -inf, NaN
         return 'inf';                                   # +inf
     }
 
@@ -6024,7 +6030,7 @@ sub bnstr {
     # Inf and NaN
 
     if ($x->{sign} ne '+' && $x->{sign} ne '-') {
-        return $x->{sign} unless $x->{sign} eq '+inf';  # -inf, NaN
+        return $x->{sign} unless $x -> is_inf("+");     # -inf, NaN
         return 'inf';                                   # +inf
     }
 
@@ -6075,7 +6081,7 @@ sub bestr {
     # Inf and NaN
 
     if ($x->{sign} ne '+' && $x->{sign} ne '-') {
-        return $x->{sign} unless $x->{sign} eq '+inf';  # -inf, NaN
+        return $x->{sign} unless $x -> is_inf("+");     # -inf, NaN
         return 'inf';                                   # +inf
     }
 
@@ -6130,7 +6136,7 @@ sub bfstr {
     # Inf and NaN
 
     if ($x->{sign} ne '+' && $x->{sign} ne '-') {
-        return $x->{sign} unless $x->{sign} eq '+inf';  # -inf, NaN
+        return $x->{sign} unless $x -> is_inf("+");     # -inf, NaN
         return 'inf';                                   # +inf
     }
 
@@ -6164,7 +6170,7 @@ sub to_hex {
     # Inf and NaN
 
     if ($x->{sign} ne '+' && $x->{sign} ne '-') {
-        return $x->{sign} unless $x->{sign} eq '+inf';  # -inf, NaN
+        return $x->{sign} unless $x -> is_inf("+");     # -inf, NaN
         return 'inf';                                   # +inf
     }
 
@@ -6196,7 +6202,7 @@ sub to_oct {
     # Inf and NaN
 
     if ($x->{sign} ne '+' && $x->{sign} ne '-') {
-        return $x->{sign} unless $x->{sign} eq '+inf';  # -inf, NaN
+        return $x->{sign} unless $x -> is_inf("+");     # -inf, NaN
         return 'inf';                                   # +inf
     }
 
@@ -6228,7 +6234,7 @@ sub to_bin {
     # Inf and NaN
 
     if ($x->{sign} ne '+' && $x->{sign} ne '-') {
-        return $x->{sign} unless $x->{sign} eq '+inf';  # -inf, NaN
+        return $x->{sign} unless $x -> is_inf("+");     # -inf, NaN
         return 'inf';                                   # +inf
     }
 

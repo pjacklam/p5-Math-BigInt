@@ -793,10 +793,6 @@ sub new {
     # Create a new Math::BigInt object from a string or another Math::BigInt
     # object. See hash keys documented at top.
 
-    # The argument could be an object, so avoid ||, && etc. on it. This would
-    # cause costly overloaded code to be called. The only allowed ops are ref()
-    # and defined.
-
     my $self    = shift;
     my $selfref = ref $self;
     my $class   = $selfref || $self;
@@ -1702,23 +1698,29 @@ sub is_zero {
     # return true if arg (BINT or num_str) is zero (array '+', '0')
     my (undef, $x) = ref($_[0]) ? (undef, @_) : objectify(1, @_);
 
-    return 0 if $x->{sign} !~ /^\+$/; # -, NaN & +-inf aren't
-    $LIB->_is_zero($x->{value});
+    return 0 if $x->{sign} ne '+';
+    return 1 if $LIB->_is_zero($x->{value});
+    return 0;
 }
 
 sub is_one {
     # return true if arg (BINT or num_str) is +1, or -1 if sign is given
     my (undef, $x, $sign) = ref($_[0]) ? (undef, @_) : objectify(1, @_);
 
-    $sign = '+' if !defined($sign) || $sign ne '-';
+    if (defined($sign)) {
+        croak 'is_one(): sign argument must be "+" or "-"'
+          unless $sign eq '+' || $sign eq '-';
+    } else {
+        $sign = '+';
+    }
 
-    return 0 if $x->{sign} ne $sign; # -1 != +1, NaN, +-inf aren't either
-    $LIB->_is_one($x->{value});
+    return 0 if $x->{sign} ne $sign;
+    $LIB->_is_one($x->{value}) ? 1 : 0;
 }
 
 sub is_finite {
     my (undef, $x) = ref($_[0]) ? (undef, @_) : objectify(1, @_);
-    return $x->{sign} eq '+' || $x->{sign} eq '-';
+    $x->{sign} eq '+' || $x->{sign} eq '-' ? 1 : 0;
 }
 
 sub is_inf {
@@ -1744,7 +1746,7 @@ sub is_positive {
     # return true when arg (BINT or num_str) is positive (> 0)
     my (undef, $x) = ref($_[0]) ? (undef, @_) : objectify(1, @_);
 
-    return 1 if $x->{sign} eq '+inf'; # +inf is positive
+    return 1 if $x -> is_inf("+");
 
     # 0+ is neither positive nor negative
     ($x->{sign} eq '+' && !$x -> is_zero()) ? 1 : 0;
@@ -1779,23 +1781,23 @@ sub is_odd {
     # return true when arg (BINT or num_str) is odd, false for even
     my (undef, $x) = ref($_[0]) ? (undef, @_) : objectify(1, @_);
 
-    return 0 if $x->{sign} !~ /^[+-]$/; # NaN & +-inf aren't
-    $LIB->_is_odd($x->{value});
+    return 0 unless $x -> is_finite();
+    $LIB->_is_odd($x->{value}) ? 1 : 0;
 }
 
 sub is_even {
     # return true when arg (BINT or num_str) is even, false for odd
     my (undef, $x) = ref($_[0]) ? (undef, @_) : objectify(1, @_);
 
-    return 0 if $x->{sign} !~ /^[+-]$/; # NaN & +-inf aren't
-    $LIB->_is_even($x->{value});
+    return 0 unless $x -> is_finite();
+    $LIB->_is_even($x->{value}) ? 1 : 0;
 }
 
 sub is_int {
     # return true when arg (BINT or num_str) is an integer
     my (undef, $x) = ref($_[0]) ? (undef, @_) : objectify(1, @_);
 
-    $x->{sign} =~ /^[+-]$/ ? 1 : 0; # inf/-inf/NaN aren't
+    $x -> is_finite() ? 1 : 0;
 }
 
 ###############################################################################
@@ -1819,13 +1821,13 @@ sub bcmp {
 
     # Unless both $x and $y are finite ...
 
-    unless ($x->{sign} =~ /^[+-]$/ && $y->{sign} =~ /^[+-]$/) {
+    unless ($x -> is_finite() && $y -> is_finite()) {
         # handle +-inf and NaN
-        return    if $x->{sign} eq $nan || $y->{sign} eq $nan;
+        return    if $x -> is_nan() || $y -> is_nan();
         return  0 if $x->{sign} eq $y->{sign} && $x->{sign} =~ /^[+-]inf$/;
-        return +1 if $x->{sign} eq '+inf';
-        return -1 if $x->{sign} eq '-inf';
-        return -1 if $y->{sign} eq '+inf';
+        return +1 if $x -> is_inf("+");
+        return -1 if $x -> is_inf("-");
+        return -1 if $y -> is_inf("+");
         return +1;
     }
 
@@ -1847,7 +1849,7 @@ sub bcmp {
     }
 
     ###########################################################################
-    # Code for Math::BigInt
+    # Code for Math::BigInt objects
     ###########################################################################
 
     # have same sign, so compare absolute values. Don't make tests for zero
@@ -1880,11 +1882,11 @@ sub bacmp {
     # Code for all classes that share the common interface.
     ###########################################################################
 
-    if (($x->{sign} !~ /^[+-]$/) || ($y->{sign} !~ /^[+-]$/)) {
+    if ((!$x -> is_finite()) || (!$y -> is_finite())) {
         # handle +-inf and NaN
-        return   if (($x->{sign} eq $nan) || ($y->{sign} eq $nan));
-        return 0 if $x->{sign} =~ /^[+-]inf$/ && $y->{sign} =~ /^[+-]inf$/;
-        return 1 if $x->{sign} =~ /^[+-]inf$/ && $y->{sign} !~ /^[+-]inf$/;
+        return    if $x -> is_nan() || $y -> is_nan();
+        return  0 if $x->{sign} =~ /^[+-]inf$/ && $y->{sign} =~ /^[+-]inf$/;
+        return  1 if $x->{sign} =~ /^[+-]inf$/ && $y->{sign} !~ /^[+-]inf$/;
         return -1;
     }
 
@@ -1902,7 +1904,7 @@ sub bacmp {
     }
 
     ###########################################################################
-    # Code for Math::BigInt
+    # Code for Math::BigInt objects
     ###########################################################################
 
     $LIB->_acmp($x->{value}, $y->{value}); # lib does only 0, 1, -1
@@ -2070,7 +2072,7 @@ sub binc {
     }
 
     ###########################################################################
-    # Code for Math::BigInt
+    # Code for Math::BigInt objects
     ###########################################################################
 
     if ($x->{sign} eq '+') {
@@ -2109,7 +2111,7 @@ sub bdec {
     }
 
     ###########################################################################
-    # Code for Math::BigInt
+    # Code for Math::BigInt objects
     ###########################################################################
 
     if ($x->{sign} eq '-') {
@@ -2263,7 +2265,7 @@ sub badd {
     }
 
     ###########################################################################
-    # Code for Math::BigInt
+    # Code for Math::BigInt objects
     ###########################################################################
 
     ($x->{value}, $x->{sign})
@@ -2321,7 +2323,7 @@ sub bsub {
     }
 
     ###########################################################################
-    # Code for Math::BigInt
+    # Code for Math::BigInt objects
     ###########################################################################
 
     ($x->{value}, $x->{sign})
@@ -2347,9 +2349,9 @@ sub bmul {
 
     return $x if $x -> modify('bmul');
 
-    return $x -> bsub($y, @r) unless $x -> isa(__PACKAGE__);
+    return $x -> bmul($y, @r) unless $x -> isa(__PACKAGE__);
 
-    return $x -> bnan(@r) if (($x->{sign} eq $nan) || ($y->{sign} eq $nan));
+    return $x -> bnan(@r) if $x -> is_nan() || $y -> is_nan();
 
     # inf handling
     if (($x->{sign} =~ /^[+-]inf$/) || ($y->{sign} =~ /^[+-]inf$/)) {
@@ -2375,9 +2377,13 @@ sub bmul {
         }
     }
 
+    ###########################################################################
+    # Code for Math::BigInt objects
+    ###########################################################################
+
     $r[3] = $y;                 # no push here
 
-    $x->{sign} = $x->{sign} eq $y->{sign} ? '+' : '-'; # +1 * +1 or -1 * -1 => +
+    $x->{sign} = $x->{sign} eq $y->{sign} ? '+' : '-';
 
     $x->{value} = $LIB->_mul($x->{value}, $y->{value}); # do actual math
     $x->{sign} = '+' if $LIB->_is_zero($x->{value});   # no -0
@@ -2545,7 +2551,9 @@ sub bfdiv {
                             ? (ref($_[0]), @_)
                             : objectify(2, @_);
 
+    ###########################################################################
     # Code for all classes that share the common interface.
+    ###########################################################################
 
     # Don't modify constant (read-only) objects.
 
@@ -2642,7 +2650,9 @@ sub bfdiv {
         return $wantarray ? ($x, $rem) : $x;
     }
 
+    ###########################################################################
     # Code for things that aren't Math::BigInt
+    ###########################################################################
 
     # At this point, both the numerator and denominator are finite, non-zero
     # numbers.
@@ -2668,7 +2678,9 @@ sub bfdiv {
         }
     }
 
+    ###########################################################################
     # Code for Math::BigInt objects
+    ###########################################################################
 
     $r[3] = $y;                                   # no push!
 
@@ -2759,7 +2771,9 @@ sub btdiv {
                             ? (ref($_[0]), @_)
                             : objectify(2, @_);
 
+    ###########################################################################
     # Code for all classes that share the common interface.
+    ###########################################################################
 
     # Don't modify constant (read-only) objects.
 
@@ -2851,7 +2865,9 @@ sub btdiv {
         return $wantarray ? ($x, $rem) : $x;
     }
 
+    ###########################################################################
     # Code for things that aren't Math::BigInt
+    ###########################################################################
 
     # Division might return a non-integer result, so upgrade, if upgrading is
     # enabled.
@@ -2877,7 +2893,9 @@ sub btdiv {
         }
     }
 
+    ###########################################################################
     # Code for Math::BigInt objects objects
+    ###########################################################################
 
     $r[3] = $y;                 # no push!
 
@@ -2926,7 +2944,9 @@ sub bfmod {
                             ? (ref($_[0]), @_)
                             : objectify(2, @_);
 
+    ###########################################################################
     # Code for all classes that share the common interface.
+    ###########################################################################
 
     # Don't modify constant (read-only) objects.
 
@@ -2962,7 +2982,9 @@ sub bfmod {
         }
     }
 
+    ###########################################################################
     # Code for things that aren't Math::BigInt
+    ###########################################################################
 
     # If called with "foreign" arguments.
 
@@ -2973,7 +2995,9 @@ sub bfmod {
         }
     }
 
+    ###########################################################################
     # Code for Math::BigInt objects
+    ###########################################################################
 
     # Calc new sign and in case $y == +/- 1, return $x.
 
@@ -2997,13 +3021,13 @@ sub btmod {
                             ? (ref($_[0]), @_)
                             : objectify(2, @_);
 
+    ###########################################################################
     # Code for all classes that share the common interface.
+    ###########################################################################
 
     # Don't modify constant (read-only) objects.
 
     return $x if $x -> modify('btmod');
-
-    # Code for all classes that share the common interface.
 
     $r[3] = $y;                 # no push!
 
@@ -3031,7 +3055,9 @@ sub btmod {
         return $x -> round(@r);
     }
 
+    ###########################################################################
     # Code for things that aren't Math::BigInt
+    ###########################################################################
 
     # If called with "foreign" arguments.
 
@@ -3042,7 +3068,9 @@ sub btmod {
         }
     }
 
+    ###########################################################################
     # Code for Math::BigInt objects
+    ###########################################################################
 
     my $xsign = $x -> {sign};
 
@@ -3070,9 +3098,25 @@ sub bmodinv {
                             ? (ref($_[0]), @_)
                             : objectify(2, @_);
 
+    ###########################################################################
+    # Code for all classes that share the common interface.
+    ###########################################################################
+
     # Don't modify constant (read-only) objects.
 
     return $x if $x -> modify('bmodinv');
+
+    # Return NaN if one or both arguments is +inf, -inf, or nan.
+
+    return $x -> bnan(@r) if !$y -> is_finite() || !$x -> is_finite();
+
+    # Return NaN if $y is zero; 1 % 0 makes no sense.
+
+    return $x -> bnan(@r) if $y -> is_zero();
+
+    ###########################################################################
+    # Code for things that aren't Math::BigInt
+    ###########################################################################
 
     # If called with "foreign" arguments.
 
@@ -3083,20 +3127,14 @@ sub bmodinv {
         }
     }
 
-    # Return NaN if one or both arguments is +inf, -inf, or nan.
-
-    return $x -> bnan(@r) if ($y->{sign} !~ /^[+-]$/ ||
-                              $x->{sign} !~ /^[+-]$/);
-
-    # Return NaN if $y is zero; 1 % 0 makes no sense.
-
-    return $x -> bnan(@r) if $y -> is_zero();
+    ###########################################################################
+    # Code for Math::BigInt objects
+    ###########################################################################
 
     # Return 0 in the trivial case. $x % 1 or $x % -1 is zero for all finite
     # integers $x.
 
-    return $x -> bzero(@r) if ($y -> is_one('+') ||
-                               $y -> is_one('-'));
+    return $x -> bzero(@r) if $y -> is_one('+') || $y -> is_one('-');
 
     # Return NaN if $x = 0, or $x modulo $y is zero. The only valid case when
     # $x = 0 is when $y = 1 or $y = -1, but that was covered above.
@@ -3107,7 +3145,7 @@ sub bmodinv {
     # $y = 7, the values fed to _modinv() are $x = 2 (= -5 % 7) and $y = 7.
     # The value if $x is affected only when $x and $y have opposite signs.
 
-    $x -> bmod($y);
+    $x -> bfmod($y);
     return $x -> bnan(@r) if $x -> is_zero();
 
     # Compute the modular multiplicative inverse of the absolute values. We'll
@@ -3125,8 +3163,8 @@ sub bmodinv {
     # relations.  If x and y are positive:
     #
     #   modinv(-x, -y) = -modinv(x, y)
-    #   modinv(-x, y) = y - modinv(x, y)  = -modinv(x, y) (mod y)
-    #   modinv( x, -y) = modinv(x, y) - y  =  modinv(x, y) (mod -y)
+    #   modinv(-x,  y) = y - modinv(x, y) = -modinv(x, y) (mod y)
+    #   modinv( x, -y) = modinv(x, y) - y =  modinv(x, y) (mod -y)
 
     # We must swap the sign of the result if the original $x is negative.
     # However, we must compensate for ignoring the signs when computing the
@@ -3151,9 +3189,24 @@ sub bmodpow {
       ? (ref($_[0]), @_)
       : objectify(3, @_);
 
+    ###########################################################################
+    # Code for all classes that share the common interface.
+    ###########################################################################
+
     # Don't modify constant (read-only) objects.
 
     return $num if $num -> modify('bmodpow');
+
+    # Check for valid input. All operands must be finite, and the modulus must
+    # be non-zero.
+
+    return $num -> bnan(@r) if (!$num -> is_finite() ||     # NaN, -inf, +inf
+                                !$exp -> is_finite() ||     # NaN, -inf, +inf
+                                !$mod -> is_finite());      # NaN, -inf, +inf
+
+    ###########################################################################
+    # Code for things that aren't Math::BigInt
+    ###########################################################################
 
     # If called with "foreign" arguments.
 
@@ -3168,15 +3221,13 @@ sub bmodpow {
     # based on finding the multiplicative inverse 'd' of 'b' modulo 'm':
     #
     #    b^(-e) (mod m) = d^e (mod m) where b*d = 1 (mod m)
+    #
+    # Return NaN if no modular multiplicative inverse exists.
 
-    $num -> bmodinv($mod) if ($exp->{sign} eq '-');
-
-    # Check for valid input. All operands must be finite, and the modulus must
-    # be non-zero.
-
-    return $num -> bnan(@r) if ($num->{sign} =~ /NaN|inf/ ||  # NaN, -inf, +inf
-                                $exp->{sign} =~ /NaN|inf/ ||  # NaN, -inf, +inf
-                                $mod->{sign} =~ /NaN|inf/);   # NaN, -inf, +inf
+    if ($exp->{sign} eq '-') {
+        $num -> bmodinv($mod);
+        return $num -> bnan(@r) if $num -> is_nan();
+    }
 
     # Modulo zero. See documentation for Math::BigInt's bmod() method.
 
@@ -3187,6 +3238,10 @@ sub bmodpow {
             return $num -> round(@r);
         }
     }
+
+    ###########################################################################
+    # Code for Math::BigInt objects
+    ###########################################################################
 
     # Compute 'a (mod m)', ignoring the signs on 'a' and 'm'. If the resulting
     # value is zero, the output is also zero, regardless of the signs on 'a'
@@ -3264,18 +3319,13 @@ sub bpow {
                             ? (ref($_[0]), @_)
                             : objectify(2, @_);
 
+    ###########################################################################
+    # Code for all classes that share the common interface.
+    ###########################################################################
+
     # Don't modify constant (read-only) objects.
 
     return $x if $x -> modify('bpow');
-
-    # If called with "foreign" arguments.
-
-    for my $arg ($x, $y) {
-        unless ($arg -> isa(__PACKAGE__)) {
-            return $x -> _upg() -> bpow($y, @r) if $upgrade;
-            croak "Can't handle a ", ref($arg), " in ", (caller(0))[3], "()";
-        }
-    }
 
     # $x and/or $y is a NaN
     return $x -> bnan(@r) if $x -> is_nan() || $y -> is_nan();
@@ -3317,6 +3367,10 @@ sub bpow {
         return $x -> bneg(@r);
     }
 
+    ###########################################################################
+    # Code for things that aren't Math::BigInt
+    ###########################################################################
+
     return $x -> _upg() -> bpow($y, @r) if $upgrade;
 
     # We don't support finite non-integers, so return zero. The reason for
@@ -3337,9 +3391,22 @@ sub bpow {
 sub binv {
     my ($class, $x, @r) = ref($_[0]) ? (ref($_[0]), $_[0]) : objectify(1, @_);
 
+    ###########################################################################
+    # Code for all classes that share the common interface.
+    ###########################################################################
+
     # Don't modify constant (read-only) objects.
 
     return $x if $x -> modify('binv');
+
+    return $x -> binf("+", @r)  if $x -> is_zero();
+    return $x -> bzero(@r)      if $x -> is_inf();
+    return $x -> bnan(@r)       if $x -> is_nan();
+    return $x -> round(@r)      if $x -> is_one("+") || $x -> is_one("-");
+
+    ###########################################################################
+    # Code for things that aren't Math::BigInt
+    ###########################################################################
 
     # If called with "foreign" argument.
 
@@ -3348,12 +3415,12 @@ sub binv {
         croak "Can't handle a ", ref($x), " in ", (caller(0))[3], "()";
     }
 
-    return $x -> binf("+", @r)  if $x -> is_zero();
-    return $x -> bzero(@r)      if $x -> is_inf();
-    return $x -> bnan(@r)       if $x -> is_nan();
-    return $x -> round(@r)      if $x -> is_one("+") || $x -> is_one("-");
-
     return $x -> _upg() -> binv(@r) if $upgrade;
+
+    ###########################################################################
+    # Code for Math::BigInt objects
+    ###########################################################################
+
     $x -> bzero(@r);
 }
 
@@ -3467,24 +3534,34 @@ sub bexp {
     # an integer value.
     my ($class, $x, @r) = ref($_[0]) ? (ref($_[0]), @_) : objectify(1, @_);
 
+    ###########################################################################
+    # Code for all classes that share the common interface.
+    ###########################################################################
+
     # Don't modify constant (read-only) objects.
 
     return $x if $x -> modify('bexp');
 
-    # If called with "foreign" argument.
+    # inf, -inf, NaN, <0 => NaN
+    return $x -> bnan(@r)  if $x -> is_nan();
+    return $x -> bone(@r)  if $x -> is_zero();
+    return $x -> round(@r) if $x -> is_inf("+");
+    return $x -> bzero(@r) if $x -> is_inf("-");
+
+    ###########################################################################
+    # Code for things that aren't Math::BigInt
+    ###########################################################################
 
     unless ($x -> isa(__PACKAGE__)) {
         return $x -> _upg() -> bexp(@r) if $upgrade;
             croak "Can't handle a ", ref($x), " in ", (caller(0))[3], "()";
     }
 
-    # inf, -inf, NaN, <0 => NaN
-    return $x -> bnan(@r)  if $x->{sign} eq 'NaN';
-    return $x -> bone(@r)  if $x -> is_zero();
-    return $x -> round(@r) if $x->{sign} eq '+inf';
-    return $x -> bzero(@r) if $x->{sign} eq '-inf';
-
     return $x -> _upg() -> bexp(@r) if $upgrade;
+
+    ###########################################################################
+    # Code for Math::BigInt objects
+    ###########################################################################
 
     require Math::BigFloat;
     my $tmp = Math::BigFloat -> bexp($x, @r) -> as_int();
@@ -3499,6 +3576,10 @@ sub bilog2 {
 
     return $x if $x -> modify('bilog2');
 
+    return $x -> bnan(@r)      if $x -> is_nan();
+    return $x -> binf("+", @r) if $x -> is_inf("+");
+    return $x -> binf("-", @r) if $x -> is_zero();
+
     # If called with "foreign" argument.
 
     unless ($x -> isa(__PACKAGE__)) {
@@ -3506,9 +3587,6 @@ sub bilog2 {
         croak "Can't handle a ", ref($x), " in ", (caller(0))[3], "()";
     }
 
-    return $x -> bnan(@r)        if $x -> is_nan();
-    return $x -> binf("+", @r)   if $x -> is_inf("+");
-    return $x -> binf("-", @r)   if $x -> is_zero();
     if ($x -> is_neg()) {
         return $x -> _upg() -> bilog2(@r) if $upgrade;
         return $x -> bnan(@r);
@@ -3525,6 +3603,10 @@ sub bilog10 {
 
     return $x if $x -> modify('bilog10');
 
+    return $x -> bnan(@r)      if $x -> is_nan();
+    return $x -> binf("+", @r) if $x -> is_inf("+");
+    return $x -> binf("-", @r) if $x -> is_zero();
+
     # If called with "foreign" argument.
 
     unless ($x -> isa(__PACKAGE__)) {
@@ -3532,9 +3614,6 @@ sub bilog10 {
         croak "Can't handle a ", ref($x), " in ", (caller(0))[3], "()";
     }
 
-    return $x -> bnan(@r)        if $x -> is_nan();
-    return $x -> binf("+", @r)   if $x -> is_inf("+");
-    return $x -> binf("-", @r)   if $x -> is_zero();
     if ($x -> is_neg()) {
         return $x -> _upg() -> bilog10(@r) if $upgrade;
         return $x -> bnan(@r);
@@ -3551,6 +3630,10 @@ sub bclog2 {
 
     return $x if $x -> modify('bclog2');
 
+    return $x -> bnan(@r)      if $x -> is_nan();
+    return $x -> binf("+", @r) if $x -> is_inf("+");
+    return $x -> binf("-", @r) if $x -> is_zero();
+
     # If called with "foreign" argument.
 
     unless ($x -> isa(__PACKAGE__)) {
@@ -3558,9 +3641,6 @@ sub bclog2 {
         croak "Can't handle a ", ref($x), " in ", (caller(0))[3], "()";
     }
 
-    return $x -> bnan(@r)        if $x -> is_nan();
-    return $x -> binf("+", @r)   if $x -> is_inf("+");
-    return $x -> binf("-", @r)   if $x -> is_zero();
     if ($x -> is_neg()) {
         return $x -> _upg() -> bclog2(@r) if $upgrade;
         return $x -> bnan(@r);
@@ -3577,6 +3657,10 @@ sub bclog10 {
 
     return $x if $x -> modify('bclog10');
 
+    return $x -> bnan(@r)      if $x -> is_nan();
+    return $x -> binf("+", @r) if $x -> is_inf("+");
+    return $x -> binf("-", @r) if $x -> is_zero();
+
     # If called with "foreign" argument.
 
     unless ($x -> isa(__PACKAGE__)) {
@@ -3584,9 +3668,6 @@ sub bclog10 {
         croak "Can't handle a ", ref($x), " in ", (caller(0))[3], "()";
     }
 
-    return $x -> bnan(@r)        if $x -> is_nan();
-    return $x -> binf("+", @r)   if $x -> is_inf("+");
-    return $x -> binf("-", @r)   if $x -> is_zero();
     if ($x -> is_neg()) {
         return $x -> _upg() -> bclog10(@r) if $upgrade;
         return $x -> bnan(@r);
@@ -3622,7 +3703,7 @@ sub bnok {
 
     # All cases where at least one argument is NaN.
 
-    return $n -> bnan(@r) if $n->{sign} eq 'NaN' || $k->{sign} eq 'NaN';
+    return $n -> bnan(@r) if $n -> is_nan() || $k -> is_nan();
 
     # All cases where at least one argument is +/-inf.
 
@@ -3940,7 +4021,7 @@ sub bsin {
         return $x;
     }
 
-    # When x is an integer, sin(x) truncated to an integer is always zero.
+    # When x is an integer ≠ 0, sin(x) truncated to an integer is always zero.
 
     $x -> bzero(@r);
 }
@@ -4028,17 +4109,17 @@ sub batan2 {
         }
     }
 
-    return $y -> bnan() if ($y->{sign} eq $nan) || ($x->{sign} eq $nan);
+    return $y -> bnan() if $y -> is_nan() || $x -> is_nan();
 
     # Y    X
     # != 0 -inf result is +- pi
     if ($x -> is_inf() || $y -> is_inf()) {
         if ($y -> is_inf()) {
-            if ($x->{sign} eq '-inf') {
+            if ($x -> is_inf("-")) {
                 # calculate 3 pi/4 => 2.3.. => 2
                 $y -> bone(substr($y->{sign}, 0, 1));
                 $y -> bmul($class -> new(2));
-            } elsif ($x->{sign} eq '+inf') {
+            } elsif ($x -> is_inf("+")) {
                 # calculate pi/4 => 0.7 => 0
                 $y -> bzero();
             } else {
@@ -4046,7 +4127,7 @@ sub batan2 {
                 $y -> bone(substr($y->{sign}, 0, 1));
             }
         } else {
-            if ($x->{sign} eq '+inf') {
+            if ($x -> is_inf("+")) {
                 # calculate pi/4 => 0.7 => 0
                 $y -> bzero();
             } else {
@@ -4352,8 +4433,8 @@ sub blucas {
     # List context.
 
     if (wantarray) {
-        return () if $x -> is_nan();
-        croak("bfib() can't return an infinitely long list of numbers")
+        return if $x -> is_nan();
+        croak("blucas() can't return an infinitely long list of numbers")
           if $x -> is_inf();
 
         # The following places a limit on how large $x can be. Should this
@@ -4851,7 +4932,7 @@ sub band {
 
     # If $x and/or $y is Inf or NaN, return NaN.
 
-    return $x -> bnan(@r) if $x->{sign} !~ /^[+-]$/ || $y->{sign} !~ /^[+-]$/;
+    return $x -> bnan(@r) if !$x -> is_finite() || !$y -> is_finite();
 
     if ($x->{sign} eq '+' && $y->{sign} eq '+') {
         $x->{value} = $LIB->_and($x->{value}, $y->{value});
@@ -4887,7 +4968,7 @@ sub bior {
 
     # If $x and/or $y is Inf or NaN, return NaN.
 
-    return $x -> bnan() if ($x->{sign} !~ /^[+-]$/ || $y->{sign} !~ /^[+-]$/);
+    return $x -> bnan() if (!$x -> is_finite() || !$y -> is_finite());
 
     if ($x->{sign} eq '+' && $y->{sign} eq '+') {
         $x->{value} = $LIB->_or($x->{value}, $y->{value});
@@ -4922,7 +5003,7 @@ sub bxor {
 
     # If $x and/or $y is Inf or NaN, return NaN.
 
-    return $x -> bnan(@r) if $x->{sign} !~ /^[+-]$/ || $y->{sign} !~ /^[+-]$/;
+    return $x -> bnan(@r) if !$x -> is_finite() || !$y -> is_finite();
 
     if ($x->{sign} eq '+' && $y->{sign} eq '+') {
         $x->{value} = $LIB->_xor($x->{value}, $y->{value});
@@ -4959,7 +5040,8 @@ sub bnot {
 sub round {
     # Round $self according to given parameters, or given second argument's
     # parameters or global defaults
-    my ($class, $self, @args) = ref($_[0]) ? (ref($_[0]), @_) : objectify(1, @_);
+    my ($class, $self, @args) = ref($_[0]) ? (ref($_[0]), @_)
+                                           : objectify(1, @_);
 
     # These signal no rounding:
     #
@@ -5077,7 +5159,7 @@ sub bround {
           if !defined $x->{accuracy} || $x->{accuracy} > $scale; # 3 > 2
         return $x;
     }
-    return $x if $x->{sign} !~ /^[+-]$/; # inf, NaN
+    return $x if !$x -> is_finite(); # inf, NaN
 
     # we have fewer digits than we want to scale to
     my $len = $x -> length();
@@ -5284,12 +5366,12 @@ sub bgcd {
     }
 
     my $x = shift @args;
-    return $class -> bnan() if $x->{sign} !~ /^[+-]$/;          # x NaN?
+    return $class -> bnan() if !$x -> is_finite();          # x NaN?
 
     $x = $x -> copy();
     while (@args) {
         my $y = shift @args;
-        return $class -> bnan() if $y->{sign} !~ /^[+-]$/;      # y NaN?
+        return $class -> bnan() if !$y -> is_finite();      # y NaN?
         $x->{value} = $LIB->_gcd($x->{value}, $y->{value});
         last if $LIB->_is_one($x->{value});
     }
@@ -5329,11 +5411,11 @@ sub blcm {
 
     my $x = shift @args;
     $x = $x -> copy();
-    return $class -> bnan() if $x->{sign} !~ /^[+-]$/;          # x NaN?
+    return $class -> bnan() if !$x -> is_finite();          # x NaN?
 
     while (@args) {
         my $y = shift @args;
-        return $x -> bnan() if $y->{sign} !~ /^[+-]$/;          # y not integer
+        return $x -> bnan() if !$y -> is_finite();          # y not integer
         $x -> {value} = $LIB->_lcm($x -> {value}, $y -> {value});
     }
 
@@ -5417,7 +5499,7 @@ sub exponent {
         croak "Can't handle a ", ref($x), " in ", (caller(0))[3], "()";
     }
 
-    if ($x->{sign} !~ /^[+-]$/) {
+    if (!$x -> is_finite()) {
         my $s = $x->{sign};
         $s =~ s/^[+-]//; # NaN, -inf, +inf => NaN or inf
         return $class -> new($s, @r);
@@ -5441,7 +5523,7 @@ sub mantissa {
         croak "Can't handle a ", ref($x), " in ", (caller(0))[3], "()";
     }
 
-    if ($x->{sign} !~ /^[+-]$/) {
+    if (!$x -> is_finite()) {
         # for NaN, +inf, -inf: keep the sign
         return $class -> new($x->{sign}, @r);
     }
@@ -5730,8 +5812,8 @@ sub bstr {
     # Inf and NaN
 
     if ($x->{sign} ne '+' && $x->{sign} ne '-') {
-        return $x->{sign} unless $x->{sign} eq '+inf'; # -inf, NaN
-        return 'inf';                                  # +inf
+        return $x->{sign} unless $x -> is_inf("+");     # -inf, NaN
+        return 'inf';                                   # +inf
     }
 
     # Upgrade?
@@ -5755,7 +5837,7 @@ sub bsstr {
     # Inf and NaN
 
     if ($x->{sign} ne '+' && $x->{sign} ne '-') {
-        return $x->{sign} unless $x->{sign} eq '+inf';  # -inf, NaN
+        return $x->{sign} unless $x -> is_inf("+");  # -inf, NaN
         return 'inf';                                   # +inf
     }
 
@@ -5782,7 +5864,7 @@ sub bnstr {
     # Inf and NaN
 
     if ($x->{sign} ne '+' && $x->{sign} ne '-') {
-        return $x->{sign} unless $x->{sign} eq '+inf';  # -inf, NaN
+        return $x->{sign} unless $x -> is_inf("+");  # -inf, NaN
         return 'inf';                                   # +inf
     }
 
@@ -5815,7 +5897,7 @@ sub bestr {
     # Inf and NaN
 
     if ($x->{sign} ne '+' && $x->{sign} ne '-') {
-        return $x->{sign} unless $x->{sign} eq '+inf';  # -inf, NaN
+        return $x->{sign} unless $x -> is_inf("+");  # -inf, NaN
         return 'inf';                                   # +inf
     }
 
@@ -5853,7 +5935,7 @@ sub bdstr {
     # Inf and NaN
 
     if ($x->{sign} ne '+' && $x->{sign} ne '-') {
-        return $x->{sign} unless $x->{sign} eq '+inf';  # -inf, NaN
+        return $x->{sign} unless $x -> is_inf("+");     # -inf, NaN
         return 'inf';                                   # +inf
     }
 
@@ -5877,7 +5959,7 @@ sub bfstr {
     # Inf and NaN
 
     if ($x->{sign} ne '+' && $x->{sign} ne '-') {
-        return $x->{sign} unless $x->{sign} eq '+inf';  # -inf, NaN
+        return $x->{sign} unless $x -> is_inf("+");     # -inf, NaN
         return 'inf';                                   # +inf
     }
 
@@ -5900,7 +5982,7 @@ sub to_hex {
     # Inf and NaN
 
     if ($x->{sign} ne '+' && $x->{sign} ne '-') {
-        return $x->{sign} unless $x->{sign} eq '+inf';  # -inf, NaN
+        return $x->{sign} unless $x -> is_inf("+");     # -inf, NaN
         return 'inf';                                   # +inf
     }
 
@@ -5924,7 +6006,7 @@ sub to_oct {
     # Inf and NaN
 
     if ($x->{sign} ne '+' && $x->{sign} ne '-') {
-        return $x->{sign} unless $x->{sign} eq '+inf';  # -inf, NaN
+        return $x->{sign} unless $x -> is_inf("+");     # -inf, NaN
         return 'inf';                                   # +inf
     }
 
@@ -5948,7 +6030,7 @@ sub to_bin {
     # Inf and NaN
 
     if ($x->{sign} ne '+' && $x->{sign} ne '-') {
-        return $x->{sign} unless $x->{sign} eq '+inf';  # -inf, NaN
+        return $x->{sign} unless $x -> is_inf("+");     # -inf, NaN
         return 'inf';                                   # +inf
     }
 
@@ -6060,7 +6142,7 @@ sub as_hex {
 
     carp "Rounding is not supported for ", (caller(0))[3], "()" if @r;
 
-    return $x -> bstr() if $x->{sign} !~ /^[+-]$/; # inf, nan etc
+    return $x -> bstr() if !$x -> is_finite(); # inf, nan etc
 
     return $x -> _upg() -> as_hex(@r)
       if $upgrade && !$x -> isa(__PACKAGE__);
@@ -6076,7 +6158,7 @@ sub as_oct {
 
     carp "Rounding is not supported for ", (caller(0))[3], "()" if @r;
 
-    return $x -> bstr() if $x->{sign} !~ /^[+-]$/; # inf, nan etc
+    return $x -> bstr() if !$x -> is_finite(); # inf, nan etc
 
     return $x -> _upg() -> as_oct(@r)
       if $upgrade && !$x -> isa(__PACKAGE__);
@@ -6092,7 +6174,7 @@ sub as_bin {
 
     carp "Rounding is not supported for ", (caller(0))[3], "()" if @r;
 
-    return $x -> bstr() if $x->{sign} !~ /^[+-]$/; # inf, nan etc
+    return $x -> bstr() if !$x -> is_finite(); # inf, nan etc
 
     return $x -> _upg() -> as_bin(@r)
       if $upgrade && !$x -> isa(__PACKAGE__);
@@ -6499,7 +6581,7 @@ sub _trailing_zeros {
     my $x = shift;
     $x = __PACKAGE__ -> new($x) unless ref $x;
 
-    return 0 if $x->{sign} !~ /^[+-]$/; # NaN, inf, -inf etc
+    return 0 if !$x -> is_finite(); # NaN, inf, -inf etc
 
     $LIB->_zeros($x->{value}); # must handle odd values, 0 etc
 }
