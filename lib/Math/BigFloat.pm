@@ -1014,7 +1014,6 @@ sub binf {
         unshift @_, __PACKAGE__;
     }
 
-
     my $self    = shift;
     my $selfref = ref $self;
     my $class   = $selfref || $self;
@@ -1737,6 +1736,8 @@ sub bneg {
     # negate number or make a negated number from string
     my ($class, $x, @r) = ref($_[0]) ? (ref($_[0]), @_) : objectify(1, @_);
 
+    # Don't modify constant (read-only) objects.
+
     return $x if $x -> modify('bneg');
 
     # For +0 do not negate (to have always normalized +0).
@@ -1801,6 +1802,8 @@ sub binc {
     # increment arg by one
     my ($class, $x, @r) = ref($_[0]) ? (ref($_[0]), @_) : objectify(1, @_);
 
+    # Don't modify constant (read-only) objects.
+
     return $x if $x -> modify('binc');
 
     # Inf and NaN
@@ -1848,6 +1851,8 @@ sub binc {
 sub bdec {
     # decrement arg by one
     my ($class, $x, @r) = ref($_[0]) ? (ref($_[0]), @_) : objectify(1, @_);
+
+    # Don't modify constant (read-only) objects.
 
     return $x if $x -> modify('bdec');
 
@@ -1900,6 +1905,8 @@ sub badd {
     my ($class, $x, $y, @r) = ref($_[0]) && ref($_[0]) eq ref($_[1])
                             ? (ref($_[0]), @_)
                             : objectify(2, @_);
+
+    # Don't modify constant (read-only) objects.
 
     return $x if $x -> modify('badd');
 
@@ -1980,6 +1987,8 @@ sub bsub {
                             ? (ref($_[0]), @_)
                             : objectify(2, @_);
 
+    # Don't modify constant (read-only) objects.
+
     return $x if $x -> modify('bsub');
 
     $r[3] = $y;                 # no push!
@@ -2007,6 +2016,8 @@ sub bmul {
     my ($class, $x, $y, @r) = ref($_[0]) && ref($_[0]) eq ref($_[1])
                             ? (ref($_[0]), @_)
                             : objectify(2, @_);
+
+    # Don't modify constant (read-only) objects.
 
     return $x if $x -> modify('bmul');
 
@@ -2050,6 +2061,8 @@ sub bmuladd {
       = ref($_[0]) && ref($_[0]) eq ref($_[1]) && ref($_[1]) eq ref($_[2])
       ? (ref($_[0]), @_)
       : objectify(3, @_);
+
+    # Don't modify constant (read-only) objects.
 
     return $x if $x -> modify('bmuladd');
 
@@ -2239,6 +2252,8 @@ sub bfdiv {
     ###########################################################################
     # Code for all classes that share the common interface.
     ###########################################################################
+
+    # Don't modify constant (read-only) objects.
 
     return $x if $x -> modify('bfdiv');
 
@@ -2443,6 +2458,8 @@ sub btdiv {
     ###########################################################################
     # Code for all classes that share the common interface.
     ###########################################################################
+
+    # Don't modify constant (read-only) objects.
 
     return $x if $x -> modify('btdiv');
 
@@ -2662,6 +2679,8 @@ sub bfmod {
                             ? (ref($_[0]), @_)
                             : objectify(2, @_);
 
+    # Don't modify constant (read-only) objects.
+
     return $x if $x -> modify('bfmod');
 
     # At least one argument is NaN. This is handled the same way as in
@@ -2786,6 +2805,8 @@ sub btmod {
                             ? (ref($_[0]), @_)
                             : objectify(2, @_);
 
+    # Don't modify constant (read-only) objects.
+
     return $x if $x -> modify('btmod');
 
     # At least one argument is NaN. This is handled the same way as in
@@ -2897,6 +2918,8 @@ sub bmodpow {
       ? (ref($_[0]), @_)
       : objectify(3, @_);
 
+    # Don't modify constant (read-only) objects.
+
     return $num if $num -> modify('bmodpow');
 
     return $num -> bnan(@r)
@@ -2939,6 +2962,8 @@ sub bpow {
     if ((!ref($_[0])) || (ref($_[0]) ne ref($_[1]))) {
         ($class, $x, $y, $a, $p, $r) = objectify(2, @_);
     }
+
+    # Don't modify constant (read-only) objects.
 
     return $x if $x -> modify('bpow');
 
@@ -3025,6 +3050,8 @@ sub bpow {
 sub binv {
     my ($class, $x, @r) = ref($_[0]) ? (ref($_[0]), @_) : objectify(1, @_);
 
+    # Don't modify constant (read-only) objects.
+
     return $x if $x -> modify('binv');
 
     # If called as a function with a "foreign" argument.
@@ -3074,6 +3101,8 @@ sub blog {
         ($class, $x, $base, @r) =
           defined $_[1] ? objectify(2, @_) : objectify(1, @_);
     }
+
+    # Don't modify constant (read-only) objects.
 
     return $x if $x -> modify('blog');
 
@@ -3218,6 +3247,8 @@ sub blog {
 sub bexp {
     # Calculate e ** X (Euler's number to the power of X)
     my ($class, $x, @r) = ref($_[0]) ? (ref($_[0]), @_) : objectify(1, @_);
+
+    # Don't modify constant (read-only) objects.
 
     return $x if $x -> modify('bexp');
 
@@ -3526,6 +3557,8 @@ sub bexp {
 sub bilog2 {
     my ($class, $x, @r) = ref($_[0]) ? (ref($_[0]), @_) : objectify(1, @_);
 
+    # Don't modify constant (read-only) objects.
+
     return $x if $x -> modify('bilog2');
 
     return $x -> bnan(@r)        if $x -> is_nan();
@@ -3559,6 +3592,8 @@ sub bilog2 {
 
 sub bilog10 {
     my ($class, $x, @r) = ref($_[0]) ? (ref($_[0]), @_) : objectify(1, @_);
+
+    # Don't modify constant (read-only) objects.
 
     return $x if $x -> modify('bilog10');
 
@@ -3594,6 +3629,8 @@ sub bilog10 {
 sub bclog2 {
     my ($class, $x, @r) = ref($_[0]) ? (ref($_[0]), @_) : objectify(1, @_);
 
+    # Don't modify constant (read-only) objects.
+
     return $x if $x -> modify('bclog2');
 
     return $x -> bnan(@r)        if $x -> is_nan();
@@ -3627,6 +3664,8 @@ sub bclog2 {
 
 sub bclog10 {
     my ($class, $x, @r) = ref($_[0]) ? (ref($_[0]), @_) : objectify(1, @_);
+
+    # Don't modify constant (read-only) objects.
 
     return $x if $x -> modify('bclog10');
 
@@ -3668,6 +3707,8 @@ sub bnok {
 
     carp "Rounding is not supported for ", (caller(0))[3], "()" if @r;
 
+    # Don't modify constant (read-only) objects.
+
     return $x if $x -> modify('bnok');
 
     return $x -> bnan() if $x -> is_nan() || $y -> is_nan();
@@ -3703,6 +3744,8 @@ sub bsin {
     #                 x^3   x^5   x^7   x^9
     #    sin(x) = x - --- + --- - --- + --- ...
     #                  3!    5!    7!    9!
+
+    # Don't modify constant (read-only) objects.
 
     return $x if $x -> modify('bsin');
 
@@ -3883,13 +3926,17 @@ sub bcos {
     #    cos = 1 - --- + --- - --- + --- ...
     #               2!    4!    6!    8!
 
+    # Don't modify constant (read-only) objects.
+
+    return $x if $x -> modify('bcos');
+
     # we need to limit the accuracy to protect against overflow
     my $fallback = 0;
     my ($scale, @params);
     ($x, @params) = $x->_find_round_parameters(@r);
 
-    #         constant object       or error in _find_round_parameters?
-    return $x if $x -> modify('bcos') || $x -> is_nan();
+    # error in _find_round_parameters?
+    return $x if $x -> is_nan();
     return $x -> bnan()   if $x -> is_inf();
     return $x -> bone(@r) if $x -> is_zero();
 
@@ -3998,6 +4045,8 @@ sub batan {
     # taylor:       x^3   x^5   x^7   x^9
     #    atan = x - --- + --- - --- + --- ...
     #                3     5     7     9
+
+    # Don't modify constant (read-only) objects.
 
     return $x if $x -> modify('batan');
 
@@ -4176,7 +4225,8 @@ sub batan2 {
                             ? (ref($_[0]), @_)
                             : objectify(2, @_);
 
-    # Quick exit if $y is read-only.
+    # Don't modify constant (read-only) objects.
+
     return $y if $y -> modify('batan2');
 
     # Handle all NaN cases.
@@ -4262,6 +4312,8 @@ sub batan2 {
 sub bsqrt {
     # calculate square root
     my ($class, $x, @r) = ref($_[0]) ? (ref($_[0]), @_) : objectify(1, @_);
+
+    # Don't modify constant (read-only) objects.
 
     return $x if $x -> modify('bsqrt');
 
@@ -4349,6 +4401,8 @@ sub broot {
     my ($class, $x, $y, @r) = ref($_[0]) && ref($_[0]) eq ref($_[1])
                             ? (ref($_[0]), @_)
                             : objectify(2, @_);
+
+    # Don't modify constant (read-only) objects.
 
     return $x if $x -> modify('broot');
 
@@ -4521,6 +4575,10 @@ sub bfac {
     # set up parameters
     my ($class, $x, @r) = ref($_[0]) ? (ref($_[0]), @_) : objectify(1, @_);
 
+    # Don't modify constant (read-only) objects.
+
+    return $x if $x -> modify('bfac');
+
     return $x -> bnan(@r)      if $x -> is_nan()  || $x -> is_inf("-");
     return $x -> binf("+", @r) if $x -> is_inf("+");
     return $x -> bnan(@r)      if $x -> is_neg() || !$x -> is_int();
@@ -4547,6 +4605,8 @@ sub bfac {
 sub bdfac {
     # compute double factorial, modify $x in place
     my ($class, $x, @r) = ref($_[0]) ? (ref($_[0]), @_) : objectify(1, @_);
+
+    # Don't modify constant (read-only) objects.
 
     return $x if $x -> modify('bdfac');
 
@@ -4576,6 +4636,8 @@ sub btfac {
 
     # set up parameters
     my ($class, $x, @r) = ref($_[0]) ? (ref($_[0]), @_) : objectify(1, @_);
+
+    # Don't modify constant (read-only) objects.
 
     return $x if $x -> modify('btfac');
 
@@ -4607,6 +4669,8 @@ sub bmfac {
     my ($class, $x, $k, @r) = ref($_[0]) && ref($_[0]) eq ref($_[1])
                             ? (ref($_[0]), @_)
                             : objectify(2, @_);
+
+    # Don't modify constant (read-only) objects.
 
     return $x if $x -> modify('bmfac');
 
@@ -4643,6 +4707,8 @@ sub bfib {
 
     croak("bfib() requires a newer version of the $LIB library.")
         unless $LIB -> can('_fib');
+
+    # Don't modify constant (read-only) objects.
 
     return $x if $x -> modify('bfib');
 
@@ -4734,6 +4800,8 @@ sub blucas {
 
     croak("blucas() requires a newer version of the $LIB library.")
         unless $LIB -> can('_lucas');
+
+    # Don't modify constant (read-only) objects.
 
     return $x if $x -> modify('blucas');
 
@@ -4828,6 +4896,8 @@ sub blsft {
       ? (ref($_[0]), @_)
       : objectify(2, @_);
 
+    # Don't modify constant (read-only) objects.
+
     return $x if $x -> modify('blsft');
 
     return $x -> bnan(@r) if $x -> is_nan() || $y -> is_nan();
@@ -4859,6 +4929,8 @@ sub brsft {
       = ref($_[0]) && ref($_[0]) eq ref($_[1]) && ref($_[1]) eq ref($_[2])
       ? (ref($_[0]), @_)
       : objectify(2, @_);
+
+    # Don't modify constant (read-only) objects.
 
     return $x if $x -> modify('brsft');
 
@@ -4895,6 +4967,10 @@ sub bblsft {
     # upgrade, even when upgrading is enabled.
 
     my ($class, $x, $y, @r) = ref($_[0]) ? (ref($_[0]), @_) : @_;
+
+    # The check for read-only objects is done in Math::BigInt.
+
+    #return $x if $x -> modify('bblsft');
 
     my $xint = Math::BigInt -> bblsft($x, $y, @r);
 
@@ -4938,6 +5014,10 @@ sub bbrsft {
 
     my ($class, $x, $y, @r) = ref($_[0]) ? (ref($_[0]), @_) : @_;
 
+    # The check for read-only objects is done in Math::BigInt.
+
+    #return $x if $x -> modify('bbrsft');
+
     my $xint = Math::BigInt -> bbrsft($x, $y, @r);
 
     # Temporarily disable downgrading.
@@ -4977,6 +5057,8 @@ sub band {
                             ? (ref($_[0]), @_)
                             : objectify(2, @_);
 
+    # Don't modify constant (read-only) objects.
+
     return if $x -> modify('band');
 
     # If $x and/or $y is Inf or NaN, return NaN.
@@ -5006,6 +5088,8 @@ sub bior {
     my ($class, $x, $y, @r) = ref($_[0]) && ref($_[0]) eq ref($_[1])
                             ? (ref($_[0]), @_)
                             : objectify(2, @_);
+
+    # Don't modify constant (read-only) objects.
 
     return if $x -> modify('bior');
 
@@ -5037,6 +5121,8 @@ sub bxor {
                             ? (ref($_[0]), @_)
                             : objectify(2, @_);
 
+    # Don't modify constant (read-only) objects.
+
     return if $x -> modify('bxor');
 
     # If $x and/or $y is Inf or NaN, return NaN.
@@ -5064,6 +5150,8 @@ sub bxor {
 
 sub bnot {
     my ($class, $x, @r) = ref($_[0]) ? (ref($_[0]), @_) : objectify(1, @_);
+
+    # Don't modify constant (read-only) objects.
 
     return if $x -> modify('bnot');
 
@@ -5098,6 +5186,8 @@ sub bround {
     if (($a[0] || 0) < 0) {
         croak('bround() needs positive accuracy');
     }
+
+    # Don't modify constant (read-only) objects.
 
     return $x if $x -> modify('bround');
 
@@ -5159,6 +5249,8 @@ sub bfround {
     # expects and returns normalized numbers!
 
     my ($class, $x, @p) = ref($_[0]) ? (ref($_[0]), @_) : objectify(1, @_);
+
+    # Don't modify constant (read-only) objects.
 
     return $x if $x -> modify('bfround'); # no-op
 
@@ -5300,6 +5392,8 @@ sub bfloor {
     # round towards minus infinity
     my ($class, $x, @r) = ref($_[0]) ? (ref($_[0]), @_) : objectify(1, @_);
 
+    # Don't modify constant (read-only) objects.
+
     return $x if $x -> modify('bfloor');
 
     return $x -> bnan(@r) if $x -> is_nan();
@@ -5323,6 +5417,8 @@ sub bfloor {
 sub bceil {
     # round towards plus infinity
     my ($class, $x, @r) = ref($_[0]) ? (ref($_[0]), @_) : objectify(1, @_);
+
+    # Don't modify constant (read-only) objects.
 
     return $x if $x -> modify('bceil');
 
@@ -5350,6 +5446,8 @@ sub bceil {
 sub bint {
     # round towards zero
     my ($class, $x, @r) = ref($_[0]) ? (ref($_[0]), @_) : objectify(1, @_);
+
+    # Don't modify constant (read-only) objects.
 
     return $x if $x -> modify('bint');
 
