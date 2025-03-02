@@ -701,12 +701,14 @@ sub _dng {
     my $self  = shift;
     my $class = ref($self);
 
-    my $downgrade = $self -> downgrade();
+    my $downgrade = $class -> downgrade();
     return $self unless $downgrade;           # bail out if no downgrading
     return $self if ref($self) eq $downgrade; # bail out if already downgraded
 
     # new() might perform upgrading or downgrading, so temporarily disable
-    # upgrading and downgrading while calling new()
+    # upgrading and downgrading in the downgrade class while calling new(). It
+    # should be possible to give new() extra arguments that disable
+    # downgrading. XXX
 
     my $upg = $downgrade -> upgrade();
     my $dng = $downgrade -> downgrade();
@@ -735,13 +737,14 @@ sub _upg {
     my $self = shift;
     my $class = ref($self);
 
-    my $upgrade = $self -> upgrade();
+    my $upgrade = $class -> upgrade();
     return $self unless $upgrade;             # bail out if no upgrading
     return $self if ref($self) eq $upgrade;   # bail out if already upgraded
 
     # new() might perform upgrading or downgrading, so temporarily disable
-    # upgrading and downgrading while calling new(). It should be possible to
-    # give new() extra arguments that disable downgrading. XXX
+    # upgrading and downgrading in the upgrade class while calling new(). It
+    # should be possible to give new() extra arguments that disable
+    # upgrading. XXX
 
     my $upg = $upgrade -> upgrade();
     my $dng = $upgrade -> downgrade();
@@ -946,7 +949,8 @@ sub new {
 
         # The value is not an integer, so upgrade if upgrading is enabled.
 
-        return $upgrade -> new($wanted, @r) if $upgrade;
+        my $upg = $class -> upgrade();
+        return $upg -> new($wanted, @r) if $upg;
     }
 
     # If we get here, the value is neither a valid decimal, binary, octal, or
@@ -994,10 +998,11 @@ sub from_dec {
 
         # The value is not an integer, so upgrade if upgrading is enabled.
 
-        if ($upgrade) {
+        my $upg = $class -> upgrade();
+        if ($upg) {
             return $self -> _upg() -> from_dec($str, @r)    # instance method
-              if $selfref && $selfref ne $upgrade;
-            return $upgrade -> from_dec($str, @r);          # class method
+              if $selfref && $selfref ne $upg;
+            return $upg -> from_dec($str, @r);              # class method
         }
     }
 
@@ -1041,10 +1046,11 @@ sub from_hex {
 
         # The value is not an integer, so upgrade if upgrading is enabled.
 
-        if ($upgrade) {
+        my $upg = $class -> upgrade();
+        if ($upg) {
             return $self -> _upg() -> from_hex($str, @r)    # instance method
-              if $selfref && $selfref ne $upgrade;
-            return $upgrade -> from_hex($str, @r);          # class method
+              if $selfref && $selfref ne $upg;
+            return $upg -> from_hex($str, @r);              # class method
         }
     }
 
@@ -1088,10 +1094,11 @@ sub from_oct {
 
         # The value is not an integer, so upgrade if upgrading is enabled.
 
-        if ($upgrade) {
+        my $upg = $class -> upgrade();
+        if ($upg) {
             return $self -> _upg() -> from_oct($str, @r)    # instance method
-              if $selfref && $selfref ne $upgrade;
-            return $upgrade -> from_oct($str, @r);          # class method
+              if $selfref && $selfref ne $upg;
+            return $upg -> from_oct($str, @r);              # class method
         }
     }
 
@@ -1135,10 +1142,11 @@ sub from_bin {
 
         # The value is not an integer, so upgrade if upgrading is enabled.
 
-        if ($upgrade) {
+        my $upg = $class -> upgrade();
+        if ($upg) {
             return $self -> _upg() -> from_bin($str, @r)    # instance method
-              if $selfref && $selfref ne $upgrade;
-            return $upgrade -> from_bin($str, @r);          # class method
+              if $selfref && $selfref ne $upg;
+            return $upg -> from_bin($str, @r);              # class method
         }
     }
 
@@ -1572,10 +1580,11 @@ sub bpi {
         #$self -> _init();              # see comment on _init() in new()
     }
 
-    if ($upgrade) {
+    my $upg = $class -> upgrade();
+    if ($upg) {
         return $self -> _upg() -> bpi(@r)        # instance method
-          if $selfref && $selfref ne $upgrade;
-        return $upgrade -> bpi(@r);             # class method
+          if $selfref && $selfref ne $upg;
+        return $upg -> bpi(@r);                  # class method
     }
 
     # hard-wired to "3"
@@ -1843,7 +1852,7 @@ sub bcmp {
 
     for my $arg ($x, $y) {
         unless ($arg -> isa(__PACKAGE__)) {
-            return $x -> _upg() -> bcmp($y, @r) if $upgrade;
+            return $x -> _upg() -> bcmp($y, @r) if $class -> upgrade();
             croak "Can't handle a ", ref($arg), " in ", (caller(0))[3], "()";
         }
     }
@@ -1898,7 +1907,7 @@ sub bacmp {
 
     for my $arg ($x, $y) {
         unless ($arg -> isa(__PACKAGE__)) {
-            return $x -> _upg() -> bacmp($y, @r) if $upgrade;
+            return $x -> _upg() -> bacmp($y, @r) if $class -> upgrade();
             croak "Can't handle a ", ref($arg), " in ", (caller(0))[3], "()";
         }
     }
@@ -2067,7 +2076,7 @@ sub binc {
     # If called as a function with a "foreign" argument.
 
     unless ($x -> isa(__PACKAGE__)) {
-        return $x -> _upg() -> binc(@r) if $upgrade;
+        return $x -> _upg() -> binc(@r) if $class -> upgrade();
         croak "Can't handle a ", ref($x), " in ", (caller(0))[3], "()";
     }
 
@@ -2106,7 +2115,7 @@ sub bdec {
     # If called as a function with a "foreign" argument.
 
     unless ($x -> isa(__PACKAGE__)) {
-        return $x -> _upg() -> bdec(@r) if $upgrade;
+        return $x -> _upg() -> bdec(@r) if $class -> upgrade();
         croak "Can't handle a ", ref($x), " in ", (caller(0))[3], "()";
     }
 
@@ -2259,7 +2268,7 @@ sub badd {
 
     for my $arg ($x, $y) {
         unless ($arg -> isa(__PACKAGE__)) {
-            return $x -> _upg() -> badd($y, @r) if $upgrade;
+            return $x -> _upg() -> badd($y, @r) if $class -> upgrade();
             croak "Can't handle a ", ref($arg), " in ", (caller(0))[3], "()";
         }
     }
@@ -2317,7 +2326,7 @@ sub bsub {
 
     for my $arg ($x, $y) {
         unless ($arg -> isa(__PACKAGE__)) {
-            return $x -> _upg() -> bsub($y, @r) if $upgrade;
+            return $x -> _upg() -> bsub($y, @r) if $class -> upgrade();
             croak "Can't handle a ", ref($arg), " in ", (caller(0))[3], "()";
         }
     }
@@ -2372,7 +2381,7 @@ sub bmul {
 
     for my $arg ($x, $y) {
         unless ($arg -> isa(__PACKAGE__)) {
-            return $x -> _upg() -> bmul($y, @r) if $upgrade;
+            return $x -> _upg() -> bmul($y, @r) if $class -> upgrade();
             croak "Can't handle a ", ref($arg), " in ", (caller(0))[3], "()";
         }
     }
@@ -3122,7 +3131,7 @@ sub bmodinv {
 
     for my $arg ($x, $y) {
         unless ($arg -> isa(__PACKAGE__)) {
-            return $x -> _upg() -> bmodinv($y, @r) if $upgrade;
+            return $x -> _upg() -> bmodinv($y, @r) if $class -> upgrade();
             croak "Can't handle a ", ref($arg), " in ", (caller(0))[3], "()";
         }
     }
@@ -3212,7 +3221,8 @@ sub bmodpow {
 
     for my $arg ($num, $exp, $mod) {
         unless ($arg -> isa(__PACKAGE__)) {
-            return $num -> _upg() -> bmodpow($exp, $mod, @r) if $upgrade;
+            return $num -> _upg() -> bmodpow($exp, $mod, @r)
+              if $class -> upgrade();
             croak "Can't handle a ", ref($arg), " in ", (caller(0))[3], "()";
         }
     }
@@ -3371,7 +3381,7 @@ sub bpow {
     # Code for things that aren't Math::BigInt
     ###########################################################################
 
-    return $x -> _upg() -> bpow($y, @r) if $upgrade;
+    return $x -> _upg() -> bpow($y, @r) if $class -> upgrade();
 
     # We don't support finite non-integers, so return zero. The reason for
     # returning zero, not NaN, is that all output is in the open interval
@@ -3411,11 +3421,11 @@ sub binv {
     # If called with "foreign" argument.
 
     unless ($x -> isa(__PACKAGE__)) {
-        return $x -> _upg() -> binv(@r) if $upgrade;
+        return $x -> _upg() -> binv(@r) if $class -> upgrade();
         croak "Can't handle a ", ref($x), " in ", (caller(0))[3], "()";
     }
 
-    return $x -> _upg() -> binv(@r) if $upgrade;
+    return $x -> _upg() -> binv(@r) if $class -> upgrade();
 
     ###########################################################################
     # Code for Math::BigInt objects
@@ -3452,7 +3462,7 @@ sub blog {
     # If called with "foreign" argument.
 
     unless ($x -> isa(__PACKAGE__)) {
-        return $x -> _upg() -> blog($base, @r) if $upgrade;
+        return $x -> _upg() -> blog($base, @r) if $class -> upgrade();
         croak "Can't handle a ", ref($x), " in ", (caller(0))[3], "()";
     }
 
@@ -3473,7 +3483,7 @@ sub blog {
             return $x -> bzero(@r) if $x -> is_one();   #     x = 1
             return $x -> bone('+', @r)  if $x == $base; #     x = base
             # we can't handle these cases, so upgrade, if we can
-            return $x -> _upg() -> blog($base, @r) if $upgrade;
+            return $x -> _upg() -> blog($base, @r) if $class -> upgrade();
             return $x -> bnan(@r);
         }
         return $x -> bone(@r) if $x == $base;   # 0 < base && 0 < x < inf
@@ -3484,7 +3494,7 @@ sub blog {
     if ($x -> is_inf()) {                       # x = +/-inf
         return $x -> binf('+', @r);
     } elsif ($x -> is_neg()) {                  # -inf < x < 0
-        return $x -> _upg() -> blog($base, @r) if $upgrade;
+        return $x -> _upg() -> blog($base, @r) if $class -> upgrade();
         return $x -> bnan(@r);
     } elsif ($x -> is_one()) {                  # x = 1
         return $x -> bzero(@r);
@@ -3494,7 +3504,7 @@ sub blog {
 
     # At this point we are done handling all exception cases and trivial cases.
 
-    return $x -> _upg() -> blog($base, @r) if $upgrade;
+    return $x -> _upg() -> blog($base, @r) if $class -> upgrade();
 
     # fix for bug #24969:
     # the default base is e (Euler's number) which is not an integer
@@ -3553,18 +3563,18 @@ sub bexp {
     ###########################################################################
 
     unless ($x -> isa(__PACKAGE__)) {
-        return $x -> _upg() -> bexp(@r) if $upgrade;
+        return $x -> _upg() -> bexp(@r) if $class -> upgrade();
             croak "Can't handle a ", ref($x), " in ", (caller(0))[3], "()";
     }
 
-    return $x -> _upg() -> bexp(@r) if $upgrade;
+    return $x -> _upg() -> bexp(@r) if $class -> upgrade();
 
     ###########################################################################
     # Code for Math::BigInt objects
     ###########################################################################
 
     require Math::BigFloat;
-    my $tmp = Math::BigFloat -> bexp($x, @r) -> as_int();
+    my $tmp = Math::BigFloat -> bexp($x) -> bint() -> round(@r) -> as_int();
     $x->{value} = $tmp->{value};
     return $x -> round(@r);
 }
@@ -3583,12 +3593,12 @@ sub bilog2 {
     # If called with "foreign" argument.
 
     unless ($x -> isa(__PACKAGE__)) {
-        return $x -> _upg() -> bilog2(@r) if $upgrade;
+        return $x -> _upg() -> bilog2(@r) if $class -> upgrade();
         croak "Can't handle a ", ref($x), " in ", (caller(0))[3], "()";
     }
 
     if ($x -> is_neg()) {
-        return $x -> _upg() -> bilog2(@r) if $upgrade;
+        return $x -> _upg() -> bilog2(@r) if $class -> upgrade();
         return $x -> bnan(@r);
     }
 
@@ -3610,12 +3620,12 @@ sub bilog10 {
     # If called with "foreign" argument.
 
     unless ($x -> isa(__PACKAGE__)) {
-        return $x -> _upg() -> bilog10(@r) if $upgrade;
+        return $x -> _upg() -> bilog10(@r) if $class -> upgrade();
         croak "Can't handle a ", ref($x), " in ", (caller(0))[3], "()";
     }
 
     if ($x -> is_neg()) {
-        return $x -> _upg() -> bilog10(@r) if $upgrade;
+        return $x -> _upg() -> bilog10(@r) if $class -> upgrade();
         return $x -> bnan(@r);
     }
 
@@ -3637,12 +3647,12 @@ sub bclog2 {
     # If called with "foreign" argument.
 
     unless ($x -> isa(__PACKAGE__)) {
-        return $x -> _upg() -> bclog2(@r) if $upgrade;
+        return $x -> _upg() -> bclog2(@r) if $class -> upgrade();
         croak "Can't handle a ", ref($x), " in ", (caller(0))[3], "()";
     }
 
     if ($x -> is_neg()) {
-        return $x -> _upg() -> bclog2(@r) if $upgrade;
+        return $x -> _upg() -> bclog2(@r) if $class -> upgrade();
         return $x -> bnan(@r);
     }
 
@@ -3664,12 +3674,12 @@ sub bclog10 {
     # If called with "foreign" argument.
 
     unless ($x -> isa(__PACKAGE__)) {
-        return $x -> _upg() -> bclog10(@r) if $upgrade;
+        return $x -> _upg() -> bclog10(@r) if $class -> upgrade();
         croak "Can't handle a ", ref($x), " in ", (caller(0))[3], "()";
     }
 
     if ($x -> is_neg()) {
-        return $x -> _upg() -> bclog10(@r) if $upgrade;
+        return $x -> _upg() -> bclog10(@r) if $class -> upgrade();
         return $x -> bnan(@r);
     }
 
@@ -3696,7 +3706,7 @@ sub bnok {
 
     for my $arg ($n, $k) {
         unless ($arg -> isa(__PACKAGE__)) {
-            return $n -> _upg() -> bnok($k, @r) if $upgrade;
+            return $n -> _upg() -> bnok($k, @r) if $class -> upgrade();
             croak "Can't handle a ", ref($arg), " in ", (caller(0))[3], "()";
         }
     }
@@ -4000,7 +4010,7 @@ sub bsin {
     # If called with "foreign" argument.
 
     unless ($x -> isa(__PACKAGE__)) {
-        return $x -> _upg() -> bsin(@r) if $upgrade;
+        return $x -> _upg() -> bsin(@r) if $class -> upgrade();
         croak "Can't handle a ", ref($x), " in ", (caller(0))[3], "()";
     }
 
@@ -4036,7 +4046,7 @@ sub bcos {
     # If called with "foreign" argument.
 
     unless ($x -> isa(__PACKAGE__)) {
-        return $x -> _upg() -> bcos(@r) if $upgrade;
+        return $x -> _upg() -> bcos(@r) if $class -> upgrade();
         croak "Can't handle a ", ref($x), " in ", (caller(0))[3], "()";
     }
 
@@ -4075,14 +4085,14 @@ sub batan {
     # If called with "foreign" argument.
 
     unless ($x -> isa(__PACKAGE__)) {
-        return $x -> _upg() -> batan(@r) if $upgrade;
+        return $x -> _upg() -> batan(@r) if $class -> upgrade();
         croak "Can't handle a ", ref($x), " in ", (caller(0))[3], "()";
     }
 
     return $x -> bnan(@r)  if $x -> is_nan();
     return $x -> bzero(@r) if $x -> is_zero();
 
-    return $x -> _upg() -> batan(@r) if $upgrade;
+    return $x -> _upg() -> batan(@r) if $class -> upgrade();
 
     return $x -> bone("+", @r) if $x -> bgt("1");
     return $x -> bone("-", @r) if $x -> blt("-1");
@@ -4104,7 +4114,7 @@ sub batan2 {
 
     for my $arg ($y, $x) {
         unless ($arg -> isa(__PACKAGE__)) {
-            return $y -> _upg() -> batan2($x, @r) if $upgrade;
+            return $y -> _upg() -> batan2($x, @r) if $class -> upgrade();
             croak "Can't handle a ", ref($arg), " in ", (caller(0))[3], "()";
         }
     }
@@ -4168,14 +4178,14 @@ sub bsqrt {
     # If called with "foreign" argument.
 
     unless ($x -> isa(__PACKAGE__)) {
-        return $x -> _upg() -> bsqrt(@r) if $upgrade;
+        return $x -> _upg() -> bsqrt(@r) if $class -> upgrade();
         croak "Can't handle a ", ref($x), " in ", (caller(0))[3], "()";
     }
 
     return $x -> round(@r) if ($x -> is_nan() || $x -> is_zero() ||
                                $x -> is_one("+") || $x -> is_inf("+"));
 
-    return $x -> _upg() -> bsqrt(@r) if $upgrade;
+    return $x -> _upg() -> bsqrt(@r) if $class -> upgrade();
 
     return $x -> bnan(@r) if $x -> is_neg();
 
@@ -4200,7 +4210,7 @@ sub broot {
     # If called with "foreign" argument.
 
     unless ($x -> isa(__PACKAGE__)) {
-        return $x -> _upg() -> broot(@r) if $upgrade;
+        return $x -> _upg() -> broot(@r) if $class -> upgrade();
         croak "Can't handle a ", ref($x), " in ", (caller(0))[3], "()";
     }
 
@@ -4212,7 +4222,7 @@ sub broot {
     return $x -> round(@r)
       if $x -> is_zero() || $x -> is_one() || $x -> is_inf() || $y -> is_one();
 
-    return $x -> _upg() -> broot($y, @r) if $upgrade;
+    return $x -> _upg() -> broot($y, @r) if $class -> upgrade();
 
     $x->{value} = $LIB->_root($x->{value}, $y->{value});
     $x -> round(@r);
@@ -4426,7 +4436,7 @@ sub blucas {
     # If called with "foreign" argument.
 
     unless ($x -> isa(__PACKAGE__)) {
-        return $x -> _upg() -> blucas(@r) if $upgrade;
+        return $x -> _upg() -> blucas(@r) if $class -> upgrade();
         croak "Can't handle a ", ref($x), " in ", (caller(0))[3], "()";
     }
 
@@ -4523,7 +4533,7 @@ sub blsft {
 
     for my $arg ($x, $y, $b) {
         unless ($arg -> isa(__PACKAGE__)) {
-            return $x -> _upg() -> blsft($y, @r) if $upgrade;
+            return $x -> _upg() -> blsft($y, @r) if $class -> upgrade();
             croak "Can't handle a ", ref($arg), " in ", (caller(0))[3], "()";
         }
     }
@@ -4655,7 +4665,7 @@ sub brsft {
 
     for my $arg ($x, $y, $b) {
         unless ($arg -> isa(__PACKAGE__)) {
-            return $x -> _upg() -> blsft($y, @r) if $upgrade;
+            return $x -> _upg() -> blsft($y, @r) if $class -> upgrade();
             croak "Can't handle a ", ref($arg), " in ", (caller(0))[3], "()";
         }
     }
@@ -4744,7 +4754,7 @@ sub brsft {
     # We know that $y is positive. Shifting right by a positive amount might
     # lead to a non-integer result.
 
-    return $x -> _upg() -> brsft($y, $b, @r) if $upgrade;
+    return $x -> _upg() -> brsft($y, $b, @r) if $class -> upgrade();
 
     # This only works for negative numbers when shifting in base 2.
     if ($x -> is_neg() && $b -> bcmp("2") == 0) {
@@ -4923,7 +4933,7 @@ sub band {
 
     for my $arg ($x, $y) {
         unless ($arg -> isa(__PACKAGE__)) {
-            return $x -> _upg() -> band($y, @r) if $upgrade;
+            return $x -> _upg() -> band($y, @r) if $class -> upgrade();
             croak "Can't handle a ", ref($arg), " in ", (caller(0))[3], "()";
         }
     }
@@ -4959,7 +4969,7 @@ sub bior {
 
     for my $arg ($x, $y) {
         unless ($arg -> isa(__PACKAGE__)) {
-            return $x -> _upg() -> bior($y, @r) if $upgrade;
+            return $x -> _upg() -> bior($y, @r) if $class -> upgrade();
             croak "Can't handle a ", ref($arg), " in ", (caller(0))[3], "()";
         }
     }
@@ -4994,7 +5004,7 @@ sub bxor {
 
     for my $arg ($x, $y) {
         unless ($arg -> isa(__PACKAGE__)) {
-            return $x -> _upg() -> bxor($y, @r) if $upgrade;
+            return $x -> _upg() -> bxor($y, @r) if $class -> upgrade();
             croak "Can't handle a ", ref($arg), " in ", (caller(0))[3], "()";
         }
     }
@@ -5026,7 +5036,7 @@ sub bnot {
     # If called as a function with a "foreign" argument.
 
     unless ($x -> isa(__PACKAGE__)) {
-        return $x -> _upg() -> binc(@r) if $upgrade;
+        return $x -> _upg() -> binc(@r) if $class -> upgrade();
         croak "Can't handle a ", ref($x), " in ", (caller(0))[3], "()";
     }
 
@@ -5288,7 +5298,7 @@ sub bfloor {
     # If called as a function with a "foreign" argument.
 
     unless ($x -> isa(__PACKAGE__)) {
-        return $x -> _upg() -> bfloor(@r) if $upgrade;
+        return $x -> _upg() -> bfloor(@r) if $class -> upgrade();
         croak "Can't handle a ", ref($x), " in ", (caller(0))[3], "()";
     }
 
@@ -5306,7 +5316,7 @@ sub bceil {
     # If called as a function with a "foreign" argument.
 
     unless ($x -> isa(__PACKAGE__)) {
-        return $x -> _upg() -> bceil(@r) if $upgrade;
+        return $x -> _upg() -> bceil(@r) if $class -> upgrade();
         croak "Can't handle a ", ref($x), " in ", (caller(0))[3], "()";
     }
 
@@ -5324,7 +5334,7 @@ sub bint {
     # If called as a function with a "foreign" argument.
 
     unless ($x -> isa(__PACKAGE__)) {
-        return $x -> _upg() -> bint(@r) if $upgrade;
+        return $x -> _upg() -> bint(@r) if $class -> upgrade();
         croak "Can't handle a ", ref($x), " in ", (caller(0))[3], "()";
     }
 
@@ -5495,7 +5505,7 @@ sub exponent {
     # If called with "foreign" argument.
 
     unless ($x -> isa(__PACKAGE__)) {
-        return $x -> _upg() -> exponent(@r) if $upgrade;
+        return $x -> _upg() -> exponent(@r) if $class -> upgrade();
         croak "Can't handle a ", ref($x), " in ", (caller(0))[3], "()";
     }
 
@@ -5519,7 +5529,7 @@ sub mantissa {
     # If called with "foreign" argument.
 
     unless ($x -> isa(__PACKAGE__)) {
-        return $x -> _upg() -> mantissa(@r) if $upgrade;
+        return $x -> _upg() -> mantissa(@r) if $class -> upgrade();
         croak "Can't handle a ", ref($x), " in ", (caller(0))[3], "()";
     }
 
@@ -5546,7 +5556,7 @@ sub parts {
     # If called with "foreign" argument.
 
     unless ($x -> isa(__PACKAGE__)) {
-        return $x -> _upg() -> parts(@r) if $upgrade;
+        return $x -> _upg() -> parts(@r) if $class -> upgrade();
         croak "Can't handle a ", ref($x), " in ", (caller(0))[3], "()";
     }
 
@@ -5565,7 +5575,7 @@ sub sparts {
     # If called with "foreign" argument.
 
     unless ($x -> isa(__PACKAGE__)) {
-        return $x -> _upg() -> sparts(@r) if $upgrade;
+        return $x -> _upg() -> sparts(@r) if $class -> upgrade();
         croak "Can't handle a ", ref($x), " in ", (caller(0))[3], "()";
     }
 
@@ -5613,7 +5623,7 @@ sub nparts {
     # If called with "foreign" argument.
 
     unless ($x -> isa(__PACKAGE__)) {
-        return $x -> _upg() -> nparts(@r) if $upgrade;
+        return $x -> _upg() -> nparts(@r) if $class -> upgrade();
         croak "Can't handle a ", ref($x), " in ", (caller(0))[3], "()";
     }
 
@@ -5629,7 +5639,7 @@ sub nparts {
         my $expo10adj = $ndigtot - $ndigfrac - 1;
 
         if ($expo10adj > 0) {          # if mantissa is not an integer
-            return $x -> _upg() -> nparts(@r) if $upgrade;
+            return $x -> _upg() -> nparts(@r) if $class -> upgrade();
             $mant -> bnan(@r);
             return $mant unless wantarray;
             $expo -> badd($expo10adj, @r);
@@ -5653,7 +5663,7 @@ sub eparts {
     # If called with "foreign" argument.
 
     unless ($x -> isa(__PACKAGE__)) {
-        return $x -> _upg() -> eparts(@r) if $upgrade;
+        return $x -> _upg() -> eparts(@r) if $class -> upgrade();
         croak "Can't handle a ", ref($x), " in ", (caller(0))[3], "()";
     }
 
@@ -5676,7 +5686,7 @@ sub eparts {
         $expo -> bsub($c);
 
         if ($ndigmant > $c) {
-            return $x -> _upg() -> eparts(@r) if $upgrade;
+            return $x -> _upg() -> eparts(@r) if $class -> upgrade();
             $mant -> bnan(@r);
             return $mant unless wantarray;
             return $mant, $expo;
@@ -5700,7 +5710,7 @@ sub dparts {
     # If called with "foreign" argument.
 
     unless ($x -> isa(__PACKAGE__)) {
-        return $x -> _upg() -> dparts(@r) if $upgrade;
+        return $x -> _upg() -> dparts(@r) if $class -> upgrade();
         croak "Can't handle a ", ref($x), " in ", (caller(0))[3], "()";
     }
 
@@ -5742,7 +5752,7 @@ sub fparts {
     # If called with "foreign" argument.
 
     unless ($x -> isa(__PACKAGE__)) {
-        return $x -> _upg() -> fparts(@r) if $upgrade;
+        return $x -> _upg() -> fparts(@r) if $class -> upgrade();
         croak "Can't handle a ", ref($x), " in ", (caller(0))[3], "()";
     }
 
@@ -5778,7 +5788,7 @@ sub numerator {
     # If called with "foreign" argument.
 
     unless ($x -> isa(__PACKAGE__)) {
-        return $x -> _upg() -> numerator(@r) if $upgrade;
+        return $x -> _upg() -> numerator(@r) if $class -> upgrade();
         croak "Can't handle a ", ref($x), " in ", (caller(0))[3], "()";
     }
 
@@ -5793,7 +5803,7 @@ sub denominator {
     # If called with "foreign" argument.
 
     unless ($x -> isa(__PACKAGE__)) {
-        return $x -> _upg() -> denominator(@r) if $upgrade;
+        return $x -> _upg() -> denominator(@r) if $class -> upgrade();
         croak "Can't handle a ", ref($x), " in ", (caller(0))[3], "()";
     }
 
@@ -5818,7 +5828,7 @@ sub bstr {
 
     # Upgrade?
 
-    $x -> _upg() -> bstr(@r) if $upgrade && !$x -> isa(__PACKAGE__);
+    $x -> _upg() -> bstr(@r) if $class -> upgrade() && !$x -> isa(__PACKAGE__);
 
     # Finite number
 
@@ -5843,7 +5853,7 @@ sub bsstr {
 
     # Upgrade?
 
-    $x -> _upg() -> bsstr(@r) if $upgrade && !$x -> isa(__PACKAGE__);
+    $x -> _upg() -> bsstr(@r) if $class -> upgrade() && !$x -> isa(__PACKAGE__);
 
     # Finite number
 
@@ -5870,7 +5880,7 @@ sub bnstr {
 
     # Upgrade?
 
-    $x -> _upg() -> bnstr(@r) if $upgrade && !$x -> isa(__PACKAGE__);
+    $x -> _upg() -> bnstr(@r) if $class -> upgrade() && !$x -> isa(__PACKAGE__);
 
     # Finite number
 
@@ -5903,7 +5913,7 @@ sub bestr {
 
     # Upgrade?
 
-    $x -> _upg() -> bestr(@r) if $upgrade && !$x -> isa(__PACKAGE__);
+    $x -> _upg() -> bestr(@r) if $class -> upgrade() && !$x -> isa(__PACKAGE__);
 
     # Finite number
 
@@ -5941,7 +5951,7 @@ sub bdstr {
 
     # Upgrade?
 
-    $x -> _upg() -> bdstr(@r) if $upgrade && !$x -> isa(__PACKAGE__);
+    $x -> _upg() -> bdstr(@r) if $class -> upgrade() && !$x -> isa(__PACKAGE__);
 
     # Finite number
 
@@ -5965,7 +5975,7 @@ sub bfstr {
 
     # Upgrade?
 
-    $x -> _upg() -> bfstr(@r) if $upgrade && !$x -> isa(__PACKAGE__);
+    $x -> _upg() -> bfstr(@r) if $class -> upgrade() && !$x -> isa(__PACKAGE__);
 
     # Finite number
 
@@ -5988,7 +5998,7 @@ sub to_hex {
 
     # Upgrade?
 
-    return $x -> _upg() -> to_hex(@r) if $upgrade && !$x -> isa(__PACKAGE__);
+    return $x -> _upg() -> to_hex(@r) if $class -> upgrade() && !$x -> isa(__PACKAGE__);
 
     # Finite number
 
@@ -6012,7 +6022,7 @@ sub to_oct {
 
     # Upgrade?
 
-    return $x -> _upg() -> to_oct(@r) if $upgrade && !$x -> isa(__PACKAGE__);
+    return $x -> _upg() -> to_oct(@r) if $class -> upgrade() && !$x -> isa(__PACKAGE__);
 
     # Finite number
 
@@ -6036,7 +6046,7 @@ sub to_bin {
 
     # Upgrade?
 
-    return $x -> _upg() -> to_bin(@r) if $upgrade && !$x -> isa(__PACKAGE__);
+    return $x -> _upg() -> to_bin(@r) if $class -> upgrade() && !$x -> isa(__PACKAGE__);
 
     # Finite number
 
@@ -6054,7 +6064,7 @@ sub to_bytes {
     croak("to_bytes() requires a finite, non-negative integer")
         if $x -> is_neg() || ! $x -> is_int();
 
-    return $x -> _upg() -> to_bytes(@r) if $upgrade && !$x -> isa(__PACKAGE__);
+    return $x -> _upg() -> to_bytes(@r) if $class -> upgrade() && !$x -> isa(__PACKAGE__);
 
     croak("to_bytes() requires a newer version of the $LIB library.")
         unless $LIB -> can('_to_bytes');
@@ -6091,7 +6101,7 @@ sub to_base {
       unless $LIB -> can('_to_base');
 
     return $x -> _upg() -> to_basen($base, $cs, @r)
-      if $upgrade && (!$x -> isa(__PACKAGE__) ||
+      if $class -> upgrade() && (!$x -> isa(__PACKAGE__) ||
                                !$base -> isa(__PACKAGE__));
 
     return $LIB->_to_base($x->{value}, $base -> {value},
@@ -6118,7 +6128,7 @@ sub to_base_num {
       unless $LIB -> can('_to_base');
 
     return $x -> _upg() -> to_base_num($base, @r)
-      if $upgrade && (!$x -> isa(__PACKAGE__) ||
+      if $class -> upgrade() && (!$x -> isa(__PACKAGE__) ||
                       !$base -> isa(__PACKAGE__));
 
     # Get a reference to an array of library thingies, and replace each element
@@ -6145,7 +6155,7 @@ sub as_hex {
     return $x -> bstr() if !$x -> is_finite(); # inf, nan etc
 
     return $x -> _upg() -> as_hex(@r)
-      if $upgrade && !$x -> isa(__PACKAGE__);
+      if $class -> upgrade() && !$x -> isa(__PACKAGE__);
 
     my $hex = $LIB->_as_hex($x->{value});
     return $x->{sign} eq '-' ? "-$hex" : $hex;
@@ -6161,7 +6171,7 @@ sub as_oct {
     return $x -> bstr() if !$x -> is_finite(); # inf, nan etc
 
     return $x -> _upg() -> as_oct(@r)
-      if $upgrade && !$x -> isa(__PACKAGE__);
+      if $class -> upgrade() && !$x -> isa(__PACKAGE__);
 
     my $oct = $LIB->_as_oct($x->{value});
     return $x->{sign} eq '-' ? "-$oct" : $oct;
@@ -6177,7 +6187,7 @@ sub as_bin {
     return $x -> bstr() if !$x -> is_finite(); # inf, nan etc
 
     return $x -> _upg() -> as_bin(@r)
-      if $upgrade && !$x -> isa(__PACKAGE__);
+      if $class -> upgrade() && !$x -> isa(__PACKAGE__);
 
     my $bin = $LIB->_as_bin($x->{value});
     return $x->{sign} eq '-' ? "-$bin" : $bin;
@@ -6208,7 +6218,7 @@ sub numify {
     }
 
     return $x -> _upg() -> numify(@r)
-      if $upgrade && !$x -> isa(__PACKAGE__);
+      if $class -> upgrade() && !$x -> isa(__PACKAGE__);
 
     my $num = 0 + $LIB->_num($x->{value});
     return $x->{sign} eq '-' ? -$num : $num;

@@ -886,7 +886,7 @@ sub bzero {
 
     return $self if $selfref && $self -> modify('bzero');
 
-    my $dng = $self -> downgrade();
+    my $dng = $class -> downgrade();
     if ($dng && $dng ne $class) {
         return $self -> _dng() -> bzero(@_) if $selfref;
         return $dng -> bzero(@_);
@@ -952,7 +952,7 @@ sub bone {
 
     return $self if $selfref && $self -> modify('bone');
 
-    my $dng = $self -> downgrade();
+    my $dng = $class -> downgrade();
     if ($dng && $dng ne $class) {
         return $self -> _dng() -> bone(@_) if $selfref;
         return $dng -> bone(@_);
@@ -1047,7 +1047,7 @@ sub binf {
 
     # Downgrade?
 
-    my $dng = $self -> downgrade();
+    my $dng = $class -> downgrade();
     if ($dng && $dng ne $class) {
         return $self -> _dng() -> binf($sign, @r) if $selfref;
         return $dng -> binf($sign, @r);
@@ -1116,7 +1116,7 @@ sub bnan {
 
     return $self if $selfref && $self -> modify('bnan');
 
-    my $dng = $self -> downgrade();
+    my $dng = $class -> downgrade();
     if ($dng && $dng ne $class) {
         return $self -> _dng() -> bnan(@_) if $selfref;
         return $dng -> bnan(@_);
@@ -1929,7 +1929,7 @@ sub badd {
                                                       : $x -> binf("-", @r));
     }
 
-    return $x -> _upg() -> badd($y, @r) if $upgrade;
+    return $x -> _upg() -> badd($y, @r) if $class -> upgrade();
 
     $r[3] = $y;                 # no push!
 
@@ -2041,7 +2041,7 @@ sub bmul {
         return $x -> binf('-', @r);
     }
 
-    return $x -> _upg() -> bmul($y, @r) if $upgrade;
+    return $x -> _upg() -> bmul($y, @r) if $class -> upgrade();
 
     # aEb * cEd = (a*c)E(b+d)
     $x->{_m} = $LIB->_mul($x->{_m}, $y->{_m});
@@ -3008,7 +3008,7 @@ sub bpow {
     # We don't support complex numbers, so upgrade or return NaN.
 
     if ($x -> is_negative() && !$y -> is_int()) {
-        return $x -> _upg() -> bpow($y, $a, $p, $r) if $upgrade;
+        return $x -> _upg() -> bpow($y, $a, $p, $r) if $class -> upgrade();
         return $x -> bnan();
     }
 
@@ -3064,7 +3064,7 @@ sub binv {
     # If called as a function with a "foreign" argument.
 
     unless ($x -> isa(__PACKAGE__)) {
-        return $x -> _upg() -> binv(@r) if $upgrade;
+        return $x -> _upg() -> binv(@r) if $class -> upgrade();
         croak "Can't handle a ", ref($x), " in ", (caller(0))[3], "()";
     }
 
@@ -3130,7 +3130,7 @@ sub blog {
             return $x -> bzero(@r) if $x -> is_one();   #     x = 1
             return $x -> bone('+', @r)  if $x == $base; #     x = base
             # we can't handle these cases, so upgrade, if we can
-            return $x -> _upg() -> blog($base, @r) if $upgrade;
+            return $x -> _upg() -> blog($base, @r) if $class -> upgrade();
             return $x -> bnan(@r);
         }
         return $x -> bone(@r) if $x == $base;       # 0 < base && 0 < x < inf
@@ -3140,7 +3140,7 @@ sub blog {
         my $sign = defined($base) && $base < 1 ? '-' : '+';
         return $x -> binf($sign, @r);
     } elsif ($x -> is_neg()) {                  # -inf < x < 0
-        return $x -> _upg() -> blog($base, @r) if $upgrade;
+        return $x -> _upg() -> blog($base, @r) if $class -> upgrade();
         return $x -> bnan(@r);
     } elsif ($x -> is_one()) {                  # x = 1
         return $x -> bzero(@r);
@@ -4332,7 +4332,7 @@ sub bsqrt {
     # We don't support complex numbers.
 
     if ($x -> is_neg()) {
-        return $x -> _upg() -> bsqrt(@r) if $upgrade;
+        return $x -> _upg() -> bsqrt(@r) if $class -> upgrade();
         return $x -> bnan(@r);
     }
 
@@ -4421,7 +4421,7 @@ sub broot {
         return $x -> broot($y -> copy() -> bneg(), @r) -> bneg()
           if ($x -> is_int() && $y -> is_int() &&
               $y -> is_neg() && $y -> is_odd());
-        return $x -> _upg -> broot($y, @r) if $upgrade;
+        return $x -> _upg -> broot($y, @r) if $class -> upgrade();
         return $x -> bnan(@r);
     }
 
@@ -5657,11 +5657,11 @@ sub sparts {
     my $mant = $class -> new($x);
     $mant->{_es} = '+';
     $mant->{_e}  = $LIB->_zero();
-    $mant = $downgrade -> new($mant) if $downgrade;
+    $mant -> _dng();
     return $mant unless wantarray;
 
     my $expo = $class -> new($x -> {_es} . $LIB->_str($x -> {_e}));
-    $expo = $downgrade -> new($expo) if $downgrade;
+    $expo -> _dng();
     return $mant, $expo;
 }
 
@@ -5772,7 +5772,7 @@ sub dparts {
         return $int, $frc;
     }
 
-    $int = $downgrade -> new($int) if $downgrade;
+    $int -> _dng();
     return $int unless wantarray;
     return $int, $frc;
 }
@@ -5805,7 +5805,7 @@ sub fparts {
 
     # If we get here, we know that the output is an integer.
 
-    $class = $downgrade if $downgrade;
+    $class = $downgrade if $class -> downgrade();
 
     my @flt_parts = ($x->{sign}, $x->{_m}, $x->{_es}, $x->{_e});
     my @rat_parts = $class -> _flt_lib_parts_to_rat_lib_parts(@flt_parts);
@@ -5829,7 +5829,7 @@ sub numerator {
 
     # If we get here, we know that the output is an integer.
 
-    $class = $downgrade if $downgrade;
+    $class = $downgrade if $class -> downgrade();
 
     if ($x -> {_es} eq '-') {                   # exponent < 0
         my $numer_lib = $LIB -> _copy($x -> {_m});
@@ -5861,7 +5861,7 @@ sub denominator {
 
     # If we get here, we know that the output is an integer.
 
-    $class = $downgrade if $downgrade;
+    $class = $downgrade if $class -> downgrade();
 
     if ($x -> {_es} eq '-') {                   # exponent < 0
         my $numer_lib = $LIB -> _copy($x -> {_m});
@@ -5961,7 +5961,7 @@ sub bdstr {
     # Upgrade?
 
     return $x -> _upg() -> bdstr(@r)
-      if $upgrade && !$x -> isa(__PACKAGE__);
+      if $class -> upgrade() && !$x -> isa(__PACKAGE__);
 
     # Finite number
 
@@ -6012,7 +6012,7 @@ sub bsstr {
     # Upgrade?
 
     return $x -> _upg() -> bsstr(@r)
-      if $upgrade && !$x -> isa(__PACKAGE__);
+      if $class -> upgrade() && !$x -> isa(__PACKAGE__);
 
     # Finite number
 
@@ -6037,7 +6037,7 @@ sub bnstr {
     # Upgrade?
 
     return $x -> _upg() -> bnstr(@r)
-      if $upgrade && !$x -> isa(__PACKAGE__);
+      if $class -> upgrade() && !$x -> isa(__PACKAGE__);
 
     # Finite number
 
@@ -6088,7 +6088,7 @@ sub bestr {
     # Upgrade?
 
     return $x -> _upg() -> bestr(@r)
-      if $upgrade && !$x -> isa(__PACKAGE__);
+      if $class -> upgrade() && !$x -> isa(__PACKAGE__);
 
     # Finite number
 
@@ -6143,7 +6143,7 @@ sub bfstr {
     # Upgrade?
 
     return $x -> _upg() -> bfstr(@r)
-      if $upgrade && !$x -> isa(__PACKAGE__);
+      if $class -> upgrade() && !$x -> isa(__PACKAGE__);
 
     # Finite number
 
@@ -6177,7 +6177,7 @@ sub to_hex {
     # Upgrade?
 
     return $x -> _upg() -> to_hex(@r)
-      if $upgrade && !$x -> isa(__PACKAGE__);
+      if $class -> upgrade() && !$x -> isa(__PACKAGE__);
 
     # Finite number
 
@@ -6209,7 +6209,7 @@ sub to_oct {
     # Upgrade?
 
     return $x -> _upg() -> to_oct(@r)
-      if $upgrade && !$x -> isa(__PACKAGE__);
+      if $class -> upgrade() && !$x -> isa(__PACKAGE__);
 
     # Finite number
 
@@ -6241,7 +6241,7 @@ sub to_bin {
     # Upgrade?
 
     return $x -> _upg() -> to_bin(@r)
-      if $upgrade && !$x -> isa(__PACKAGE__);
+      if $class -> upgrade() && !$x -> isa(__PACKAGE__);
 
     # Finite number
 
