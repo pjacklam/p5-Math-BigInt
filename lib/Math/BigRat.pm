@@ -2703,16 +2703,13 @@ sub bclog10 {
 
 sub bnok {
     # set up parameters
-    my ($class, $x, $y, @r) = (ref($_[0]), @_);
+    my ($class, $x, $y, @r) = ref($_[0]) && ref($_[0]) eq ref($_[1])
+                            ? (ref($_[0]), @_)
+                            : objectify(2, @_);
 
     # Don't modify constant (read-only) objects.
 
     return $x if $x -> modify('bnok');
-
-    # objectify is costly, so avoid it
-    if ((!ref($_[0])) || (ref($_[0]) ne ref($_[1]))) {
-        ($class, $x, $y, @r) = objectify(2, @_);
-    }
 
     return $x -> bnan() if $x -> is_nan() || $y -> is_nan();
     return $x -> bnan() if (($x -> is_finite() && !$x -> is_int()) ||
