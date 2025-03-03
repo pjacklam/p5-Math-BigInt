@@ -40,11 +40,11 @@ use overload
 
   '*'     =>      sub { $_[0] -> copy() -> bmul($_[1]); },
 
-  '/'     =>      sub { $_[2] ? ref($_[0]) -> new($_[1]) -> bdiv($_[0])
-                              : $_[0] -> copy() -> bdiv($_[1]); },
+  '/'     =>      sub { $_[2] ? ref($_[0]) -> new($_[1]) -> bfdiv($_[0])
+                              : $_[0] -> copy() -> bfdiv($_[1]); },
 
-  '%'     =>      sub { $_[2] ? ref($_[0]) -> new($_[1]) -> bmod($_[0])
-                              : $_[0] -> copy() -> bmod($_[1]); },
+  '%'     =>      sub { $_[2] ? ref($_[0]) -> new($_[1]) -> bfmod($_[0])
+                              : $_[0] -> copy() -> bfmod($_[1]); },
 
   '**'    =>      sub { $_[2] ? ref($_[0]) -> new($_[1]) -> bpow($_[0])
                               : $_[0] -> copy() -> bpow($_[1]); },
@@ -63,9 +63,9 @@ use overload
 
   '*='    =>      sub { $_[0] -> bmul($_[1]); },
 
-  '/='    =>      sub { scalar $_[0] -> bdiv($_[1]); },
+  '/='    =>      sub { scalar $_[0] -> bfdiv($_[1]); },
 
-  '%='    =>      sub { $_[0] -> bmod($_[1]); },
+  '%='    =>      sub { $_[0] -> bfmod($_[1]); },
 
   '**='   =>      sub { $_[0] -> bpow($_[1]); },
 
@@ -2486,7 +2486,7 @@ sub blog {
     $base = Math::BigFloat -> new($base) if defined $base;
     my $xnum = Math::BigFloat -> new($LIB -> _str($x->{_n}));
     my $xden = Math::BigFloat -> new($LIB -> _str($x->{_d}));
-    my $xstr = $xnum -> bdiv($xden) -> blog($base, @r) -> bsstr();
+    my $xstr = $xnum -> bfdiv($xden) -> blog($base, @r) -> bsstr();
 
     # reset upgrading and downgrading
 
@@ -2758,13 +2758,13 @@ sub broot {
     # Convert $x into a Math::BigFloat.
 
     my $xd   = Math::BigFloat -> new($LIB -> _str($x->{_d}));
-    my $xflt = Math::BigFloat -> new($LIB -> _str($x->{_n})) -> bdiv($xd);
+    my $xflt = Math::BigFloat -> new($LIB -> _str($x->{_n})) -> bfdiv($xd);
     $xflt -> {sign} = $x -> {sign};
 
     # Convert $y into a Math::BigFloat.
 
     my $yd   = Math::BigFloat -> new($LIB -> _str($y->{_d}));
-    my $yflt = Math::BigFloat -> new($LIB -> _str($y->{_n})) -> bdiv($yd);
+    my $yflt = Math::BigFloat -> new($LIB -> _str($y->{_n})) -> bfdiv($yd);
     $yflt -> {sign} = $y -> {sign};
 
     # Compute the root and convert back to a Math::BigRat.
@@ -2873,7 +2873,7 @@ sub bsqrt {
     my $xn = Math::BigFloat -> new($LIB -> _str($n));
     my $xd = Math::BigFloat -> new($LIB -> _str($d));
 
-    my $xtmp = Math::BigRat -> new($xn -> bdiv($xd) -> bsqrt() -> bsstr());
+    my $xtmp = Math::BigRat -> new($xn -> bfdiv($xd) -> bsqrt() -> bsstr());
 
     $x -> {sign} = $xtmp -> {sign};
     $x -> {_n}   = $xtmp -> {_n};
@@ -2941,9 +2941,9 @@ sub brsft {
     # shift by a negative amount?
     return $x -> blsft($y -> copy() -> babs(), $b) if $y -> {sign} =~ /^-/;
 
-    # the following call to bdiv() will return either quotient (scalar context)
+    # the following call to bfdiv() will return either quotient (scalar context)
     # or quotient and remainder (list context).
-    $x -> bdiv($b -> bpow($y));
+    $x -> bfdiv($b -> bpow($y));
 }
 
 ###############################################################################
@@ -3346,7 +3346,7 @@ sub numify {
     my $abs = $LIB->_is_one($x->{_d})
             ? $LIB->_num($x->{_n})
             : Math::BigFloat -> new($LIB->_str($x->{_n}))
-                             -> bdiv($LIB->_str($x->{_d}))
+                             -> bfdiv($LIB->_str($x->{_d}))
                              -> bstr();
     return $x->{sign} eq '-' ? 0 - $abs : 0 + $abs;
 }
@@ -3443,7 +3443,7 @@ sub as_float {
         $y -> {sign} = $x -> {sign};
         unless ($LIB -> _is_one($x->{_d})) {
             my $xd = Math::BigFloat -> new($LIB -> _str($x->{_d}));
-            $y -> bdiv($xd, @r);
+            $y -> bfdiv($xd, @r);
         }
     }
 
