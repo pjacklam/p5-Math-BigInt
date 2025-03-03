@@ -852,6 +852,79 @@ sub bzero {
     return $self;
 }
 
+sub bpi {
+    my $self    = shift;
+    my $selfref = ref $self;
+    my $class   = $selfref || $self;
+    my @r       = @_;                   # rounding paramters
+
+    # Make "require" work.
+
+    $class -> import() if $IMPORT == 0;
+
+    # Don't modify constant (read-only) objects.
+
+    return $self if $selfref && $self -> modify('bpi');
+
+    # If called as a class method, initialize a new object.
+
+    $self = bless {}, $class unless $selfref;
+
+    ($self, @r) = $self -> _find_round_parameters(@r);
+
+    # The accuracy, i.e., the number of digits. Pi has one digit before the
+    # dot, so a precision of 4 digits is equivalent to an accuracy of 5 digits.
+
+    my $n = defined $r[0] ? $r[0]
+          : defined $r[1] ? 1 - $r[1]
+          : $self -> div_scale();
+
+    # The algorithm below creates a fraction from a floating point number. The
+    # worst case is the number (1 + sqrt(5))/2 (golden ratio), which takes
+    # almost 2.4*N iterations to find a fraction that is accurate to N digits,
+    # i.e., the relative error is less than 10**(-N).
+    #
+    # This algorithm might be useful in general, so it should probably be moved
+    # out to a method of its own. XXX
+
+    my $max_iter = $n * 2.4;
+
+    my $x = Math::BigFloat -> bpi($n + 10);
+
+    my $tol = $class -> new("1/10") -> bpow("$n") -> bmul($x);
+
+    my $n0 = $class -> bzero();
+    my $d0 = $class -> bone();
+
+    my $n1 = $class -> bone();
+    my $d1 = $class -> bzero();
+
+    my ($n2, $d2);
+
+    my $xtmp = $x -> copy();
+
+    for (my $iter = 0 ; $iter <= $max_iter ; $iter++) {
+        my $t = $xtmp -> copy() -> bint();
+
+        $n2 = $n1 -> copy() -> bmul($t) -> badd($n0);
+        $d2 = $d1 -> copy() -> bmul($t) -> badd($d0);
+
+        my $err = $n2 -> copy() -> bdiv($d2) -> bsub($x);
+        last if $err -> copy() -> babs() -> ble($tol);
+
+        $xtmp -> bsub($t);
+        last if $xtmp -> is_zero();
+        $xtmp -> binv();
+
+        ($n1, $n0) = ($n2, $n1);
+        ($d1, $d0) = ($d2, $d1);
+    }
+
+    my $mbr = $n2 -> bdiv($d2);
+    %$self = %$mbr;
+    return $self;
+}
+
 ##############################################################################
 
 sub config {
@@ -3947,6 +4020,19 @@ Create a new Math::BigRat object. Input can come in various forms:
             Math::BigInt->new(-123),
             Math::BigInt->new(7),
          );                      # => -123/7
+
+=item bpi()
+
+    $x = Math::BigRat -> bpi();         # default accuracy
+    $x = Math::BigRat -> bpi(7);        # specified accuracy
+
+Returns a rational approximation of PI accurate to the specified accuracy or
+the default accuracy if no accuracy is specified. If called as an instance
+method, the value is assigned to the invocand.
+
+    $x = Math::BigInt -> bpi(1);        # returns "3"
+    $x = Math::BigInt -> bpi(3);        # returns "22/7"
+    $x = Math::BigInt -> bpi(7);        # returns "355/113"
 
 =item numerator()
 
