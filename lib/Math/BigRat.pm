@@ -2818,6 +2818,32 @@ sub bnok {
     return $x;
 }
 
+sub bperm {
+    # set up parameters
+    my ($class, $x, $y, @r) = ref($_[0]) && ref($_[0]) eq ref($_[1])
+                            ? (ref($_[0]), @_)
+                            : objectify(2, @_);
+
+    # Don't modify constant (read-only) objects.
+
+    return $x if $x -> modify('bperm');
+
+    return $x -> bnan() if $x -> is_nan() || $y -> is_nan();
+    return $x -> bnan() if (($x -> is_finite() && !$x -> is_int()) ||
+                            ($y -> is_finite() && !$y -> is_int()));
+
+    my $xint = Math::BigInt -> new($x -> bstr());
+    my $yint = Math::BigInt -> new($y -> bstr());
+    $xint -> bperm($yint);
+    my $xrat = Math::BigRat -> new($xint);
+
+    $x -> {sign} = $xrat -> {sign};
+    $x -> {_n}   = $xrat -> {_n};
+    $x -> {_d}   = $xrat -> {_d};
+
+    return $x;
+}
+
 sub broot {
     # set up parameters
     my ($class, $x, $y, @r) = ref($_[0]) && ref($_[0]) eq ref($_[1])
@@ -4513,16 +4539,11 @@ See also C<blog()>.
 
 =item bnok()
 
-    $x->bnok($y);               # x over y (binomial coefficient n over k)
+See L<Math::BigInt/bnok()>.
 
-Calculates the binomial coefficient n over k, also called the "choose"
-function. The result is equivalent to:
+=item bperm()
 
-    ( n )      n!
-    | - |  = -------
-    ( k )    k!(n-k)!
-
-This method was added in v0.20 of Math::BigRat (May 2007).
+See L<Math::BigInt/bperm()>.
 
 =item config()
 

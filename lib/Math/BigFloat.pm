@@ -3739,6 +3739,41 @@ sub bnok {
     return $x;
 }
 
+sub bperm {
+    # Calculate n over k (binomial coefficient or "choose" function) as
+    # integer. set up parameters
+    my ($class, $x, $y, @r) = ref($_[0]) && ref($_[0]) eq ref($_[1])
+                            ? (ref($_[0]), @_)
+                            : objectify(2, @_);
+
+    carp "Rounding is not supported for ", (caller(0))[3], "()" if @r;
+
+    # Don't modify constant (read-only) objects.
+
+    return $x if $x -> modify('bperm');
+
+    return $x -> bnan() if $x -> is_nan() || $y -> is_nan();
+    return $x -> bnan() if (($x -> is_finite() && !$x -> is_int()) ||
+                            ($y -> is_finite() && !$y -> is_int()));
+
+    # This should be implemented without converting to Math::BigInt. XXX
+
+    my $xint = $x -> as_int();          # to Math::BigInt
+    my $yint = $y -> as_int();          # to Math::BigInt
+
+    $xint -> bperm($yint);
+    $xint -> round(@r);
+
+    my $xflt = $xint -> as_float();
+    $x -> {sign} = $xflt -> {sign};
+    $x -> {_m}   = $xflt -> {_m};
+    $x -> {_es}  = $xflt -> {_es};
+    $x -> {_e}   = $xflt -> {_e};
+
+    return $x -> _dng();
+    return $x;
+}
+
 sub bsin {
     # Calculate a sinus of x.
     my ($class, $x, @r) = ref($_[0]) ? (ref($_[0]), @_) : objectify(1, @_);
@@ -7598,16 +7633,11 @@ This method was added in v1.82 of Math::BigInt (April 2007).
 
 =item bnok()
 
-    $x->bnok($y);   # x over y (binomial coefficient n over k)
+See L<Math::BigInt/bnok()>.
 
-Calculates the binomial coefficient n over k, also called the "choose"
-function. The result is equivalent to:
+=item bperm()
 
-    ( n )      n!
-    | - |  = -------
-    ( k )    k!(n-k)!
-
-This method was added in v1.84 of Math::BigInt (April 2007).
+See L<Math::BigInt/bperm()>.
 
 =item bsin()
 

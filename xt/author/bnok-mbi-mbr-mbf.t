@@ -3,100 +3,113 @@
 use strict;
 use warnings;
 
-use Test::More tests => 5021;
+use Scalar::Util qw< refaddr >;
+use Test::More tests => 45183;
 
-my $class;
+my @classes;
 
 BEGIN {
-    $class = 'Math::BigFloat';
-    use_ok($class);
+    @classes = qw< Math::BigInt Math::BigRat Math::BigFloat >;
+    for my $class (@classes) {
+        use_ok($class);
+    }
 }
 
 while (<DATA>) {
-    s/#.*$//;                   # remove comments
+    s/(^|\s+)#.*$//;            # remove comments
+    s/^\s+//;                   # remove leading whitespace
     s/\s+$//;                   # remove trailing whitespace
     next unless length;         # skip empty lines
 
-    my ($nval, $kval, $nokval) = split /:/;
-    my ($n, $k, $got, @got);
+    my ($nval, $kval, $outval) = split /:/;
 
-    for my $context_is_scalar (0, 1) {
-        for my $k_is_scalar (0, 1) {
+    for my $class (@classes) {
+        for my $scalar_context (0, 1) {
+            for my $instance_method (0, 1) {
+                for my $n_is_scalar (0, 1) {
+                    for my $k_is_scalar (0, 1) {
 
-            my $test = qq|\$n = $class -> new("$nval");|;
+                        my ($n, $k, $got, @got);
 
-            $test .= $k_is_scalar
-                     ? qq| \$k = "$kval";|
-                     : qq| \$k = $class -> new("$kval");|;
+                        # We cannot use an instance method when the first
+                        # operand is scalar.
 
-            $test .= $context_is_scalar
-                     ? qq| \$got = \$n -> bnok(\$k);|
-                     : qq| \@got = \$n -> bnok(\$k);|;
+                        next if $instance_method && $n_is_scalar;
 
-            my $desc = "bnok() in ";
-            $desc .= $context_is_scalar ? "scalar context" : "list context";
-            $desc .= $k_is_scalar ? " with k as scalar" : " with k as object";
+                        # Build test.
 
-            subtest $desc,
-              sub {
-                  plan tests => $context_is_scalar ? 7 : 8;
+                        my $test;
 
-                  eval $test;
-                  is($@, "", "'$test' gives emtpy \$\@");
+                        $test .= $n_is_scalar
+                          ? qq|\$n = "$nval";|
+                          : qq|\$n = $class -> new("$nval");|;
 
-                  if ($context_is_scalar) {
+                        $test .= $k_is_scalar
+                          ? qq| \$k = "$kval";|
+                          : qq| \$k = $class -> new("$kval");|;
 
-                      # Check output.
+                        $test .= $scalar_context
+                          ? qq| \$got =|
+                          : qq| \@got =|;
 
-                      is(ref($got), $class,
-                         "'$test' output arg is a $class");
+                        $test .= $instance_method
+                          ? qq| \$n -> bnok(\$k);|
+                          : qq| $class -> bnok(\$n, \$k);|;
 
-                      is($got -> bstr(), $nokval,
-                         "'$test' output arg has the right value");
+                        # Display tests.
 
-                  } else {
+                        note("\n$test\n\n");
 
-                      # Check number of output arguments.
+                        subtest $test, sub {
 
-                      cmp_ok(scalar @got, '==', 1,
-                             "'$test' gives one output arg");
+                            eval $test;
+                            is($@, "", '$@ is empty');
 
-                      # Check output.
+                            unless ($scalar_context) {
 
-                      is(ref($got[0]), $class,
-                         "'$test' output arg is a $class");
+                                # Check number of output arguments.
 
-                      is($got[0] -> bstr(), $nokval,
-                         "'$test' output arg has the right value");
-                  }
+                                cmp_ok(scalar(@got), '==', 1,
+                                       "got one output arg");
 
-                  # Check the invocand.
+                                $got = $got[0];
+                            }
 
-                  is(ref($n), $class,
-                     "'$test' invocand is still a $class");
+                            # Check output.
 
-                  is($n -> bstr(), $nokval,
-                     "'$test' invocand has the right value");
+                            is(ref($got), $class,
+                               "output arg is a $class");
 
-                  # Check the input argument.
+                            is($got, $outval,
+                               "output arg has the right value");
 
-                  if ($k_is_scalar) {
+                            unless ($n_is_scalar) {
+                                is(refaddr($got), refaddr($n),
+                                   "the output is the first operand");
+                            }
 
-                      is(ref($k), '',
-                         "'$test' second input arg is still a scalar");
+                            # Check the second operand.
 
-                      is($k, $kval,
-                         "'$test' second input arg is unmodified");
+                            if ($k_is_scalar) {
 
-                  } else {
+                                is(ref($k), '',
+                                   "second input arg is still a scalar");
 
-                      is(ref($k), $class,
-                         "'$test' second input arg is still a $class");
+                                is($k, $kval,
+                                   "second input arg is unmodified");
 
-                      is($k -> bstr(), $kval,
-                         "'$test' second input arg is unmodified");
-                  }
-              };
+                            } else {
+
+                                is(ref($k), $class,
+                                   "second input arg is still a $class");
+
+                                is($k, $kval,
+                                   "second input arg is unmodified");
+                            }
+                        };
+                    }
+                }
+            }
         }
     }
 }

@@ -3788,6 +3788,61 @@ sub bnok {
     $n -> round(@r);
 }
 
+sub bperm {
+    # Calculate permutations: n! / (n - k)!
+
+    # Set up parameters.
+    my ($class, $n, $k, @r) = ref($_[0]) && ref($_[0]) eq ref($_[1])
+                            ? (ref($_[0]), @_)
+                            : objectify(2, @_);
+
+    carp "Rounding is not supported for ", (caller(0))[3], "()" if @r;
+
+    # Don't modify constant (read-only) objects.
+
+    return $n if $n -> modify('bnok');
+
+    # If called with "foreign" arguments.
+
+    for my $arg ($n, $k) {
+        unless ($arg -> isa(__PACKAGE__)) {
+            return $n -> _upg() -> bperm($k, @r) if $class -> upgrade();
+            croak "Can't handle a ", ref($arg), " in ", (caller(0))[3], "()";
+        }
+    }
+
+    # Special cases.
+
+    return $n -> bnan(@r) if $n -> is_nan() || $k -> is_nan();
+    return $n -> bnan(@r) unless $n >= $k && $k >= 0;
+    return $n -> bone("+", @r) if $k -> is_zero();
+
+    if ($n -> is_inf()) {
+        if ($k -> is_inf()) {
+            return $n -> bnan(@r);
+        } else {
+            return $n -> binf("+", @r);
+        }
+    }
+
+    # Should this code be moved into the backend library? XXX
+
+    # $factor is $n
+    my $factor = $LIB -> _copy($n->{value});
+
+    # $limit is $n - $k + 1
+    my $limit  = $LIB -> _copy($n->{value});
+    $limit = $LIB -> _sub($limit, $k->{value});
+    $limit = $LIB -> _inc($limit);
+
+    while ($LIB -> _acmp($factor, $limit) > 0) {
+        $LIB -> _dec($factor);
+        $LIB -> _mul($n->{value}, $factor);
+    }
+
+    $n -> round(@r);
+}
+
 sub buparrow {
     my ($class, $a, $n, $b, @r) = objectify(3, @_);
 
@@ -8492,14 +8547,18 @@ exact, i.e., the input is an exact power of 10, and 0 otherwise.
 
 =item bnok()
 
-    $x->bnok($y);               # x over y (binomial coefficient n over k)
+Combinations.
+
+    $n->bnok($k);               # binomial coefficient n over k
 
 Calculates the binomial coefficient n over k, also called the "choose"
-function, which is
+function, which is the number of ways to choose a sample of k elements from a
+set of n distinct objects where order does not matter and replacements are not
+allowed. The result is equivalent to
 
-    ( n )       n!
-    |   |  = --------
-    ( k )    k!(n-k)!
+              / n \      n!
+    C(n, k) = |   | = --------  where 0 <= k <= n
+              \ k /   k!(n-k)!
 
 when n and k are non-negative. This method implements the full Kronenburg
 extension (Kronenburg, M.J. "The Binomial Coefficient for Negative Arguments."
@@ -8517,6 +8576,19 @@ pseudo-code:
 
 The behaviour is identical to the behaviour of the Maple and Mathematica
 function for negative integers n, k.
+
+=item bperm()
+
+Permutations
+
+    $n->bperm($k);
+
+Calculates the number of ways to choose a sample of k elements from a set of n
+distinct objects where order does matter and replacements are not allowed.
+
+                n!
+    P(n, k) = ------  where 0 <= k <= n
+              (n-k)!
 
 =item buparrow()
 

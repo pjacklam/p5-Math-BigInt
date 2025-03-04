@@ -17,7 +17,7 @@ my @methods = qw<
                     badd bsub bmul bpow bmod btmod
                     band bior bxor
                     blsft brsft
-                    bmfac bnok
+                    bmfac bnok bperm
                     bblsft bbrsft
                     broot
                 >;
