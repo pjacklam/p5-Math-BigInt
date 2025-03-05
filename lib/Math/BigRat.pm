@@ -3899,6 +3899,8 @@ sub from_bytes {
     $self -> {sign} = "+";
     $self -> {_n}   = $LIB -> _from_bytes($str);
     $self -> {_d}   = $LIB -> _one();
+
+    $self -> _dng();
     return $self;
 }
 

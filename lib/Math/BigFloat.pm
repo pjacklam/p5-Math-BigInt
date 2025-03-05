@@ -719,6 +719,7 @@ sub from_bytes {
     $self -> {_e}   = $LIB -> _zero();
     $self -> bnorm();
 
+    $self -> _dng();
     return $self;
 }
 
