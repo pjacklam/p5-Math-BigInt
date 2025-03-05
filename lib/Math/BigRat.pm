@@ -1011,6 +1011,24 @@ sub bsstr {
     return $str;
 }
 
+sub bdstr {
+    my ($class, $x, @r) = ref($_[0]) ? (ref($_[0]), @_) : objectify(1, @_);
+
+    croak "bdstr() is not implemented for $class";
+}
+
+sub bnstr {
+    my ($class, $x, @r) = ref($_[0]) ? (ref($_[0]), @_) : objectify(1, @_);
+
+    croak "bnstr() is not implemented for $class";
+}
+
+sub bestr {
+    my ($class, $x, @r) = ref($_[0]) ? (ref($_[0]), @_) : objectify(1, @_);
+
+    croak "bestr() is not implemented for $class";
+}
+
 sub bfstr {
     my ($class, $x, @r) = ref($_[0]) ? (ref($_[0]), $_[0]) : objectify(1, @_);
 
@@ -4436,6 +4454,18 @@ Please see the documentation in L<Math::BigInt> for further details.
     print $x->bsstr(), "\n";            # prints 1/2
 
 Return a string representing this object.
+
+=item bdstr()
+
+Not implemented in Math::BigRat.
+
+=item bnstr()
+
+Not implemented in Math::BigRat.
+
+=item bestr()
+
+Not implemented in Math::BigRat.
 
 =item bcmp()
 
