@@ -5,7 +5,7 @@ use warnings;
 
 use Test::More tests => 230;
 
-use Math::BigFloat;
+use Math::BigRat;
 
 my @k = (16, 32, 64, 128);
 
@@ -19,9 +19,9 @@ for my $k (@k) {
           : $k == 64 ? 53
           : $k - sprintf("%.0f", 4 * log($k)/log(2)) + 13;
 
-    $b = Math::BigFloat -> new($b);
-    $k = Math::BigFloat -> new($k);
-    $p = Math::BigFloat -> new($p);
+    $b = Math::BigRat -> new($b);
+    $k = Math::BigRat -> new($k);
+    $p = Math::BigRat -> new($p);
     my $w = $k - $p;
 
     my $emax = 2 ** ($w - 1) - 1;
@@ -29,7 +29,7 @@ for my $k (@k) {
 
     my $format = sprintf 'binary%u', $k;
 
-    my $binv = Math::BigFloat -> new("0.5");
+    my $binv = Math::BigRat -> new("0.5");
 
     my $data =
       [
@@ -104,7 +104,7 @@ for my $k (@k) {
              . "0" . ("1" x ($w - 1))
              . "0" x ($p - 1),
         asc => "1",
-        obj => Math::BigFloat -> new("1"),
+        obj => Math::BigRat -> new("1"),
        },
 
        {
@@ -113,7 +113,7 @@ for my $k (@k) {
              . "0" . ("1" x ($w - 1))
              . "0" x ($p - 1),
         asc => "-1",
-        obj => Math::BigFloat -> new("-1"),
+        obj => Math::BigRat -> new("-1"),
        },
 
        {
@@ -122,7 +122,7 @@ for my $k (@k) {
              . "1" . ("0" x ($w - 1))
              . ("0" x ($p - 1)),
         asc => "2",
-        obj => Math::BigFloat -> new("2"),
+        obj => Math::BigRat -> new("2"),
        },
 
        {
@@ -131,7 +131,7 @@ for my $k (@k) {
              . "1" . ("0" x ($w - 1))
              . ("0" x ($p - 1)),
         asc => "-2",
-        obj => Math::BigFloat -> new("-2"),
+        obj => Math::BigRat -> new("-2"),
        },
 
        {
@@ -140,7 +140,7 @@ for my $k (@k) {
              . ("0" x $w)
              . ("0" x ($p - 1)),
         asc => "+0",
-        obj => Math::BigFloat -> new("0"),
+        obj => Math::BigRat -> new("0"),
        },
 
        {
@@ -149,7 +149,7 @@ for my $k (@k) {
              . ("0" x $w)
              . ("0" x ($p - 1)),
         asc => "-0",
-        obj => Math::BigFloat -> new("0"),
+        obj => Math::BigRat -> new("0"),
        },
 
        {
@@ -158,7 +158,7 @@ for my $k (@k) {
              . ("1" x $w)
              . ("0" x ($p - 1)),
         asc => "+inf",
-        obj => Math::BigFloat -> new("inf"),
+        obj => Math::BigRat -> new("inf"),
        },
 
        {
@@ -167,7 +167,7 @@ for my $k (@k) {
              . ("1" x $w)
              . ("0" x ($p - 1)),
         asc => "-inf",
-        obj => Math::BigFloat -> new("-inf"),
+        obj => Math::BigRat -> new("-inf"),
        },
 
        {
@@ -176,7 +176,7 @@ for my $k (@k) {
              . ("1" x $w)
              . ("0" x ($p - 2)) . "1",
         asc => "sNaN",
-        obj => Math::BigFloat -> new("NaN"),
+        obj => Math::BigRat -> new("NaN"),
        },
 
        {
@@ -185,7 +185,7 @@ for my $k (@k) {
              . ("1" x $w)
              . "1" . ("0" x ($p - 3)) . "1",
         asc => "qNaN",
-        obj => Math::BigFloat -> new("NaN"),
+        obj => Math::BigRat -> new("NaN"),
        },
 
        {
@@ -194,7 +194,7 @@ for my $k (@k) {
              . ("1" x $w)
              . ("1" x ($p - 1)),
         asc => "NaN",
-        obj => Math::BigFloat -> new("NaN"),
+        obj => Math::BigRat -> new("NaN"),
        },
 
        {
@@ -203,7 +203,7 @@ for my $k (@k) {
              . ("1" x $w)
              . ("1" . ("0" x ($p - 2))),
         asc => "NaN",
-        obj => Math::BigFloat -> new("NaN"),
+        obj => Math::BigRat -> new("NaN"),
        },
 
       ];
@@ -226,17 +226,18 @@ for my $k (@k) {
         my $expected = $entry -> {obj};
         my ($got, $test);
 
-        $got = Math::BigFloat -> from_ieee754($bin, $format);
-        $test = qq|Math::BigFloat->from_ieee754("$bin")|;
-        is($got -> bnstr(), $expected -> bnstr(), $test);
+        $got = Math::BigRat -> from_ieee754($bin, $format);
 
-        $got = Math::BigFloat -> from_ieee754($hex, $format);
-        $test = qq|Math::BigFloat->from_ieee754("$hex")|;
-        is($got -> bnstr(), $expected -> bnstr(), $test);
+        $test = qq|Math::BigRat->from_ieee754("$bin", "$format")|;
+        is($got, $expected, $test);
 
-        $got = Math::BigFloat -> from_ieee754($bytes, $format);
-        $test = qq|Math::BigFloat->from_ieee754("$str")|;
-        is($got -> bnstr(), $expected -> bnstr(), $test);
+        $got = Math::BigRat -> from_ieee754($hex, $format);
+        $test = qq|Math::BigRat->from_ieee754("$hex", "$format")|;
+        is($got, $expected, $test);
+
+        $got = Math::BigRat -> from_ieee754($bytes, $format);
+        $test = qq|Math::BigRat->from_ieee754("$str", "$format")|;
+        is($got, $expected, $test);
     }
 }
 
@@ -244,7 +245,7 @@ note("\nTest as class method vs. instance method.\n\n");
 
 # As class method.
 
-my $x = Math::BigFloat -> from_ieee754("4000000000000000", "binary64");
+my $x = Math::BigRat -> from_ieee754("4000000000000000", "binary64");
 is($x, 2, "class method");
 
 # As instance method, the invocand should be modified.

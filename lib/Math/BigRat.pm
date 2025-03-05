@@ -3876,6 +3876,38 @@ sub from_oct {
     return $self -> bnan(@r);
 }
 
+sub from_ieee754 {
+    my $self    = shift;
+    my $selfref = ref $self;
+    my $class   = $selfref || $self;
+
+    # Make "require" work.
+
+    $class -> import() if $IMPORT == 0;
+
+    # Don't modify constant (read-only) objects.
+
+    return $self if $selfref && $self -> modify('from_ieee754');
+
+    my $in     = shift;
+    my $format = shift;
+    my @r      = @_;
+
+    my $tmp = Math::BigFloat -> from_ieee754($in, $format, @r);
+
+    $tmp = $tmp -> as_rat();
+
+    # If called as a class method, initialize a new object.
+
+    $self = $class -> bzero(@r) unless $selfref;
+    $self -> {sign} = $tmp -> {sign};
+    $self -> {_n}   = $tmp -> {_n};
+    $self -> {_d}   = $tmp -> {_d};
+
+    $self -> _dng() if $self -> is_int();
+    return $self;
+}
+
 ##############################################################################
 # import
 
@@ -4183,6 +4215,16 @@ Create a BigRat from an octal number in string form.
     my $b = Math::BigRat->from_bin('0b10000000');
 
 Create a BigRat from an binary number in string form.
+
+=item from_ieee754()
+
+    # set $x to 13176795/4194304, the closest value to pi that can be
+    # represented in the binary32 (single) format
+    $x = Math::BigRat -> from_ieee754("40490fdb", "binary32");
+
+Interpret the input as a value encoded as described in IEEE754-2008.
+
+See L<Math::BigFloat/from_ieee754()>.
 
 =item bnan()
 

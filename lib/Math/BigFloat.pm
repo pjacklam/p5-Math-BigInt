@@ -7566,14 +7566,31 @@ If called as an instance method, the value is assigned to the invocand.
 
 =item from_ieee754()
 
-Interpret the input as a value encoded as described in IEEE754-2008.  The input
-can be given as a byte string, hex string or binary string. The input is
+Interpret the input as a value encoded as described in IEEE754-2008. The input
+can be given as a byte string, hex string, or binary string. The input is
 assumed to be in big-endian byte-order.
 
-        # both $dbl and $mbf are 3.141592...
-        $bytes = "\x40\x09\x21\xfb\x54\x44\x2d\x18";
-        $dbl = unpack "d>", $bytes;
-        $mbf = Math::BigFloat -> from_ieee754($bytes, "binary64");
+    # Both $dbl, $xr, $xh, and $xb below are 3.141592...
+
+    $dbl = unpack "d>", "\x40\x09\x21\xfb\x54\x44\x2d\x18";
+
+    $raw = "\x40\x09\x21\xfb\x54\x44\x2d\x18";          # raw bytes
+    $xr  = Math::BigFloat -> from_ieee754($raw, "binary64");
+
+    $hex = "400921fb54442d18";
+    $xh  = Math::BigFloat -> from_ieee754($hex, "binary64");
+
+    $bin = "0100000000001001001000011111101101010100010001000010110100011000";
+    $xb  = Math::BigFloat -> from_ieee754($bin, "binary64");
+
+Supported formats are all IEEE 754 binary formats: "binary16", "binary32",
+"binary64", "binary128", "binary160", "binary192", "binary224", "binary256",
+etc. where the number of bits is a multiple of 32 for all formats larger than
+"binary128". Aliases are "half" ("binary16"), "single" ("binary32"), "double"
+("binary64"), "quadruple" ("binary128"), "octuple" ("binary256"), and
+"sexdecuple" ("binary512").
+
+See also L</to_ieee754()>.
 
 =item bpi()
 
@@ -7716,7 +7733,7 @@ are recognized: "half" for "binary16", "single" for "binary32", "double" for
 "binary64", "quadruple" for "binary128", "octuple" for "binary256", and
 "sexdecuple" for "binary512".
 
-See also L<https://en.wikipedia.org/wiki/IEEE_754>.
+See also L</from_ieee754()>, L<https://en.wikipedia.org/wiki/IEEE_754>.
 
 =back
 

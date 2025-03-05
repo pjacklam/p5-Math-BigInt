@@ -5,6 +5,7 @@ use warnings;
 
 use Test::More tests => 230;
 
+use Math::BigInt;
 use Math::BigFloat;
 
 my @k = (16, 32, 64, 128);
@@ -224,19 +225,22 @@ for my $k (@k) {
              "\n");
 
         my $expected = $entry -> {obj};
+        $expected = "NaN" unless ($expected -> is_inf() ||
+                                  $expected -> is_int());
         my ($got, $test);
 
-        $got = Math::BigFloat -> from_ieee754($bin, $format);
-        $test = qq|Math::BigFloat->from_ieee754("$bin")|;
-        is($got -> bnstr(), $expected -> bnstr(), $test);
+        $got = Math::BigInt -> from_ieee754($bin, $format);
 
-        $got = Math::BigFloat -> from_ieee754($hex, $format);
-        $test = qq|Math::BigFloat->from_ieee754("$hex")|;
-        is($got -> bnstr(), $expected -> bnstr(), $test);
+        $test = qq|Math::BigInt->from_ieee754("$bin", "$format")|;
+        is($got, $expected, $test);
 
-        $got = Math::BigFloat -> from_ieee754($bytes, $format);
-        $test = qq|Math::BigFloat->from_ieee754("$str")|;
-        is($got -> bnstr(), $expected -> bnstr(), $test);
+        $got = Math::BigInt -> from_ieee754($hex, $format);
+        $test = qq|Math::BigInt->from_ieee754("$hex", "$format")|;
+        is($got, $expected, $test);
+
+        $got = Math::BigInt -> from_ieee754($bytes, $format);
+        $test = qq|Math::BigInt->from_ieee754("$str", "$format")|;
+        is($got, $expected, $test);
     }
 }
 
@@ -244,7 +248,7 @@ note("\nTest as class method vs. instance method.\n\n");
 
 # As class method.
 
-my $x = Math::BigFloat -> from_ieee754("4000000000000000", "binary64");
+my $x = Math::BigInt -> from_ieee754("4000000000000000", "binary64");
 is($x, 2, "class method");
 
 # As instance method, the invocand should be modified.

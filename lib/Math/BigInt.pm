@@ -1182,6 +1182,37 @@ sub from_bytes {
     return $self -> round(@r);
 }
 
+sub from_ieee754 {
+    my $self    = shift;
+    my $selfref = ref $self;
+    my $class   = $selfref || $self;
+
+    # Make "require" work.
+
+    $class -> import() if $IMPORT == 0;
+
+    # Don't modify constant (read-only) objects.
+
+    return $self if $selfref && $self -> modify('from_ieee754');
+
+    my $in     = shift;
+    my $format = shift;
+    my @r      = @_;
+
+    require Math::BigFloat;
+    my $tmp = Math::BigFloat -> from_ieee754($in, $format, @r);
+    return $self -> bnan(@r) unless $tmp -> is_inf() || $tmp -> is_int();
+    $tmp = $tmp -> as_int();
+
+    # If called as a class method, initialize a new object.
+
+    $self = $class -> bzero(@r) unless $selfref;
+    $self -> {sign}  = $tmp -> {sign};
+    $self -> {value} = $tmp -> {value};
+
+    return $self;
+}
+
 sub from_base {
     my $self    = shift;
     my $selfref = ref $self;
@@ -8005,6 +8036,18 @@ In some special cases, from_bytes() matches the conversion done by unpack():
     $b = "\x2d\xe0\x49\xad\x2d\xe0\x49\xad"; # eight char byte string
     $x = Math::BigInt->from_bytes($b);       # = 3305723134637787565
     $y = unpack "Q>", $b;                    # ditto, but scalar
+
+=item from_ieee754()
+
+    # set $x to 314159
+    $x = Math::BigInt -> from_ieee754("40490fdb", "binary32");
+
+Interpret the input as a value encoded as described in IEEE754-2008. NaN is
+returned if the value is neither +/-infinity nor an integer.
+
+See L<Math::BigFloat/from_ieee754()>.
+
+$ perl -MMath::BigFloat -wle 'print Math::BigFloat -> from_ieee754("489965e0", "binary32")'
 
 =item from_base()
 
