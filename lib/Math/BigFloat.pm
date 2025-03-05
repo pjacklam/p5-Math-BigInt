@@ -892,6 +892,56 @@ sub from_ieee754 {
     croak("The format '$format' is not yet supported.");
 }
 
+sub from_base {
+    my $self    = shift;
+    my $selfref = ref $self;
+    my $class   = $selfref || $self;
+
+    # Make "require" work.
+
+    $class -> import() if $IMPORT == 0;
+
+    # Don't modify constant (read-only) objects.
+
+    return $self if $selfref && $self -> modify('from_base');
+
+    my ($str, $base, $cs, @r) = @_;     # $cs is the collation sequence
+
+    $base = $class -> new($base) unless ref($base);
+
+    croak("the base must be a finite integer >= 2")
+      if $base < 2 || ! $base -> is_int();
+
+    # If called as a class method, initialize a new object.
+
+    $self = $class -> bzero() unless $selfref;
+
+    # If no collating sequence is given, pass some of the conversions to
+    # methods optimized for those cases.
+
+    unless (defined $cs) {
+        return $self -> from_bin($str, @r) if $base == 2;
+        return $self -> from_oct($str, @r) if $base == 8;
+        return $self -> from_hex($str, @r) if $base == 16;
+        return $self -> from_dec($str, @r) if $base == 10;
+    }
+
+    croak("from_base() requires a newer version of the $LIB library.")
+      unless $LIB -> can('_from_base');
+
+    my $base_lib = $LIB -> _lsft($LIB -> _copy($base->{_m}), $base->{_e}, 10);
+    $self -> {sign} = '+';
+    $self -> {_m}   = $LIB->_from_base($str, $base_lib,
+                                       defined($cs) ? $cs : ());
+    $self -> {_es}  = "+";
+    $self -> {_e}   = $LIB->_zero();
+    $self -> bnorm();
+
+    $self -> bround(@r);
+    $self -> _dng();
+    return $self;
+}
+
 sub bzero {
     # create/assign '+0'
 
@@ -7630,6 +7680,10 @@ etc. where the number of bits is a multiple of 32 for all formats larger than
 "sexdecuple" ("binary512").
 
 See also L</to_ieee754()>.
+
+=item from_base()
+
+See L<Math::BigInt/from_base()>.
 
 =item bpi()
 

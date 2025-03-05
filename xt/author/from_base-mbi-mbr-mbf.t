@@ -3,12 +3,16 @@
 use strict;
 use warnings;
 
-use Test::More tests => 176;
+use Test::More tests => 153;
 
-my $class;
+my @classes;
 
-BEGIN { $class = 'Math::BigInt'; }
-BEGIN { use_ok($class); }
+BEGIN {
+    @classes = qw< Math::BigInt Math::BigRat Math::BigFloat >;
+    for my $class (@classes) {
+        use_ok($class);
+    }
+}
 
 my @data;
 
@@ -20,37 +24,40 @@ while (<DATA>) {
     my @in = split /:/;
     my $out = pop @in;
 
-    # As class method.
+    for my $class (@classes) {
 
-    {
-        my $x;
-        my $test = qq|\$x = $class -> from_base("$in[0]", $in[1]|;
-        $test .= qq|, "$in[2]"| if @in == 3;
-        $test .= qq|);|;
+        # As class method.
 
-        eval $test;
-        #die $@ if $@;           # this should never happen
-        die "\nThe following test died when eval()'ed. This indicates a ",
-          "broken test\n\n    $test\n\nThe error message was\n\n    $@\n"
-          if $@;
-
-        subtest $test, sub {
-            plan tests => 2,
-
-            is(ref($x), $class, "output arg is a $class");
-            is($x, $out, 'output arg has the right value');
-        };
-    }
-
-    # As instance method.
-
-    {
-        for my $str ("-1", "0", "1", "-inf", "+inf", "NaN") {
+        {
             my $x;
-            my $test = qq|\$x = $class -> new("$str");|;
+            my $test = qq|\$x = $class -> from_base("$in[0]", $in[1]|;
+            $test .= qq|, "$in[2]"| if @in == 3;
+            $test .= qq|);|;
+            note("\n$test\n\n");
+
+            eval $test;
+            #die $@ if $@;           # this should never happen
+            die "\nThe following test died when eval()'ed. This indicates a ",
+              "broken test\n\n    $test\n\nThe error message was\n\n    $@\n"
+              if $@;
+
+            subtest $test, sub {
+                plan tests => 2;
+
+                is(ref($x), $class, "output arg is a $class");
+                is($x, $out, 'output arg has the right value');
+            };
+        }
+
+        # As instance method.
+
+        {
+            my $x;
+            my $test = qq|\$x = $class -> bnan();|;
             $test .= qq| \$x -> from_base("$in[0]", $in[1]|;
             $test .= qq|, "$in[2]"| if @in == 3;
             $test .= qq|);|;
+            note("\n$test\n\n");
 
             eval $test;
             #die $@ if $@;       # this should never happen
@@ -59,7 +66,7 @@ while (<DATA>) {
               if $@;
 
             subtest $test, sub {
-                plan tests => 2,
+                plan tests => 2;
 
                 is(ref($x), $class, "output arg is a $class");
                 is($x, $out, 'output arg has the right value');

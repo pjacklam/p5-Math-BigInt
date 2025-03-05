@@ -1244,20 +1244,15 @@ sub from_base {
         return $self -> from_bin($str, @r) if $base == 2;
         return $self -> from_oct($str, @r) if $base == 8;
         return $self -> from_hex($str, @r) if $base == 16;
-        if ($base == 10) {
-            my $tmp = $class -> from_dec($str, @r);
-            $self -> {value} = $tmp -> {value};
-            $self -> {sign}  = '+';
-            return $self -> bround(@r);
-        }
-    }
+        return $self -> from_dec($str, @r) if $base == 10;
+     }
 
     croak("from_base() requires a newer version of the $LIB library.")
       unless $LIB -> can('_from_base');
 
     $self -> {sign}  = '+';
-    $self -> {value}
-      = $LIB->_from_base($str, $base -> {value}, defined($cs) ? $cs : ());
+    $self -> {value} = $LIB->_from_base($str, $base -> {value},
+                                        defined($cs) ? $cs : ());
     return $self -> bround(@r);
 }
 

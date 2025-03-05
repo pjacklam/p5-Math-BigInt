@@ -3936,6 +3936,53 @@ sub from_ieee754 {
     return $self;
 }
 
+sub from_base {
+    my $self    = shift;
+    my $selfref = ref $self;
+    my $class   = $selfref || $self;
+
+    # Make "require" work.
+
+    $class -> import() if $IMPORT == 0;
+
+    # Don't modify constant (read-only) objects.
+
+    return $self if $selfref && $self -> modify('from_base');
+
+    my ($str, $base, $cs, @r) = @_;     # $cs is the collation sequence
+
+    $base = $class -> new($base) unless ref($base);
+
+    croak("the base must be a finite integer >= 2")
+      if $base < 2 || ! $base -> is_int();
+
+    # If called as a class method, initialize a new object.
+
+    $self = $class -> bzero() unless $selfref;
+
+    # If no collating sequence is given, pass some of the conversions to
+    # methods optimized for those cases.
+
+    unless (defined $cs) {
+        return $self -> from_bin($str, @r) if $base == 2;
+        return $self -> from_oct($str, @r) if $base == 8;
+        return $self -> from_hex($str, @r) if $base == 16;
+        return $self -> from_dec($str, @r) if $base == 10;
+    }
+
+    croak("from_base() requires a newer version of the $LIB library.")
+      unless $LIB -> can('_from_base');
+
+    $self -> {sign} = '+';
+    $self -> {_n}   = $LIB->_from_base($str, $base -> {_n},
+                                       defined($cs) ? $cs : ());
+    $self -> {_d}   = $LIB->_one();
+    $self -> bnorm();
+
+    $self -> _dng();
+    return $self;
+}
+
 ##############################################################################
 # import
 
@@ -4262,6 +4309,10 @@ See L<Math::BigInt/from_bytes()>.
 Interpret the input as a value encoded as described in IEEE754-2008.
 
 See L<Math::BigFloat/from_ieee754()>.
+
+=item from_base()
+
+See L<Math::BigInt/from_base()>.
 
 =item bnan()
 
