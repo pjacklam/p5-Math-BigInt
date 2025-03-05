@@ -3876,6 +3876,32 @@ sub from_oct {
     return $self -> bnan(@r);
 }
 
+sub from_bytes {
+    my $self    = shift;
+    my $selfref = ref $self;
+    my $class   = $selfref || $self;
+
+    # Make "require" work.
+
+    $class -> import() if $IMPORT == 0;
+
+    # Don't modify constant (read-only) objects.
+
+    return $self if $selfref && $self -> modify('from_bytes');
+
+    my $str = shift;
+    my @r = @_;
+
+    # If called as a class method, initialize a new object.
+
+    $self = $class -> bzero(@r) unless $selfref;
+
+    $self -> {sign} = "+";
+    $self -> {_n}   = $LIB -> _from_bytes($str);
+    $self -> {_d}   = $LIB -> _one();
+    return $self;
+}
+
 sub from_ieee754 {
     my $self    = shift;
     my $selfref = ref $self;
@@ -4215,6 +4241,15 @@ Create a BigRat from an octal number in string form.
     my $b = Math::BigRat->from_bin('0b10000000');
 
 Create a BigRat from an binary number in string form.
+
+=item from_bytes()
+
+    $x = Math::BigRat->from_bytes("\xf3\x6b");  # $x = 62315
+
+Interpret the input as a byte string, assuming big endian byte order. The
+output is always a non-negative, finite integer.
+
+See L<Math::BigInt/from_bytes()>.
 
 =item from_ieee754()
 
