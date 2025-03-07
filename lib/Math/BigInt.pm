@@ -6145,7 +6145,8 @@ sub to_bytes {
     croak("to_bytes() requires a finite, non-negative integer")
         if $x -> is_neg() || ! $x -> is_int();
 
-    return $x -> _upg() -> to_bytes(@r) if $class -> upgrade() && !$x -> isa(__PACKAGE__);
+    return $x -> _upg() -> to_bytes(@r)
+      if $class -> upgrade() && !$x -> isa(__PACKAGE__);
 
     croak("to_bytes() requires a newer version of the $LIB library.")
         unless $LIB -> can('_to_bytes');

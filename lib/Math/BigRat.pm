@@ -3624,6 +3624,25 @@ sub to_bin {
     return $x->{sign} eq "-" ? "-$str" : $str;
 }
 
+sub to_bytes {
+    # return a byte string
+
+    my ($class, $x, @r) = ref($_[0]) ? (ref($_[0]), @_) : objectify(1, @_);
+
+    carp "Rounding is not supported for ", (caller(0))[3], "()" if @r;
+
+    croak("to_bytes() requires a finite, non-negative integer")
+        if $x -> is_neg() || ! $x -> is_int();
+
+    return $x -> _upg() -> to_bytes(@r)
+      if $class -> upgrade() && !$x -> isa(__PACKAGE__);
+
+    croak("to_bytes() requires a newer version of the $LIB library.")
+        unless $LIB -> can('_to_bytes');
+
+    return $LIB->_to_bytes($x->{_n});
+}
+
 sub as_bin {
     my ($class, $x) = ref($_[0]) ? (undef, $_[0]) : objectify(1, @_);
 
@@ -4596,6 +4615,10 @@ Not implemented in Math::BigRat.
 =item bestr()
 
 Not implemented in Math::BigRat.
+
+=item to_bytes()
+
+See L<Math::BigInt/to_bytes()>.
 
 =item bcmp()
 

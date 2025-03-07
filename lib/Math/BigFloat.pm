@@ -6372,6 +6372,25 @@ sub to_bin {
     return $x->{sign} eq '-' ? "-$str" : $str;
 }
 
+sub to_bytes {
+    # return a byte string
+
+    my ($class, $x, @r) = ref($_[0]) ? (ref($_[0]), @_) : objectify(1, @_);
+
+    carp "Rounding is not supported for ", (caller(0))[3], "()" if @r;
+
+    croak("to_bytes() requires a finite, non-negative integer")
+        if $x -> is_neg() || ! $x -> is_int();
+
+    return $x -> _upg() -> to_bytes(@r)
+      if $class -> upgrade() && !$x -> isa(__PACKAGE__);
+
+    croak("to_bytes() requires a newer version of the $LIB library.")
+        unless $LIB -> can('_to_bytes');
+
+    return $LIB->_to_bytes($LIB -> _lsft($x->{_m}, $x->{_e}, 10));
+}
+
 sub to_ieee754 {
     my ($class, $x, $format, @r) = ref($_[0]) ? (ref($_[0]), @_) : objectify(1, @_);
 
@@ -7804,6 +7823,10 @@ object that has the same class as $x, a subclass thereof, or a string that
 C<ref($x)-E<gt>new()> can parse to create an object.
 
 In Math::BigFloat, C<as_float()> has the same effect as C<copy()>.
+
+=item to_bytes()
+
+See L<Math::BigInt/to_bytes()>.
 
 =item to_ieee754()
 
