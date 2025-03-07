@@ -6154,6 +6154,21 @@ sub to_bytes {
     return $LIB->_to_bytes($x->{value});
 }
 
+sub to_ieee754 {
+    my ($class, $x, $format, @r) = ref($_[0]) ? (ref($_[0]), @_)
+                                              : objectify(1, @_);
+
+    carp "Rounding is not supported for ", (caller(0))[3], "()" if @r;
+
+    return $x -> _upg() -> to_ieee754($format, @r)
+      if $class -> upgrade() && !$x -> isa(__PACKAGE__);
+
+    croak("the value to convert must be an integer, +/-infinity, or NaN")
+      unless $x -> is_int() || $x -> is_inf() || $x -> is_nan();
+
+    return $x -> as_float() -> to_ieee754($format);
+}
+
 sub to_base {
     # return a base anything string
 
@@ -9285,6 +9300,10 @@ C<_to_base()>, all input values may be arbitrarily large.
 
     $x = Math::BigInt->new(65191);
     $x->to_base_num(128);                       # returns [3, 125, 39]
+
+=item to_ieee754()
+
+See L<Math::BigFloat/to_ieee754()>.
 
 =item as_hex()
 

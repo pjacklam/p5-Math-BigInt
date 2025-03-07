@@ -5,7 +5,7 @@ use warnings;
 
 use Test::More tests => 66;
 
-use Math::BigFloat;
+use Math::BigRat;
 
 my @k = (16, 32, 64, 128);
 
@@ -19,9 +19,9 @@ for my $k (@k) {
           : $k == 64 ? 53
           : $k - sprintf("%.0f", 4 * log($k)/log(2)) + 13;
 
-    $b = Math::BigFloat -> new($b);
-    $k = Math::BigFloat -> new($k);
-    $p = Math::BigFloat -> new($p);
+    $b = Math::BigRat -> new($b);
+    $k = Math::BigRat -> new($k);
+    $p = Math::BigRat -> new($p);
     my $w = $k - $p;
 
     my $emax = 2 ** ($w - 1) - 1;
@@ -31,7 +31,7 @@ for my $k (@k) {
 
     note("\nComputing test data for k = $k ...\n\n");
 
-    my $binv = Math::BigFloat -> new("0.5");
+    my $binv = Math::BigRat -> new("0.5");
 
     my $data =
       [
@@ -106,7 +106,7 @@ for my $k (@k) {
              . "0" . ("1" x ($w - 1))
              . "0" x ($p - 1),
         asc => "1",
-        obj => Math::BigFloat -> new("1"),
+        obj => Math::BigRat -> new("1"),
        },
 
        {
@@ -115,7 +115,7 @@ for my $k (@k) {
              . "0" . ("1" x ($w - 1))
              . "0" x ($p - 1),
         asc => "-1",
-        obj => Math::BigFloat -> new("-1"),
+        obj => Math::BigRat -> new("-1"),
        },
 
        {
@@ -124,7 +124,7 @@ for my $k (@k) {
              . "1" . ("0" x ($w - 1))
              . ("0" x ($p - 1)),
         asc => "2",
-        obj => Math::BigFloat -> new("2"),
+        obj => Math::BigRat -> new("2"),
        },
 
        {
@@ -133,7 +133,7 @@ for my $k (@k) {
              . "1" . ("0" x ($w - 1))
              . ("0" x ($p - 1)),
         asc => "-2",
-        obj => Math::BigFloat -> new("-2"),
+        obj => Math::BigRat -> new("-2"),
        },
 
        {
@@ -142,7 +142,7 @@ for my $k (@k) {
              . ("0" x $w)
              . ("0" x ($p - 1)),
         asc => "+0",
-        obj => Math::BigFloat -> new("0"),
+        obj => Math::BigRat -> new("0"),
        },
 
        {
@@ -151,7 +151,7 @@ for my $k (@k) {
              . ("1" x $w)
              . ("0" x ($p - 1)),
         asc => "+inf",
-        obj => Math::BigFloat -> new("inf"),
+        obj => Math::BigRat -> new("inf"),
        },
 
        {
@@ -160,7 +160,7 @@ for my $k (@k) {
              . ("1" x $w)
              . ("0" x ($p - 1)),
         asc => "-inf",
-        obj => Math::BigFloat -> new("-inf"),
+        obj => Math::BigRat -> new("-inf"),
        },
 
        {
@@ -169,7 +169,7 @@ for my $k (@k) {
              . ("1" x $w)
              . ("1" . ("0" x ($p - 2))),
         asc => "NaN",
-        obj => Math::BigFloat -> new("NaN"),
+        obj => Math::BigRat -> new("NaN"),
        },
 
       ];
@@ -183,7 +183,7 @@ for my $k (@k) {
 
         my $x = $entry -> {obj};
 
-        my $test = qq|Math::BigFloat -> new("$x") -> to_ieee754("$format")|;
+        my $test = qq|Math::BigRat -> new("$x) -> to_ieee754("$format")|;
 
         my $got_bytes = $x -> to_ieee754($format);
         my $got_hex = unpack "H*", $got_bytes;
@@ -202,10 +202,10 @@ for my $k (@k) {
 
 {
     # largest subnormal number
-    my $lo = Math::BigFloat -> from_ieee754("03ff", "binary16");
+    my $lo = Math::BigRat -> from_ieee754("03ff", "binary16");
 
     # smallest normal number
-    my $hi = Math::BigFloat -> from_ieee754("0400", "binary16");
+    my $hi = Math::BigRat -> from_ieee754("0400", "binary16");
 
     # compute an average weighted towards the larger of the two
     my $x = 0.25 * $lo + 0.75 * $hi;
@@ -217,10 +217,10 @@ for my $k (@k) {
 
 {
     # largest number smaller than one
-    my $lo = Math::BigFloat -> from_ieee754("3bff", "binary16");
+    my $lo = Math::BigRat -> from_ieee754("3bff", "binary16");
 
     # one
-    my $hi = Math::BigFloat -> from_ieee754("3c00", "binary16");
+    my $hi = Math::BigRat -> from_ieee754("3c00", "binary16");
 
     # compute an average weighted towards the larger of the two
     my $x = 0.25 * $lo + 0.75 * $hi;
@@ -233,10 +233,10 @@ for my $k (@k) {
 
 {
     # largest subnormal number
-    my $lo = Math::BigFloat -> from_ieee754("007fffff", "binary32");
+    my $lo = Math::BigRat -> from_ieee754("007fffff", "binary32");
 
     # smallest normal number
-    my $hi = Math::BigFloat -> from_ieee754("00800000", "binary32");
+    my $hi = Math::BigRat -> from_ieee754("00800000", "binary32");
 
     # compute an average weighted towards the larger of the two
     my $x = 0.25 * $lo + 0.75 * $hi;
@@ -248,10 +248,10 @@ for my $k (@k) {
 
 {
     # largest number smaller than one
-    my $lo = Math::BigFloat -> from_ieee754("3f7fffff", "binary32");
+    my $lo = Math::BigRat -> from_ieee754("3f7fffff", "binary32");
 
     # one
-    my $hi = Math::BigFloat -> from_ieee754("3f800000", "binary32");
+    my $hi = Math::BigRat -> from_ieee754("3f800000", "binary32");
 
     # compute an average weighted towards the larger of the two
     my $x = 0.25 * $lo + 0.75 * $hi;
@@ -265,10 +265,10 @@ for my $k (@k) {
 
 {
     # largest subnormal number
-    my $lo = Math::BigFloat -> from_ieee754("000fffffffffffff", "binary64");
+    my $lo = Math::BigRat -> from_ieee754("000fffffffffffff", "binary64");
 
     # smallest normal number
-    my $hi = Math::BigFloat -> from_ieee754("0010000000000000", "binary64");
+    my $hi = Math::BigRat -> from_ieee754("0010000000000000", "binary64");
 
     # compute an average weighted towards the larger of the two
     my $x = 0.25 * $lo + 0.75 * $hi;
@@ -280,10 +280,10 @@ for my $k (@k) {
 
 {
     # largest number smaller than one
-    my $lo = Math::BigFloat -> from_ieee754("3fefffffffffffff", "binary64");
+    my $lo = Math::BigRat -> from_ieee754("3fefffffffffffff", "binary64");
 
     # one
-    my $hi = Math::BigFloat -> from_ieee754("3ff0000000000000", "binary64");
+    my $hi = Math::BigRat -> from_ieee754("3ff0000000000000", "binary64");
 
     # compute an average weighted towards the larger of the two
     my $x = 0.25 * $lo + 0.75 * $hi;

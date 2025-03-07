@@ -3643,6 +3643,15 @@ sub to_bytes {
     return $LIB->_to_bytes($x->{_n});
 }
 
+sub to_ieee754 {
+    my ($class, $x, $format, @r) = ref($_[0]) ? (ref($_[0]), @_)
+                                              : objectify(1, @_);
+
+    carp "Rounding is not supported for ", (caller(0))[3], "()" if @r;
+
+    return $x -> as_float() -> to_ieee754($format);
+}
+
 sub as_bin {
     my ($class, $x) = ref($_[0]) ? (undef, $_[0]) : objectify(1, @_);
 
@@ -4619,6 +4628,10 @@ Not implemented in Math::BigRat.
 =item to_bytes()
 
 See L<Math::BigInt/to_bytes()>.
+
+=item to_ieee754()
+
+See L<Math::BigFloat/to_ieee754()>.
 
 =item bcmp()
 
