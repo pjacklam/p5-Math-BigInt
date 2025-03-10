@@ -8261,10 +8261,10 @@ Returns true if the invocand is one and false otherwise.
 Returns true if the invocand is a finite number, i.e., it is neither +inf,
 -inf, nor NaN.
 
-=item is_inf( [ SIGN ] )
+=item is_inf()
 
-    $x->is_inf();               # true if $x is +inf
-    $x->is_inf("+");            # ditto
+    $x->is_inf();               # true if $x is +inf or -inf
+    $x->is_inf("+");            # true if $x is +inf
     $x->is_inf("-");            # true if $x is -inf
 
 Returns true if the invocand is infinite and false otherwise.
