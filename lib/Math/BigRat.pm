@@ -2119,6 +2119,98 @@ sub bint {
     return $x;
 }
 
+sub bgcd {
+    # GCD -- Euclid's algorithm, variant C (Knuth Vol 3, pg 341 ff)
+
+    # Class::method(...) -> Class->method(...)
+    unless (@_ && (defined(blessed($_[0])) && $_[0] -> isa(__PACKAGE__) ||
+                   ($_[0] =~ /^[a-z]\w*(?:::[a-z]\w*)*$/i &&
+                    $_[0] !~ /^(inf|nan)/i)))
+    {
+        #carp "Using ", (caller(0))[3], "() as a function is deprecated;",
+        #  " use is as a method instead";
+        unshift @_, __PACKAGE__;
+    }
+
+    my ($class, @args) = objectify(0, @_);
+
+    # Pre-process list of operands.
+
+    for my $arg (@args) {
+        return $class -> bnan() unless $arg -> is_finite();
+    }
+
+    # Temporarily disable downgrading.
+
+    my $dng = $class -> downgrade();
+    $class -> downgrade(undef);
+
+    my $x = shift @args;
+    $x = $x -> copy();          # bgcd() and blcm() never modify any operands
+
+    while (@args) {
+        my $y = shift @args;
+
+        # greatest common divisor
+        while (! $y -> is_zero()) {
+            ($x, $y) = ($y -> copy(), $x -> copy() -> bmod($y));
+        }
+
+        last if $x -> is_one();
+    }
+    $x -> babs();
+
+    # Restore downgrading.
+
+    $class -> downgrade($dng);
+
+    $x -> _dng() if $x -> is_int();
+    return $x;
+}
+
+sub blcm {
+    # Least Common Multiple
+
+    # Class::method(...) -> Class->method(...)
+    unless (@_ && (defined(blessed($_[0])) && $_[0] -> isa(__PACKAGE__) ||
+                   ($_[0] =~ /^[a-z]\w*(?:::[a-z]\w*)*$/i &&
+                    $_[0] !~ /^(inf|nan)/i)))
+    {
+        #carp "Using ", (caller(0))[3], "() as a function is deprecated;",
+        #  " use is as a method instead";
+        unshift @_, __PACKAGE__;
+    }
+
+    my ($class, @args) = objectify(0, @_);
+
+    # Pre-process list of operands.
+
+    my $all_zero = 1;   # are all operands zero?
+    my $one_zero = 0;   # are at least one operand zero?
+
+    for my $arg (@args) {
+        return $class -> bnan() unless $arg -> is_finite();
+        my $arg_is_zero = $arg -> is_zero();
+        $all_zero &&= $arg_is_zero;
+        $one_zero ||= $arg_is_zero;
+    }
+
+    return $class -> bnan()  if $all_zero;
+    return $class -> bzero() if $one_zero;
+
+    my $x = shift @args;
+    $x = $x -> copy();          # bgcd() and blcm() never modify any operands
+
+    while (@args) {
+        my $y = shift @args;
+        my $gcd = $x -> copy() -> bgcd($y);
+        $x -> bdiv($gcd) -> bmul($y);
+    }
+
+    $x -> babs();       # might downgrade
+    return $x;
+}
+
 sub bfac {
     my ($class, $x, @r) = ref($_[0]) ? (ref($_[0]), @_) : objectify(1, @_);
 
@@ -4689,6 +4781,16 @@ otherwise.
 Used to shift numbers left/right.
 
 Please see the documentation in L<Math::BigInt> for further details.
+
+=item bgcd()
+
+    $x -> bgcd($y);             # GCD of $x and $y
+    $x -> bgcd($y, $z, ...);    # GCD of $x, $y, $z, ...
+
+Returns the greatest common divisor (GCD), which is the number with the largest
+absolute value such that $x/$gcd, $y/$gcd, ... is an integer. For example, when
+the operands are 4/5 and 6/5, the GCD is 2/5. This is a generalisation of the
+ordinary GCD for integers. See L<Math::BigInt/gcd()>.
 
 =item band()
 

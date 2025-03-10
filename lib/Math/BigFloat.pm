@@ -5594,12 +5594,12 @@ sub bint {
 ###############################################################################
 
 sub bgcd {
-    # (BINT or num_str, BINT or num_str) return BINT
-    # does not modify arguments, but returns new object
+    # GCD -- Euclid's algorithm, variant C (Knuth Vol 3, pg 341 ff)
 
     # Class::method(...) -> Class->method(...)
     unless (@_ && (defined(blessed($_[0])) && $_[0] -> isa(__PACKAGE__) ||
-                   $_[0] =~ /^[a-z]\w*(?:::[a-z]\w*)*$/i))
+                   ($_[0] =~ /^[a-z]\w*(?:::[a-z]\w*)*$/i &&
+                    $_[0] !~ /^(inf|nan)/i)))
     {
         #carp "Using ", (caller(0))[3], "() as a function is deprecated;",
         #  " use is as a method instead";
@@ -5608,12 +5608,22 @@ sub bgcd {
 
     my ($class, @args) = objectify(0, @_);
 
+    # Pre-process list of operands.
+
+    for my $arg (@args) {
+        return $class -> bnan() unless $arg -> is_finite();
+    }
+
+    # Temporarily disable downgrading.
+
+    my $dng = $class -> downgrade();
+    $class -> downgrade(undef);
+
     my $x = shift @args;
-    return $class -> bnan() unless $x -> is_int();
+    $x = $x -> copy();          # bgcd() and blcm() never modify any operands
 
     while (@args) {
         my $y = shift @args;
-        return $class -> bnan() unless $y -> is_int();
 
         # greatest common divisor
         while (! $y -> is_zero()) {
@@ -5624,18 +5634,21 @@ sub bgcd {
     }
     $x -> babs();
 
+    # Restore downgrading.
+
+    $class -> downgrade($dng);
+
     $x -> _dng() if $x -> is_int();
     return $x;
 }
 
 sub blcm {
-    # (BFLOAT or num_str, BFLOAT or num_str) return BFLOAT
-    # does not modify arguments, but returns new object
     # Least Common Multiple
 
     # Class::method(...) -> Class->method(...)
     unless (@_ && (defined(blessed($_[0])) && $_[0] -> isa(__PACKAGE__) ||
-                   $_[0] =~ /^[a-z]\w*(?:::[a-z]\w*)*$/i))
+                   ($_[0] =~ /^[a-z]\w*(?:::[a-z]\w*)*$/i &&
+                    $_[0] !~ /^(inf|nan)/i)))
     {
         #carp "Using ", (caller(0))[3], "() as a function is deprecated;",
         #  " use is as a method instead";
@@ -5644,20 +5657,31 @@ sub blcm {
 
     my ($class, @args) = objectify(0, @_);
 
+    # Pre-process list of operands.
+
+    my $all_zero = 1;   # are all operands zero?
+    my $one_zero = 0;   # are at least one operand zero?
+
+    for my $arg (@args) {
+        return $class -> bnan() unless $arg -> is_finite();
+        my $arg_is_zero = $arg -> is_zero();
+        $all_zero &&= $arg_is_zero;
+        $one_zero ||= $arg_is_zero;
+    }
+
+    return $class -> bnan()  if $all_zero;
+    return $class -> bzero() if $one_zero;
+
     my $x = shift @args;
-    return $class -> bnan() if $x->{sign} !~ /^[+-]$/;          # x NaN?
-    $x = $x -> copy();
+    $x = $x -> copy();          # bgcd() and blcm() never modify any operands
 
     while (@args) {
         my $y = shift @args;
-        return $x -> bnan() unless $y -> is_int();              # y not integer
-        my $gcd = $x -> bgcd($y);
-        $x = $x -> bdiv($gcd) -> bmul($y);
+        my $gcd = $x -> copy() -> bgcd($y);
+        $x -> bdiv($gcd) -> bmul($y);
     }
 
-    $x = $x -> babs();
-
-    $x -> _dng() if $x -> is_int();
+    $x -> babs();       # might downgrade
     return $x;
 }
 
@@ -7805,6 +7829,16 @@ Calculate the arcus tanges of C<$y> divided by C<$x>, modifying $y in place.
 See also L</batan()>.
 
 This method was added in v1.87 of Math::BigInt (June 2007).
+
+=item bgcd()
+
+    $x -> bgcd($y);             # GCD of $x and $y
+    $x -> bgcd($y, $z, ...);    # GCD of $x, $y, $z, ...
+
+Returns the greatest common divisor (GCD), which is the number with the largest
+absolute value such that $x/$gcd, $y/$gcd, ... is an integer. For example, when
+the operands are 0.8 and 1.2, the GCD is 0.4. This is a generalisation of the
+ordinary GCD for integers. See L<Math::BigInt/gcd()>.
 
 =item as_float()
 

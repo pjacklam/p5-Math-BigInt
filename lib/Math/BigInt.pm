@@ -5427,13 +5427,12 @@ sub bint {
 ###############################################################################
 
 sub bgcd {
-    # (BINT or num_str, BINT or num_str) return BINT
-    # does not modify arguments, but returns new object
     # GCD -- Euclid's algorithm, variant C (Knuth Vol 3, pg 341 ff)
 
     # Class::method(...) -> Class->method(...)
     unless (@_ && (defined(blessed($_[0])) && $_[0] -> isa(__PACKAGE__) ||
-                   $_[0] =~ /^[a-z]\w*(?:::[a-z]\w*)*$/i))
+                   ($_[0] =~ /^[a-z]\w*(?:::[a-z]\w*)*$/i &&
+                    $_[0] !~ /^(inf|nan)/i)))
     {
         #carp "Using ", (caller(0))[3], "() as a function is deprecated;",
         #  " use is as a method instead";
@@ -5441,6 +5440,12 @@ sub bgcd {
     }
 
     my ($class, @args) = objectify(0, @_);
+
+    # Pre-process list of operands.
+
+    for my $arg (@args) {
+        return $class -> bnan() unless $arg -> is_int();
+    }
 
     # Upgrade?
 
@@ -5453,16 +5458,17 @@ sub bgcd {
                 last;
             }
         }
-        return $upg -> bgcd(@args) if $do_upgrade;
+        if ($do_upgrade) {
+            my $x = shift @args;
+            $x -> _upg();
+            return $x -> bgcd(@args);
+        }
     }
 
     my $x = shift @args;
-    return $class -> bnan() if !$x -> is_finite();          # x NaN?
-
-    $x = $x -> copy();
+    $x = $x -> copy();          # bgcd() and blcm() never modify any operands
     while (@args) {
         my $y = shift @args;
-        return $class -> bnan() if !$y -> is_finite();      # y NaN?
         $x->{value} = $LIB->_gcd($x->{value}, $y->{value});
         last if $LIB->_is_one($x->{value});
     }
@@ -5471,13 +5477,12 @@ sub bgcd {
 }
 
 sub blcm {
-    # (BINT or num_str, BINT or num_str) return BINT
-    # does not modify arguments, but returns new object
     # Least Common Multiple
 
     # Class::method(...) -> Class->method(...)
     unless (@_ && (defined(blessed($_[0])) && $_[0] -> isa(__PACKAGE__) ||
-                   $_[0] =~ /^[a-z]\w*(?:::[a-z]\w*)*$/i))
+                   ($_[0] =~ /^[a-z]\w*(?:::[a-z]\w*)*$/i &&
+                    $_[0] !~ /^(inf|nan)/i)))
     {
         #carp "Using ", (caller(0))[3], "() as a function is deprecated;",
         #  " use is as a method instead";
@@ -5485,6 +5490,21 @@ sub blcm {
     }
 
     my ($class, @args) = objectify(0, @_);
+
+    # Pre-process list of operands.
+
+    my $all_zero = 1;   # are all operands zero?
+    my $one_zero = 0;   # are at least one operand zero?
+
+    for my $arg (@args) {
+        return $class -> bnan() unless $arg -> is_finite() && $arg -> is_int();
+        my $arg_is_zero = $arg -> is_zero();
+        $all_zero &&= $arg_is_zero;
+        $one_zero ||= $arg_is_zero;
+    }
+
+    return $class -> bnan()  if $all_zero;
+    return $class -> bzero() if $one_zero;
 
     # Upgrade?
 
@@ -5497,16 +5517,21 @@ sub blcm {
                 last;
             }
         }
-        return $upg -> bgcd(@args) if $do_upgrade;
+        if ($do_upgrade) {
+            my $x = shift @args;
+            $x -> _upg();
+            return $x -> bgcd(@args);
+        }
     }
 
     my $x = shift @args;
-    $x = $x -> copy();
-    return $class -> bnan() if !$x -> is_finite();          # x NaN?
+    $x = $x -> copy();          # bgcd() and blcm() never modify any operands
+    return $x if $x -> is_zero();
 
     while (@args) {
         my $y = shift @args;
-        return $x -> bnan() if !$y -> is_finite();          # y not integer
+        return $x -> bzero() if $y -> is_zero();
+        return $x -> bnan() if !$y -> is_int();         # is $y not integer?
         $x -> {value} = $LIB->_lcm($x -> {value}, $y -> {value});
     }
 
@@ -9033,7 +9058,8 @@ Round $x towards zero.
     $x -> bgcd($y);             # GCD of $x and $y
     $x -> bgcd($y, $z, ...);    # GCD of $x, $y, $z, ...
 
-Returns the greatest common divisor (GCD).
+Returns the greatest common divisor (GCD), which is the largest positive
+integer that divides each of the operands.
 
 =item blcm()
 
