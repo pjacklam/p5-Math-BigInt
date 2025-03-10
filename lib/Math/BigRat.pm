@@ -4616,14 +4616,15 @@ Return true if $x is even, otherwise false.
 
     $x->bceil();
 
-Set $x to the next bigger integer value (e.g. truncate the number to integer
-and then increment it by one).
+Round $x towards plus infinity, i.e., set $x to the smallest integer greater
+than or equal to $x.
 
 =item bfloor()
 
     $x->bfloor();
 
-Truncate $x to an integer value.
+Round $x towards minus infinity, i.e., set $x to the largest integer less than
+or equal to $x.
 
 =item bint()
 

@@ -9039,7 +9039,7 @@ or equal to $x.
     $x->bceil();
 
 Round $x towards plus infinity, i.e., set $x to the smallest integer greater
-than or equal to $x).
+than or equal to $x.
 
 =item bint()
 
