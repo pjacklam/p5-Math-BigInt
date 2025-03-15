@@ -2348,8 +2348,7 @@ sub bpow {
     # We don't support complex numbers, so upgrade or return NaN.
 
     if ($x -> is_negative() && !$y -> is_int()) {
-        return $upgrade -> bpow($upgrade -> new($x), $y, @r)
-          if $class -> upgrade();
+        return $x -> _upg() -> bpow($y, @r) if $class -> upgrade();
         return $x -> bnan();
     }
 

@@ -2540,16 +2540,19 @@ sub bfdiv {
     # At this point, both the numerator and denominator are finite, non-zero
     # numbers.
 
-    if ($class -> upgrade() && !$wantarray) {
-        my $tmp = $class -> upgrade() -> bfdiv($x, $y, @r);
-        if ($tmp -> is_int()) {
-            $tmp = $tmp -> as_int();
-            %$x = %$tmp;
-        } else {
-            %$x = %$tmp;
-            bless $x, $upgrade;
+    unless ($wantarray) {
+        my $upg = $class -> upgrade();
+        if ($upg) {
+            my $tmp = $upg -> bfdiv($x, $y, @r);
+            if ($tmp -> is_int()) {
+                $tmp = $tmp -> as_int();
+                %$x = %$tmp;
+            } else {
+                %$x = %$tmp;
+                bless $x, $upg;
+            }
+            return $x;
         }
-        return $x;
     }
 
     # If called with "foreign" arguments.
@@ -2836,16 +2839,19 @@ sub btdiv {
     # Division might return a non-integer result, so upgrade, if upgrading is
     # enabled.
 
-    if ($upgrade && !$wantarray) {
-        my $tmp = $upgrade -> btdiv($x, $y, @r);
-        if ($tmp -> is_int()) {
-            $tmp = $tmp -> as_int();
-            %$x = %$tmp;
-        } else {
-            %$x = %$tmp;
-            bless $x, $upgrade;
+    unless ($wantarray) {
+        my $upg = $class -> upgrade();
+        if ($upg) {
+            my $tmp = $upg -> btdiv($x, $y, @r);
+            if ($tmp -> is_int()) {
+                $tmp = $tmp -> as_int();
+                %$x = %$tmp;
+            } else {
+                %$x = %$tmp;
+                bless $x, $upg;
+            }
+            return $x;
         }
-        return $x;
     }
 
     # If called with "foreign" arguments.
@@ -4156,14 +4162,15 @@ sub bsin {
     return $x -> bzero(@r) if $x -> is_zero();
     return $x -> bnan(@r)  if $x -> is_inf() || $x -> is_nan();
 
-    if ($upgrade) {
-        my $xtmp = $upgrade -> bsin($x, @r);
+    my $upg = $class -> upgrade();
+    if ($upg) {
+        my $xtmp = $upg -> bsin($x, @r);
         if ($xtmp -> is_int()) {
             $xtmp = $xtmp -> as_int();
             %$x = %$xtmp;
         } else {
             %$x = %$xtmp;
-            bless $x, $upgrade;
+            bless $x, $upg;
         }
         return $x;
     }
@@ -4185,14 +4192,15 @@ sub bcos {
     return $x -> bone(@r) if $x -> is_zero();
     return $x -> bnan(@r) if $x -> is_inf() || $x -> is_nan();
 
-    if ($upgrade) {
-        my $xtmp = $upgrade -> bcos($x, @r);
+    my $upg = $class -> upgrade();
+    if ($upg) {
+        my $xtmp = $upg -> bcos($x, @r);
         if ($xtmp -> is_int()) {
             $xtmp = $xtmp -> as_int();
             %$x = %$xtmp;
         } else {
             %$x = %$xtmp;
-            bless $x, $upgrade;
+            bless $x, $upg;
         }
         return $x;
     }
