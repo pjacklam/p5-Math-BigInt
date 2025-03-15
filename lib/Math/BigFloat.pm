@@ -2822,13 +2822,6 @@ sub binv {
 
     return $x if $x -> modify('binv');
 
-    # If called as a function with a "foreign" argument.
-
-    unless ($x -> isa(__PACKAGE__)) {
-        return $x -> _upg() -> binv(@r) if $class -> upgrade();
-        croak "Can't handle a ", ref($x), " in ", (caller(0))[3], "()";
-    }
-
     # bone() might perform downgrading, so temporarily disable downgrading
 
     my $dng = Math::BigFloat -> downgrade();
@@ -3317,15 +3310,6 @@ sub bmuladd {
             } elsif ($z->{sign} eq "+inf") {
                 return $x -> binf("+", @r);
             }
-        }
-    }
-
-    # If called with "foreign" arguments.
-
-    for my $arg ($x, $y, $z) {
-        unless ($arg -> isa(__PACKAGE__)) {
-            return $x -> _upg() -> bmuladd($y, $z, @r) if $class -> upgrade();
-            croak "Can't handle a ", ref($arg), " in ", (caller(0))[3], "()";
         }
     }
 
@@ -3910,13 +3894,6 @@ sub bilog2 {
     return $x -> binf("+", @r)   if $x -> is_inf("+");
     return $x -> binf("-", @r)   if $x -> is_zero();
 
-    # If called with "foreign" argument.
-
-    unless ($x -> isa(__PACKAGE__)) {
-        return $x -> _upg() -> bilog2(@r) if $class -> upgrade();
-        croak "Can't handle a ", ref($x), " in ", (caller(0))[3], "()";
-    }
-
     if ($x -> is_neg()) {
         return $x -> _upg() -> bilog2(@r) if $class -> upgrade();
         return $x -> bnan(@r);
@@ -3945,13 +3922,6 @@ sub bilog10 {
     return $x -> bnan(@r)        if $x -> is_nan();
     return $x -> binf("+", @r)   if $x -> is_inf("+");
     return $x -> binf("-", @r)   if $x -> is_zero();
-
-    # If called with "foreign" argument.
-
-    unless ($x -> isa(__PACKAGE__)) {
-        return $x -> _upg() -> bilog10(@r) if $class -> upgrade();
-        croak "Can't handle a ", ref($x), " in ", (caller(0))[3], "()";
-    }
 
     if ($x -> is_neg()) {
         return $x -> _upg() -> bilog10(@r) if $class -> upgrade();
@@ -3982,13 +3952,6 @@ sub bclog2 {
     return $x -> binf("+", @r)   if $x -> is_inf("+");
     return $x -> binf("-", @r)   if $x -> is_zero();
 
-    # If called with "foreign" argument.
-
-    unless ($x -> isa(__PACKAGE__)) {
-        return $x -> _upg() -> bclog2(@r) if $class -> upgrade();
-        croak "Can't handle a ", ref($x), " in ", (caller(0))[3], "()";
-    }
-
     if ($x -> is_neg()) {
         return $x -> _upg() -> bclog2(@r) if $class -> upgrade();
         return $x -> bnan(@r);
@@ -4017,13 +3980,6 @@ sub bclog10 {
     return $x -> bnan(@r)        if $x -> is_nan();
     return $x -> binf("+", @r)   if $x -> is_inf("+");
     return $x -> binf("-", @r)   if $x -> is_zero();
-
-    # If called with "foreign" argument.
-
-    unless ($x -> isa(__PACKAGE__)) {
-        return $x -> _upg() -> bclog10(@r) if $class -> upgrade();
-        croak "Can't handle a ", ref($x), " in ", (caller(0))[3], "()";
-    }
 
     if ($x -> is_neg()) {
         return $x -> _upg() -> bclog10(@r) if $class -> upgrade();
@@ -4805,13 +4761,6 @@ sub bmfac {
     my $one = $class -> bone();
     return $x -> bone(@r) if $x <= $one;
 
-    # If called with "foreign" argument.
-
-    unless ($x -> isa(__PACKAGE__)) {
-        return $x -> _upg() -> bmfac(@r) if $class -> upgrade();
-        croak "Can't handle a ", ref($x), " in ", (caller(0))[3], "()";
-    }
-
     my $f = $x -> copy();
     while ($f -> bsub($k) > $one) {
         $x -> bmul($f);
@@ -4832,13 +4781,6 @@ sub bfib {
     # Don't modify constant (read-only) objects.
 
     return $x if $x -> modify('bfib');
-
-    # If called with "foreign" argument.
-
-    unless ($x -> isa(__PACKAGE__)) {
-        return $x -> _upg() -> bfib(@r) if $class -> upgrade();
-        croak "Can't handle a ", ref($x), " in ", (caller(0))[3], "()";
-    }
 
     # List context.
 
@@ -4925,13 +4867,6 @@ sub blucas {
     # Don't modify constant (read-only) objects.
 
     return $x if $x -> modify('blucas');
-
-    # If called with "foreign" argument.
-
-    unless ($x -> isa(__PACKAGE__)) {
-        return $x -> _upg() -> blucas(@r) if $class -> upgrade();
-        croak "Can't handle a ", ref($x), " in ", (caller(0))[3], "()";
-    }
 
     # List context.
 

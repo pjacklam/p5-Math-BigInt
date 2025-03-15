@@ -1884,20 +1884,18 @@ sub bcmp {
 
     # If called with "foreign" arguments.
 
-    for my $arg ($x, $y) {
-        unless ($arg -> isa(__PACKAGE__)) {
+    unless ($y -> isa(__PACKAGE__)) {
+        if ($y -> is_int()) {
+            $y = $y -> as_int();
+        } else {
             return $x -> _upg() -> bcmp($y, @r) if $class -> upgrade();
-            croak "Can't handle a ", ref($arg), " in ", (caller(0))[3], "()";
+            croak "Can't handle a ", ref($y), " in ", (caller(0))[3], "()";
         }
     }
 
     ###########################################################################
     # Code for Math::BigInt objects
     ###########################################################################
-
-    # have same sign, so compare absolute values. Don't make tests for zero
-    # here because it's actually slower than testing in Calc (especially w/
-    # Pari et al)
 
     # post-normalized compare for internal use (honors signs)
     if ($x->{sign} eq '+') {
@@ -1939,10 +1937,12 @@ sub bacmp {
 
     # If called with "foreign" arguments.
 
-    for my $arg ($x, $y) {
-        unless ($arg -> isa(__PACKAGE__)) {
+    unless ($y -> isa(__PACKAGE__)) {
+        if ($y -> is_int()) {
+            $y = $y -> as_int();
+        } else {
             return $x -> _upg() -> bacmp($y, @r) if $class -> upgrade();
-            croak "Can't handle a ", ref($arg), " in ", (caller(0))[3], "()";
+            croak "Can't handle a ", ref($y), " in ", (caller(0))[3], "()";
         }
     }
 
@@ -2104,17 +2104,6 @@ sub binc {
     return $x -> round(@r) if $x -> is_inf() || $x -> is_nan();
 
     ###########################################################################
-    # Code for things that aren't Math::BigInt
-    ###########################################################################
-
-    # If called as a function with a "foreign" argument.
-
-    unless ($x -> isa(__PACKAGE__)) {
-        return $x -> _upg() -> binc(@r) if $class -> upgrade();
-        croak "Can't handle a ", ref($x), " in ", (caller(0))[3], "()";
-    }
-
-    ###########################################################################
     # Code for Math::BigInt objects
     ###########################################################################
 
@@ -2141,17 +2130,6 @@ sub bdec {
     return $x if $x -> modify('bdec');
 
     return $x -> round(@r) if $x -> is_inf() || $x -> is_nan();
-
-    ###########################################################################
-    # Code for things that aren't Math::BigInt
-    ###########################################################################
-
-    # If called as a function with a "foreign" argument.
-
-    unless ($x -> isa(__PACKAGE__)) {
-        return $x -> _upg() -> bdec(@r) if $class -> upgrade();
-        croak "Can't handle a ", ref($x), " in ", (caller(0))[3], "()";
-    }
 
     ###########################################################################
     # Code for Math::BigInt objects
@@ -2300,10 +2278,12 @@ sub badd {
 
     # If called with "foreign" arguments.
 
-    for my $arg ($x, $y) {
-        unless ($arg -> isa(__PACKAGE__)) {
+    unless ($y -> isa(__PACKAGE__)) {
+        if ($y -> is_int()) {
+            $y = $y -> as_int();
+        } else {
             return $x -> _upg() -> badd($y, @r) if $class -> upgrade();
-            croak "Can't handle a ", ref($arg), " in ", (caller(0))[3], "()";
+            croak "Can't handle a ", ref($y), " in ", (caller(0))[3], "()";
         }
     }
 
@@ -2358,10 +2338,12 @@ sub bsub {
 
     # If called with "foreign" arguments.
 
-    for my $arg ($x, $y) {
-        unless ($arg -> isa(__PACKAGE__)) {
+    unless ($y -> isa(__PACKAGE__)) {
+        if ($y -> is_int()) {
+            $y = $y -> as_int();
+        } else {
             return $x -> _upg() -> bsub($y, @r) if $class -> upgrade();
-            croak "Can't handle a ", ref($arg), " in ", (caller(0))[3], "()";
+            croak "Can't handle a ", ref($y), " in ", (caller(0))[3], "()";
         }
     }
 
@@ -2413,10 +2395,12 @@ sub bmul {
 
     # If called with "foreign" arguments.
 
-    for my $arg ($x, $y) {
-        unless ($arg -> isa(__PACKAGE__)) {
+    unless ($y -> isa(__PACKAGE__)) {
+        if ($y -> is_int()) {
+            $y = $y -> as_int();
+        } else {
             return $x -> _upg() -> bmul($y, @r) if $class -> upgrade();
-            croak "Can't handle a ", ref($arg), " in ", (caller(0))[3], "()";
+            croak "Can't handle a ", ref($y), " in ", (caller(0))[3], "()";
         }
     }
 
@@ -2570,10 +2554,12 @@ sub bfdiv {
 
     # If called with "foreign" arguments.
 
-    for my $arg ($x, $y) {
-        unless ($arg -> isa(__PACKAGE__)) {
+    unless ($y -> isa(__PACKAGE__)) {
+        if ($y -> is_int()) {
+            $y = $y -> as_int();
+        } else {
             return $x -> _upg() -> bfdiv($y, @r) if $class -> upgrade();
-            croak "Can't handle a ", ref($arg), " in ", (caller(0))[3], "()";
+            croak "Can't handle a ", ref($y), " in ", (caller(0))[3], "()";
         }
     }
 
@@ -2710,10 +2696,12 @@ sub bfmod {
 
     # If called with "foreign" arguments.
 
-    for my $arg ($x, $y) {
-        unless ($arg -> isa(__PACKAGE__)) {
+    unless ($y -> isa(__PACKAGE__)) {
+        if ($y -> is_int()) {
+            $y = $y -> as_int();
+        } else {
             return $x -> _upg() -> bfmod($y, @r) if $class -> upgrade();
-            croak "Can't handle a ", ref($arg), " in ", (caller(0))[3], "()";
+            croak "Can't handle a ", ref($y), " in ", (caller(0))[3], "()";
         }
     }
 
@@ -2862,10 +2850,12 @@ sub btdiv {
 
     # If called with "foreign" arguments.
 
-    for my $arg ($x, $y) {
-        unless ($arg -> isa(__PACKAGE__)) {
+    unless ($y -> isa(__PACKAGE__)) {
+        if ($y -> is_int()) {
+            $y = $y -> as_int();
+        } else {
             return $x -> _upg() -> btdiv($y, @r) if $class -> upgrade();
-            croak "Can't handle a ", ref($arg), " in ", (caller(0))[3], "()";
+            croak "Can't handle a ", ref($y), " in ", (caller(0))[3], "()";
         }
     }
 
@@ -2960,10 +2950,12 @@ sub btmod {
 
     # If called with "foreign" arguments.
 
-    for my $arg ($x, $y) {
-        unless ($arg -> isa(__PACKAGE__)) {
+    unless ($y -> isa(__PACKAGE__)) {
+        if ($y -> is_int()) {
+            $y = $y -> as_int();
+        } else {
             return $x -> _upg() -> btmod($y, @r) if $class -> upgrade();
-            croak "Can't handle a ", ref($arg), " in ", (caller(0))[3], "()";
+            croak "Can't handle a ", ref($y), " in ", (caller(0))[3], "()";
         }
     }
 
@@ -2997,17 +2989,18 @@ sub binv {
     return $x -> round(@r)      if $x -> is_one("+") || $x -> is_one("-");
 
     ###########################################################################
+    # Output might be finite, non-integer, so upgrade.
+    ###########################################################################
+
+    return $x -> _upg() -> binv(@r) if $class -> upgrade();
+
+    ###########################################################################
     # Code for things that aren't Math::BigInt
     ###########################################################################
 
-    # If called with "foreign" argument.
-
     unless ($x -> isa(__PACKAGE__)) {
-        return $x -> _upg() -> binv(@r) if $class -> upgrade();
         croak "Can't handle a ", ref($x), " in ", (caller(0))[3], "()";
     }
-
-    return $x -> _upg() -> binv(@r) if $class -> upgrade();
 
     ###########################################################################
     # Code for Math::BigInt objects
@@ -3020,23 +3013,35 @@ sub bsqrt {
     # calculate square root of $x
     my ($class, $x, @r) = ref($_[0]) ? (ref($_[0]), @_) : objectify(1, @_);
 
+    ###########################################################################
+    # Code for all classes that share the common interface.
+    ###########################################################################
+
     # Don't modify constant (read-only) objects.
 
     return $x if $x -> modify('bsqrt');
 
-    # If called with "foreign" argument.
+    return $x -> round(@r) if ($x -> is_zero() || $x -> is_one("+") ||
+                               $x -> is_nan() || $x -> is_inf("+"));
+    return $x -> bnan(@r)  if $x -> is_negative();
 
-    unless ($x -> isa(__PACKAGE__)) {
-        return $x -> _upg() -> bsqrt(@r) if $class -> upgrade();
-        croak "Can't handle a ", ref($x), " in ", (caller(0))[3], "()";
-    }
-
-    return $x -> round(@r) if ($x -> is_nan() || $x -> is_zero() ||
-                               $x -> is_one("+") || $x -> is_inf("+"));
+    ###########################################################################
+    # Output might be finite, non-integer, so upgrade.
+    ###########################################################################
 
     return $x -> _upg() -> bsqrt(@r) if $class -> upgrade();
 
-    return $x -> bnan(@r) if $x -> is_neg();
+    ###########################################################################
+    # Code for things that aren't Math::BigInt
+    ###########################################################################
+
+    unless ($x -> isa(__PACKAGE__)) {
+        croak "Can't handle a ", ref($x), " in ", (caller(0))[3], "()";
+    }
+
+    ###########################################################################
+    # Code for Math::BigInt objects
+    ###########################################################################
 
     $x->{value} = $LIB -> _sqrt($x->{value});
     return $x -> round(@r);
@@ -3137,14 +3142,18 @@ sub broot {
 
     # If called with "foreign" argument.
 
-    unless ($x -> isa(__PACKAGE__)) {
-        return $x -> _upg() -> broot(@r) if $class -> upgrade();
-        croak "Can't handle a ", ref($x), " in ", (caller(0))[3], "()";
+    unless ($y -> isa(__PACKAGE__)) {
+        if ($y -> is_int()) {
+            $y = $y -> as_int();
+        } else {
+            return $x -> _upg() -> broot($y, @r) if $class -> upgrade();
+            croak "Can't handle a ", ref($y), " in ", (caller(0))[3], "()";
+        }
     }
 
     # NaN handling: $x ** 1/0, x or y NaN, or y inf/-inf or y == 0
-    return $x -> bnan(@r) if $x->{sign} !~ /^\+/ || $y -> is_zero() ||
-                           $y->{sign} !~ /^\+$/;
+    return $x -> bnan(@r) if ($x->{sign} !~ /^\+/ || $y -> is_zero() ||
+                              $y->{sign} !~ /^\+$/);
 
     # Quick exit for trivial cases.
     return $x -> round(@r)
@@ -3275,10 +3284,16 @@ sub bmuladd {
 
     # If called with "foreign" arguments.
 
-    for my $arg ($x, $y, $z) {
-        unless ($arg -> isa(__PACKAGE__)) {
+    unless ($y -> isa(__PACKAGE__) && $z -> isa(__PACKAGE__)) {
+        if ($y -> is_int() && $z -> is_int()) {
+            $y = $y -> as_int();
+            $z = $z -> as_int();
+        } else {
             return $x -> _upg() -> bmuladd($y, $z, @r) if $class -> upgrade();
-            croak "Can't handle a ", ref($arg), " in ", (caller(0))[3], "()";
+            croak "Can't handle a ", ref($y), " in ", (caller(0))[3], "()"
+              unless $y -> isa(__PACKAGE__);
+            croak "Can't handle a ", ref($z), " in ", (caller(0))[3], "()"
+              unless $z -> isa(__PACKAGE__);
         }
     }
 
@@ -3330,11 +3345,16 @@ sub bmodpow {
 
     # If called with "foreign" arguments.
 
-    for my $arg ($num, $exp, $mod) {
-        unless ($arg -> isa(__PACKAGE__)) {
-            return $num -> _upg() -> bmodpow($exp, $mod, @r)
-              if $class -> upgrade();
-            croak "Can't handle a ", ref($arg), " in ", (caller(0))[3], "()";
+    unless ($exp -> isa(__PACKAGE__) && $mod -> isa(__PACKAGE__)) {
+        if ($exp -> is_int() && $mod -> is_int()) {
+            $exp = $exp -> as_int();
+            $mod = $mod -> as_int();
+        } else {
+            return $num -> _upg() -> bmodpow($exp, $mod, @r) if $class -> upgrade();
+            croak "Can't handle a ", ref($exp), " in ", (caller(0))[3], "()"
+              unless $exp -> isa(__PACKAGE__);
+            croak "Can't handle a ", ref($mod), " in ", (caller(0))[3], "()"
+              unless $mod -> isa(__PACKAGE__);
         }
     }
 
@@ -3469,10 +3489,12 @@ sub bmodinv {
 
     # If called with "foreign" arguments.
 
-    for my $arg ($x, $y) {
-        unless ($arg -> isa(__PACKAGE__)) {
+    unless ($y -> isa(__PACKAGE__)) {
+        if ($y -> is_int()) {
+            $y = $y -> as_int();
+        } else {
             return $x -> _upg() -> bmodinv($y, @r) if $class -> upgrade();
-            croak "Can't handle a ", ref($arg), " in ", (caller(0))[3], "()";
+            croak "Can't handle a ", ref($y), " in ", (caller(0))[3], "()";
         }
     }
 
@@ -3553,13 +3575,6 @@ sub blog {
     # Don't modify constant (read-only) objects.
 
     return $x if $x->modify('blog');
-
-    # If called with "foreign" argument.
-
-    unless ($x -> isa(__PACKAGE__)) {
-        return $x -> _upg() -> blog($base, @r) if $class -> upgrade();
-        croak "Can't handle a ", ref($x), " in ", (caller(0))[3], "()";
-    }
 
     # Handle all exception cases and all trivial cases. I have used Wolfram
     # Alpha (http://www.wolframalpha.com) as the reference for these cases.
@@ -3654,15 +3669,18 @@ sub bexp {
     return $x -> bzero(@r) if $x -> is_inf("-");
 
     ###########################################################################
+    # Output might be finite, non-integer, so upgrade.
+    ###########################################################################
+
+    return $x -> _upg() -> bexp(@r) if $class -> upgrade();
+
+    ###########################################################################
     # Code for things that aren't Math::BigInt
     ###########################################################################
 
     unless ($x -> isa(__PACKAGE__)) {
-        return $x -> _upg() -> bexp(@r) if $class -> upgrade();
-            croak "Can't handle a ", ref($x), " in ", (caller(0))[3], "()";
+        croak "Can't handle a ", ref($x), " in ", (caller(0))[3], "()";
     }
-
-    return $x -> _upg() -> bexp(@r) if $class -> upgrade();
 
     ###########################################################################
     # Code for Math::BigInt objects
@@ -3685,13 +3703,6 @@ sub bilog2 {
     return $x -> binf("+", @r) if $x -> is_inf("+");
     return $x -> binf("-", @r) if $x -> is_zero();
 
-    # If called with "foreign" argument.
-
-    unless ($x -> isa(__PACKAGE__)) {
-        return $x -> _upg() -> bilog2(@r) if $class -> upgrade();
-        croak "Can't handle a ", ref($x), " in ", (caller(0))[3], "()";
-    }
-
     if ($x -> is_neg()) {
         return $x -> _upg() -> bilog2(@r) if $class -> upgrade();
         return $x -> bnan(@r);
@@ -3711,13 +3722,6 @@ sub bilog10 {
     return $x -> bnan(@r)      if $x -> is_nan();
     return $x -> binf("+", @r) if $x -> is_inf("+");
     return $x -> binf("-", @r) if $x -> is_zero();
-
-    # If called with "foreign" argument.
-
-    unless ($x -> isa(__PACKAGE__)) {
-        return $x -> _upg() -> bilog10(@r) if $class -> upgrade();
-        croak "Can't handle a ", ref($x), " in ", (caller(0))[3], "()";
-    }
 
     if ($x -> is_neg()) {
         return $x -> _upg() -> bilog10(@r) if $class -> upgrade();
@@ -3739,13 +3743,6 @@ sub bclog2 {
     return $x -> binf("+", @r) if $x -> is_inf("+");
     return $x -> binf("-", @r) if $x -> is_zero();
 
-    # If called with "foreign" argument.
-
-    unless ($x -> isa(__PACKAGE__)) {
-        return $x -> _upg() -> bclog2(@r) if $class -> upgrade();
-        croak "Can't handle a ", ref($x), " in ", (caller(0))[3], "()";
-    }
-
     if ($x -> is_neg()) {
         return $x -> _upg() -> bclog2(@r) if $class -> upgrade();
         return $x -> bnan(@r);
@@ -3765,13 +3762,6 @@ sub bclog10 {
     return $x -> bnan(@r)      if $x -> is_nan();
     return $x -> binf("+", @r) if $x -> is_inf("+");
     return $x -> binf("-", @r) if $x -> is_zero();
-
-    # If called with "foreign" argument.
-
-    unless ($x -> isa(__PACKAGE__)) {
-        return $x -> _upg() -> bclog10(@r) if $class -> upgrade();
-        croak "Can't handle a ", ref($x), " in ", (caller(0))[3], "()";
-    }
 
     if ($x -> is_neg()) {
         return $x -> _upg() -> bclog10(@r) if $class -> upgrade();
@@ -3799,10 +3789,12 @@ sub bnok {
 
     # If called with "foreign" arguments.
 
-    for my $arg ($n, $k) {
-        unless ($arg -> isa(__PACKAGE__)) {
+    unless ($k -> isa(__PACKAGE__)) {
+        if ($k -> is_int()) {
+            $k = $k -> as_int();
+        } else {
             return $n -> _upg() -> bnok($k, @r) if $class -> upgrade();
-            croak "Can't handle a ", ref($arg), " in ", (caller(0))[3], "()";
+            croak "Can't handle a ", ref($k), " in ", (caller(0))[3], "()";
         }
     }
 
@@ -3899,10 +3891,12 @@ sub bperm {
 
     # If called with "foreign" arguments.
 
-    for my $arg ($n, $k) {
-        unless ($arg -> isa(__PACKAGE__)) {
+    unless ($k -> isa(__PACKAGE__)) {
+        if ($k -> is_int()) {
+            $k = $k -> as_int();
+        } else {
             return $n -> _upg() -> bperm($k, @r) if $class -> upgrade();
-            croak "Can't handle a ", ref($arg), " in ", (caller(0))[3], "()";
+            croak "Can't handle a ", ref($k), " in ", (caller(0))[3], "()";
         }
     }
 
@@ -4157,13 +4151,6 @@ sub bsin {
 
     return $x if $x -> modify('bsin');
 
-    # If called with "foreign" argument.
-
-    unless ($x -> isa(__PACKAGE__)) {
-        return $x -> _upg() -> bsin(@r) if $class -> upgrade();
-        croak "Can't handle a ", ref($x), " in ", (caller(0))[3], "()";
-    }
-
     # Trivial cases.
 
     return $x -> bzero(@r) if $x -> is_zero();
@@ -4192,13 +4179,6 @@ sub bcos {
     # Don't modify constant (read-only) objects.
 
     return $x if $x -> modify('bcos');
-
-    # If called with "foreign" argument.
-
-    unless ($x -> isa(__PACKAGE__)) {
-        return $x -> _upg() -> bcos(@r) if $class -> upgrade();
-        croak "Can't handle a ", ref($x), " in ", (caller(0))[3], "()";
-    }
 
     # Trivial cases.
 
@@ -4232,13 +4212,6 @@ sub batan {
 
     return $x if $x -> modify('batan');
 
-    # If called with "foreign" argument.
-
-    unless ($x -> isa(__PACKAGE__)) {
-        return $x -> _upg() -> batan(@r) if $class -> upgrade();
-        croak "Can't handle a ", ref($x), " in ", (caller(0))[3], "()";
-    }
-
     return $x -> bnan(@r)  if $x -> is_nan();
     return $x -> bzero(@r) if $x -> is_zero();
 
@@ -4262,10 +4235,12 @@ sub batan2 {
 
     # If called with "foreign" arguments.
 
-    for my $arg ($y, $x) {
-        unless ($arg -> isa(__PACKAGE__)) {
-            return $y -> _upg() -> batan2($x, @r) if $class -> upgrade();
-            croak "Can't handle a ", ref($arg), " in ", (caller(0))[3], "()";
+    unless ($y -> isa(__PACKAGE__)) {
+        if ($y -> is_int()) {
+            $y = $y -> as_int();
+        } else {
+            return $y -> _upg() -> batan2($y, @r) if $class -> upgrade();
+            croak "Can't handle a ", ref($y), " in ", (caller(0))[3], "()";
         }
     }
 
@@ -4331,13 +4306,6 @@ sub bfac {
     return $x -> bnan(@r)      if $x -> is_neg();
     return $x -> bone(@r)      if $x -> is_zero() || $x -> is_one();
 
-    # If called with "foreign" argument.
-
-    unless ($x -> isa(__PACKAGE__)) {
-        return $x -> _upg() -> bfac(@r) if $class -> upgrade();
-        croak "Can't handle a ", ref($x), " in ", (caller(0))[3], "()";
-    }
-
     $x->{value} = $LIB->_fac($x->{value});
     $x -> round(@r);
 }
@@ -4354,13 +4322,6 @@ sub bdfac {
     return $x -> binf("+", @r) if $x -> is_inf("+");
     return $x -> bnan(@r)      if $x <= -2;
     return $x -> bone(@r)      if $x <= 1;
-
-    # If called with "foreign" argument.
-
-    unless ($x -> isa(__PACKAGE__)) {
-        return $x -> _upg() -> bdfac(@r) if $class -> upgrade();
-        croak "Can't handle a ", ref($x), " in ", (caller(0))[3], "()";
-    }
 
     croak("bdfac() requires a newer version of the $LIB library.")
         unless $LIB -> can('_dfac');
@@ -4386,13 +4347,6 @@ sub btfac {
     my $one = $class -> bone();
     return $x -> bone(@r) if $x <= $one;
 
-    # If called with "foreign" argument.
-
-    unless ($x -> isa(__PACKAGE__)) {
-        return $x -> _upg() -> bdfac(@r) if $class -> upgrade();
-        croak "Can't handle a ", ref($x), " in ", (caller(0))[3], "()";
-    }
-
     my $f = $x -> copy();
     while ($f -> bsub($k) > $one) {
         $x -> bmul($f);
@@ -4414,11 +4368,15 @@ sub bmfac {
     return $x -> bnan(@r)      if $k -> is_nan();
     return $x -> binf("+", @r) if $x -> is_inf("+");
 
-    # If called with "foreign" argument.
+    # If called with "foreign" arguments.
 
-    unless ($x -> isa(__PACKAGE__)) {
-        return $x -> _upg() -> bmfac(@r) if $class -> upgrade();
-        croak "Can't handle a ", ref($x), " in ", (caller(0))[3], "()";
+    unless ($k -> isa(__PACKAGE__)) {
+        if ($k -> is_int()) {
+            $k = $k -> as_int();
+        } else {
+            return $x -> _upg() -> bmfac($k, @r) if $class -> upgrade();
+            croak "Can't handle a ", ref($k), " in ", (caller(0))[3], "()";
+        }
     }
 
     return $x -> bnan(@r) if $k < 1 || $x <= -$k;
@@ -4443,13 +4401,6 @@ sub bfib {
     # Don't modify constant (read-only) objects.
 
     return $x if $x -> modify('bfib');
-
-    # If called with "foreign" argument.
-
-    unless ($x -> isa(__PACKAGE__)) {
-        return $x -> _upg() -> bfib(@r) if $class -> upgrade();
-        croak "Can't handle a ", ref($x), " in ", (caller(0))[3], "()";
-    }
 
     # List context.
 
@@ -4521,13 +4472,6 @@ sub blucas {
     # Don't modify constant (read-only) objects.
 
     return $x if $x -> modify('blucas');
-
-    # If called with "foreign" argument.
-
-    unless ($x -> isa(__PACKAGE__)) {
-        return $x -> _upg() -> blucas(@r) if $class -> upgrade();
-        croak "Can't handle a ", ref($x), " in ", (caller(0))[3], "()";
-    }
 
     # List context.
 
@@ -4616,14 +4560,18 @@ sub blsft {
     $b = 2 unless defined $b;
     $b = $class -> new($b) unless defined(blessed($b));
 
-    # Handle "foreign" objects.
-
     # If called with "foreign" arguments.
 
-    for my $arg ($x, $y, $b) {
-        unless ($arg -> isa(__PACKAGE__)) {
-            return $x -> _upg() -> blsft($y, @r) if $class -> upgrade();
-            croak "Can't handle a ", ref($arg), " in ", (caller(0))[3], "()";
+    unless ($y -> isa(__PACKAGE__) && $b -> isa(__PACKAGE__)) {
+        if ($y -> is_int() && $b -> is_int()) {
+            $y = $y -> as_int();
+            $b = $b -> as_int();
+        } else {
+            return $x -> _upg() -> blsft($y, $b, @r) if $class -> upgrade();
+            croak "Can't handle a ", ref($x), " in ", (caller(0))[3], "()"
+              unless $y -> isa(__PACKAGE__);
+            croak "Can't handle a ", ref($b), " in ", (caller(0))[3], "()"
+              unless $b -> isa(__PACKAGE__);
         }
     }
 
@@ -4752,10 +4700,16 @@ sub brsft {
 
     # If called with "foreign" arguments.
 
-    for my $arg ($x, $y, $b) {
-        unless ($arg -> isa(__PACKAGE__)) {
-            return $x -> _upg() -> blsft($y, @r) if $class -> upgrade();
-            croak "Can't handle a ", ref($arg), " in ", (caller(0))[3], "()";
+    unless ($y -> isa(__PACKAGE__) && $b -> isa(__PACKAGE__)) {
+        if ($y -> is_int() && $b -> is_int()) {
+            $y = $y -> as_int();
+            $b = $b -> as_int();
+        } else {
+            return $x -> _upg() -> brsft($y, $b, @r) if $class -> upgrade();
+            croak "Can't handle a ", ref($x), " in ", (caller(0))[3], "()"
+              unless $y -> isa(__PACKAGE__);
+            croak "Can't handle a ", ref($b), " in ", (caller(0))[3], "()"
+              unless $b -> isa(__PACKAGE__);
         }
     }
 
@@ -5020,10 +4974,12 @@ sub band {
 
     # If called with "foreign" arguments.
 
-    for my $arg ($x, $y) {
-        unless ($arg -> isa(__PACKAGE__)) {
+    unless ($y -> isa(__PACKAGE__)) {
+        if ($y -> is_int()) {
+            $y = $y -> as_int();
+        } else {
             return $x -> _upg() -> band($y, @r) if $class -> upgrade();
-            croak "Can't handle a ", ref($arg), " in ", (caller(0))[3], "()";
+            croak "Can't handle a ", ref($y), " in ", (caller(0))[3], "()";
         }
     }
 
@@ -5056,10 +5012,12 @@ sub bior {
 
     # If called with "foreign" arguments.
 
-    for my $arg ($x, $y) {
-        unless ($arg -> isa(__PACKAGE__)) {
+    unless ($y -> isa(__PACKAGE__)) {
+        if ($y -> is_int()) {
+            $y = $y -> as_int();
+        } else {
             return $x -> _upg() -> bior($y, @r) if $class -> upgrade();
-            croak "Can't handle a ", ref($arg), " in ", (caller(0))[3], "()";
+            croak "Can't handle a ", ref($y), " in ", (caller(0))[3], "()";
         }
     }
 
@@ -5091,10 +5049,12 @@ sub bxor {
 
     # If called with "foreign" arguments.
 
-    for my $arg ($x, $y) {
-        unless ($arg -> isa(__PACKAGE__)) {
+    unless ($y -> isa(__PACKAGE__)) {
+        if ($y -> is_int()) {
+            $y = $y -> as_int();
+        } else {
             return $x -> _upg() -> bxor($y, @r) if $class -> upgrade();
-            croak "Can't handle a ", ref($arg), " in ", (caller(0))[3], "()";
+            croak "Can't handle a ", ref($y), " in ", (caller(0))[3], "()";
         }
     }
 
@@ -5121,13 +5081,6 @@ sub bnot {
     # Don't modify constant (read-only) objects.
 
     return $x if $x -> modify('bnot');
-
-    # If called as a function with a "foreign" argument.
-
-    unless ($x -> isa(__PACKAGE__)) {
-        return $x -> _upg() -> binc(@r) if $class -> upgrade();
-        croak "Can't handle a ", ref($x), " in ", (caller(0))[3], "()";
-    }
 
     $x -> binc() -> bneg(@r);
 }
@@ -5384,13 +5337,6 @@ sub bfloor {
 
     return $x if $x -> modify('bfloor');
 
-    # If called as a function with a "foreign" argument.
-
-    unless ($x -> isa(__PACKAGE__)) {
-        return $x -> _upg() -> bfloor(@r) if $class -> upgrade();
-        croak "Can't handle a ", ref($x), " in ", (caller(0))[3], "()";
-    }
-
     $x -> round(@r);
 }
 
@@ -5402,13 +5348,6 @@ sub bceil {
 
     return $x if $x -> modify('bceil');
 
-    # If called as a function with a "foreign" argument.
-
-    unless ($x -> isa(__PACKAGE__)) {
-        return $x -> _upg() -> bceil(@r) if $class -> upgrade();
-        croak "Can't handle a ", ref($x), " in ", (caller(0))[3], "()";
-    }
-
     $x -> round(@r);
 }
 
@@ -5419,13 +5358,6 @@ sub bint {
     # Don't modify constant (read-only) objects.
 
     return $x if $x -> modify('bint');
-
-    # If called as a function with a "foreign" argument.
-
-    unless ($x -> isa(__PACKAGE__)) {
-        return $x -> _upg() -> bint(@r) if $class -> upgrade();
-        croak "Can't handle a ", ref($x), " in ", (caller(0))[3], "()";
-    }
 
     $x->round(@r);
 }
@@ -5616,13 +5548,6 @@ sub mantissa {
 
     carp "Rounding is not supported for ", (caller(0))[3], "()" if @r;
 
-    # If called with "foreign" argument.
-
-    unless ($x -> isa(__PACKAGE__)) {
-        return $x -> _upg() -> mantissa(@r) if $class -> upgrade();
-        croak "Can't handle a ", ref($x), " in ", (caller(0))[3], "()";
-    }
-
     if (!$x -> is_finite()) {
         # for NaN, +inf, -inf: keep the sign
         return $class -> new($x->{sign}, @r);
@@ -5643,13 +5568,6 @@ sub exponent {
 
     carp "Rounding is not supported for ", (caller(0))[3], "()" if @r;
 
-    # If called with "foreign" argument.
-
-    unless ($x -> isa(__PACKAGE__)) {
-        return $x -> _upg() -> exponent(@r) if $class -> upgrade();
-        croak "Can't handle a ", ref($x), " in ", (caller(0))[3], "()";
-    }
-
     if (!$x -> is_finite()) {
         my $s = $x->{sign};
         $s =~ s/^[+-]//; # NaN, -inf, +inf => NaN or inf
@@ -5667,13 +5585,6 @@ sub parts {
 
     carp "Rounding is not supported for ", (caller(0))[3], "()" if @r;
 
-    # If called with "foreign" argument.
-
-    unless ($x -> isa(__PACKAGE__)) {
-        return $x -> _upg() -> parts(@r) if $class -> upgrade();
-        croak "Can't handle a ", ref($x), " in ", (caller(0))[3], "()";
-    }
-
     ($x -> mantissa(@r), $x -> exponent(@r));
 }
 
@@ -5685,13 +5596,6 @@ sub sparts {
     my ($class, $x, @r) = ref($_[0]) ? (ref($_[0]), @_) : objectify(1, @_);
 
     carp "Rounding is not supported for ", (caller(0))[3], "()" if @r;
-
-    # If called with "foreign" argument.
-
-    unless ($x -> isa(__PACKAGE__)) {
-        return $x -> _upg() -> sparts(@r) if $class -> upgrade();
-        croak "Can't handle a ", ref($x), " in ", (caller(0))[3], "()";
-    }
 
     # Not-a-number.
 
@@ -5734,13 +5638,6 @@ sub nparts {
 
     carp "Rounding is not supported for ", (caller(0))[3], "()" if @r;
 
-    # If called with "foreign" argument.
-
-    unless ($x -> isa(__PACKAGE__)) {
-        return $x -> _upg() -> nparts(@r) if $class -> upgrade();
-        croak "Can't handle a ", ref($x), " in ", (caller(0))[3], "()";
-    }
-
     # Not-a-Number and Infinity.
 
     return $x -> sparts(@r) if $x -> is_nan() || $x -> is_inf();
@@ -5773,13 +5670,6 @@ sub eparts {
     my ($class, $x, @r) = ref($_[0]) ? (ref($_[0]), @_) : objectify(1, @_);
 
     carp "Rounding is not supported for ", (caller(0))[3], "()" if @r;
-
-    # If called with "foreign" argument.
-
-    unless ($x -> isa(__PACKAGE__)) {
-        return $x -> _upg() -> eparts(@r) if $class -> upgrade();
-        croak "Can't handle a ", ref($x), " in ", (caller(0))[3], "()";
-    }
 
     # Not-a-number and Infinity.
 
@@ -5821,13 +5711,6 @@ sub dparts {
 
     carp "Rounding is not supported for ", (caller(0))[3], "()" if @r;
 
-    # If called with "foreign" argument.
-
-    unless ($x -> isa(__PACKAGE__)) {
-        return $x -> _upg() -> dparts(@r) if $class -> upgrade();
-        croak "Can't handle a ", ref($x), " in ", (caller(0))[3], "()";
-    }
-
     # Not-a-number.
 
     if ($x -> is_nan()) {
@@ -5863,13 +5746,6 @@ sub fparts {
 
     carp "Rounding is not supported for ", (caller(0))[3], "()" if @r;
 
-    # If called with "foreign" argument.
-
-    unless ($x -> isa(__PACKAGE__)) {
-        return $x -> _upg() -> fparts(@r) if $class -> upgrade();
-        croak "Can't handle a ", ref($x), " in ", (caller(0))[3], "()";
-    }
-
     # NaN => NaN/NaN
 
     if ($x -> is_nan()) {
@@ -5899,13 +5775,6 @@ sub numerator {
 
     carp "Rounding is not supported for ", (caller(0))[3], "()" if @r;
 
-    # If called with "foreign" argument.
-
-    unless ($x -> isa(__PACKAGE__)) {
-        return $x -> _upg() -> numerator(@r) if $class -> upgrade();
-        croak "Can't handle a ", ref($x), " in ", (caller(0))[3], "()";
-    }
-
     return $x -> copy() -> round(@r);
 }
 
@@ -5913,13 +5782,6 @@ sub denominator {
     my ($class, $x, @r) = ref($_[0]) ? (ref($_[0]), @_) : objectify(1, @_);
 
     carp "Rounding is not supported for ", (caller(0))[3], "()" if @r;
-
-    # If called with "foreign" argument.
-
-    unless ($x -> isa(__PACKAGE__)) {
-        return $x -> _upg() -> denominator(@r) if $class -> upgrade();
-        croak "Can't handle a ", ref($x), " in ", (caller(0))[3], "()";
-    }
 
     return $x -> is_nan() ? $class -> bnan(@r) : $class -> bone(@r);
 }

@@ -2530,15 +2530,6 @@ sub bmuladd {
         }
     }
 
-    # If called with "foreign" arguments.
-
-    for my $arg ($x, $y, $z) {
-        unless ($arg -> isa(__PACKAGE__)) {
-            return $x -> _upg() -> bmuladd($y, $z, @r) if $class -> upgrade();
-            croak "Can't handle a ", ref($arg), " in ", (caller(0))[3], "()";
-        }
-    }
-
     # The code below might be faster if we compute the GCD earlier than in the
     # call to bnorm().
     #
@@ -2832,13 +2823,6 @@ sub bilog2 {
     return $x -> binf("+", @r)   if $x -> is_inf("+");
     return $x -> binf("-", @r)   if $x -> is_zero();
 
-    # If called with "foreign" argument.
-
-    unless ($x -> isa(__PACKAGE__)) {
-        return $x -> _upg() -> bilog2(@r) if $class -> upgrade();
-        croak "Can't handle a ", ref($x), " in ", (caller(0))[3], "()";
-    }
-
     if ($x -> is_neg()) {
         return $x -> _upg() -> bilog2(@r) if $class -> upgrade();
         return $x -> bnan(@r);
@@ -2862,13 +2846,6 @@ sub bilog10 {
     return $x -> bnan(@r)        if $x -> is_nan();
     return $x -> binf("+", @r)   if $x -> is_inf("+");
     return $x -> binf("-", @r)   if $x -> is_zero();
-
-    # If called with "foreign" argument.
-
-    unless ($x -> isa(__PACKAGE__)) {
-        return $x -> _upg() -> bilog10(@r) if $class -> upgrade();
-        croak "Can't handle a ", ref($x), " in ", (caller(0))[3], "()";
-    }
 
     if ($x -> is_neg()) {
         return $x -> _upg() -> bilog10(@r) if $class -> upgrade();
@@ -2894,13 +2871,6 @@ sub bclog2 {
     return $x -> binf("+", @r)   if $x -> is_inf("+");
     return $x -> binf("-", @r)   if $x -> is_zero();
 
-    # If called with "foreign" argument.
-
-    unless ($x -> isa(__PACKAGE__)) {
-        return $x -> _upg() -> bclog2(@r) if $class -> upgrade();
-        croak "Can't handle a ", ref($x), " in ", (caller(0))[3], "()";
-    }
-
     if ($x -> is_neg()) {
         return $x -> _upg() -> bclog2(@r) if $class -> upgrade();
         return $x -> bnan(@r);
@@ -2924,13 +2894,6 @@ sub bclog10 {
     return $x -> bnan(@r)        if $x -> is_nan();
     return $x -> binf("+", @r)   if $x -> is_inf("+");
     return $x -> binf("-", @r)   if $x -> is_zero();
-
-    # If called with "foreign" argument.
-
-    unless ($x -> isa(__PACKAGE__)) {
-        return $x -> _upg() -> bclog10(@r) if $class -> upgrade();
-        croak "Can't handle a ", ref($x), " in ", (caller(0))[3], "()";
-    }
 
     if ($x -> is_neg()) {
         return $x -> _upg() -> bclog10(@r) if $class -> upgrade();
@@ -3009,13 +2972,6 @@ sub bfac {
     return $x -> bnan(@r)      if $x -> is_neg() || !$x -> is_int();
     return $x -> bone(@r)      if $x -> is_zero() || $x -> is_one();
 
-    # If called with "foreign" argument.
-
-    unless ($x -> isa(__PACKAGE__)) {
-        return $x -> _upg() -> bfac(@r) if $class -> upgrade();
-        croak "Can't handle a ", ref($x), " in ", (caller(0))[3], "()";
-    }
-
     $x->{_n} = $LIB->_fac($x->{_n});
     # since _d is 1, we don't need to reduce/norm the result
     $x -> round(@r);
@@ -3035,13 +2991,6 @@ sub bdfac {
     return $x -> binf("+", @r) if $x -> is_inf("+");
     return $x -> bnan(@r)      if $x <= -2 || !$x -> is_int();
     return $x -> bone(@r)      if $x <= 1;
-
-    # If called with "foreign" argument.
-
-    unless ($x -> isa(__PACKAGE__)) {
-        return $x -> _upg() -> bdfac(@r) if $class -> upgrade();
-        croak "Can't handle a ", ref($x), " in ", (caller(0))[3], "()";
-    }
 
     croak("bdfac() requires a newer version of the $LIB library.")
         unless $LIB -> can('_dfac');
@@ -3069,13 +3018,6 @@ sub btfac {
 
     my $one = $class -> bone();
     return $x -> bone(@r) if $x <= $one;
-
-    # If called with "foreign" argument.
-
-    unless ($x -> isa(__PACKAGE__)) {
-        return $x -> _upg() -> btfac(@r) if $class -> upgrade();
-        croak "Can't handle a ", ref($x), " in ", (caller(0))[3], "()";
-    }
 
     my $f = $x -> copy();
     while ($f -> bsub($k) > $one) {
@@ -3106,13 +3048,6 @@ sub bmfac {
     my $one = $class -> bone();
     return $x -> bone(@r) if $x <= $one;
 
-    # If called with "foreign" argument.
-
-    unless ($x -> isa(__PACKAGE__)) {
-        return $x -> _upg() -> bmfac(@r) if $class -> upgrade();
-        croak "Can't handle a ", ref($x), " in ", (caller(0))[3], "()";
-    }
-
     my $f = $x -> copy();
     while ($f -> bsub($k) > $one) {
         $x -> bmul($f);
@@ -3132,13 +3067,6 @@ sub bfib {
     # Don't modify constant (read-only) objects.
 
     return $x if $x -> modify('bfib');
-
-    # If called with "foreign" argument.
-
-    unless ($x -> isa(__PACKAGE__)) {
-        return $x -> _upg() -> bfib(@r) if $class -> upgrade();
-        croak "Can't handle a ", ref($x), " in ", (caller(0))[3], "()";
-    }
 
     # List context.
 
@@ -3220,13 +3148,6 @@ sub blucas {
     # Don't modify constant (read-only) objects.
 
     return $x if $x -> modify('blucas');
-
-    # If called with "foreign" argument.
-
-    unless ($x -> isa(__PACKAGE__)) {
-        return $x -> _upg() -> blucas(@r) if $class -> upgrade();
-        croak "Can't handle a ", ref($x), " in ", (caller(0))[3], "()";
-    }
 
     # List context.
 
