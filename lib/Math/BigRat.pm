@@ -4293,9 +4293,9 @@ Returns a rational approximation of PI accurate to the specified accuracy or
 the default accuracy if no accuracy is specified. If called as an instance
 method, the value is assigned to the invocand.
 
-    $x = Math::BigInt -> bpi(1);        # returns "3"
-    $x = Math::BigInt -> bpi(3);        # returns "22/7"
-    $x = Math::BigInt -> bpi(7);        # returns "355/113"
+    $x = Math::BigRat -> bpi(1);        # returns "3"
+    $x = Math::BigRat -> bpi(3);        # returns "22/7"
+    $x = Math::BigRat -> bpi(7);        # returns "355/113"
 
 =item copy()
 
