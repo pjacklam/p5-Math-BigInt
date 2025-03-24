@@ -42,7 +42,6 @@ Verify that these three expressions give the same result:
     $x -> bmuladd($y, $z)
     $x -> bmul($y) -> badd($z)
     $x * $y + $z
-
 EOF
 
 my @values = qw< -Inf -3 -2.5 -2 -1.5 -1 0.5 0 0.5 1 1.5 2 2.5 3 Inf NaN >;
@@ -60,8 +59,13 @@ EOF
 
             my $x = Math::BigFloat -> new("$a") -> bmuladd("$b", "$c");
             my $y = Math::BigFloat -> new("$a") -> bmul("$b") -> badd("$c");
+
             my $z = $a * $b + $c;
-            $z = lc($y) if $z =~ /inf/i; # Math::Big* use "inf", not "Inf"
+
+            $z = "NaN" if $z =~ /nan/i;
+            if ($z =~ /inf/i) {
+                $z = $z < 0 ? "-inf" : "inf";
+            }
 
             subtest "$a * $b + $c = $z" => sub {
                 plan tests => 4;

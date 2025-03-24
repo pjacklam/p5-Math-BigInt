@@ -33,7 +33,7 @@ subtest '$x = Math::BigInt -> new("2"); $y = $x -> bmuladd("3", "5");'
       is(ref($y), 'Math::BigInt', '$y is a Math::BigInt');
       is(refaddr($x), refaddr($y), '$x and $y are the same object');
       cmp_ok($x, "==", 11, '$x == 11');
-};
+  };
 
 note <<'EOF';
 
@@ -42,7 +42,6 @@ Verify that these three expressions give the same result:
     $x -> bmuladd($y, $z)
     $x -> bmul($y) -> badd($z)
     $x * $y + $z
-
 EOF
 
 my @values = qw< -Inf -3 -2 -1 0 1 2 3 Inf NaN >;
@@ -60,8 +59,13 @@ EOF
 
             my $x = Math::BigInt -> new("$a") -> bmuladd("$b", "$c");
             my $y = Math::BigInt -> new("$a") -> bmul("$b") -> badd("$c");
+
             my $z = $a * $b + $c;
-            $z = lc($y) if $z =~ /inf/i;    # Math::Big* use "inf", not "Inf"
+
+            $z = "NaN" if $z =~ /nan/i;
+            if ($z =~ /inf/i) {
+                $z = $z < 0 ? "-inf" : "inf";
+            }
 
             subtest "$a * $b + $c = $z" => sub {
                 plan tests => 4;

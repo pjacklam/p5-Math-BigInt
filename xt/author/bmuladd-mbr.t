@@ -42,7 +42,6 @@ Verify that these three expressions give the same result:
     $x -> bmuladd($y, $z)
     $x -> bmul($y) -> badd($z)
     $x * $y + $z
-
 EOF
 
 my @values = qw< -Inf -3 -5/2 -2 -3/2 -1 1/2 0 1/2 1 3/2 2 5/2 3 Inf NaN >;
@@ -59,14 +58,18 @@ for my $a (@values) {
 EOF
 
             my $x = Math::BigRat -> new("$a") -> bmuladd("$b", "$c");
-
             my $y = Math::BigRat -> new("$a") -> bmul("$b") -> badd("$c");
 
-            $a = eval $a if $a =~ m|/|;     # 3/2 -> 1.5 etc.
-            $b = eval $b if $b =~ m|/|;     # 3/2 -> 1.5 etc.
-            $c = eval $c if $c =~ m|/|;     # 3/2 -> 1.5 etc.
+            for ($a, $b, $c) {
+                $_ = eval $_ if m|/|;           # 3/2 -> 1.5 etc.
+            }
+
             my $z = $a * $b + $c;
-            $z = lc($y) if $z =~ /inf/i;    # Math::Big* use "inf", not "Inf"
+
+            $z = "NaN" if $z =~ /nan/i;
+            if ($z =~ /inf/i) {
+                $z = $z < 0 ? "-inf" : "inf";
+            }
 
             subtest "$a * $b + $c = $z" => sub {
                 plan tests => 4;
