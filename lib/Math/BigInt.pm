@@ -7459,7 +7459,7 @@ Math::BigInt - arbitrary size integer math package
   # or make it faster with huge numbers: install (optional)
   # Math::BigInt::GMP and always use (it falls back to
   # pure Perl if the GMP library is not installed):
-  # (See also the L<MATH LIBRARY> section!)
+  # (See also the L</Math Library> section!)
 
   # to warn if Math::BigInt::GMP cannot be found, use
   use Math::BigInt lib => 'GMP';
@@ -7472,30 +7472,51 @@ Math::BigInt - arbitrary size integer math package
 
   # Configuration methods (may be used as class methods and instance methods)
 
-  Math::BigInt->accuracy();     # get class accuracy
-  Math::BigInt->accuracy($n);   # set class accuracy
-  Math::BigInt->precision();    # get class precision
-  Math::BigInt->precision($n);  # set class precision
-  Math::BigInt->round_mode();   # get class rounding mode
-  Math::BigInt->round_mode($m); # set global round mode, must be one of
-                                # 'even', 'odd', '+inf', '-inf', 'zero',
-                                # 'trunc', or 'common'
-  Math::BigInt->div_scale($n);  # set fallback accuracy
-  Math::BigInt->trap_inf($b);   # trap infinities or not
-  Math::BigInt->trap_nan($b);   # trap NaNs or not
-  Math::BigInt->config();       # return hash with configuration
+  Math::BigInt->accuracy($n);       # set accuracy
+  Math::BigInt->accuracy();         # get accuracy
+  Math::BigInt->precision($n);      # set precision
+  Math::BigInt->precision();        # get precision
+  Math::BigInt->round_mode($m);     # set rounding mode, must be
+                                    # 'even', 'odd', '+inf', '-inf',
+                                    # 'zero', 'trunc', or 'common'
+  Math::BigInt->round_mode();       # get class rounding mode
+  Math::BigInt->div_scale($n);      # set fallback accuracy
+  Math::BigInt->div_scale();        # get fallback accuracy
+  Math::BigInt->trap_inf($b);       # trap infinities or not
+  Math::BigInt->trap_inf();         # get trap infinities status
+  Math::BigInt->trap_nan($b);       # trap NaNs or not
+  Math::BigInt->trap_nan();         # get trap NaNs status
+  Math::BigInt->config($par, $val); # set configuration parameter
+  Math::BigInt->config($par);       # get configuration parameter
+  Math::BigInt->config();           # get hash with configuration
+  Math::BigFloat->config("lib");    # get name of backend library
 
-  # Constructor methods (when the class methods below are used as instance
-  # methods, the value is assigned the invocand)
+  # Generic constructor method (always returns a new object)
 
   $x = Math::BigInt->new($str);             # defaults to 0
-  $x = Math::BigInt->new('0x123');          # from hexadecimal
+  $x = Math::BigInt->new('256');            # from decimal
+  $x = Math::BigInt->new('0256');           # from decimal
+  $x = Math::BigInt->new('0xcafe');         # from hexadecimal
+  $x = Math::BigInt->new('0x1.fap+7');      # from hexadecimal
+  $x = Math::BigInt->new('0o377');          # from octal
+  $x = Math::BigInt->new('0o1.35p+6');      # from octal
   $x = Math::BigInt->new('0b101');          # from binary
+  $x = Math::BigInt->new('0b1.101p+3');     # from binary
+
+  # Specific constructor methods (no prefix needed; when used as
+  # instance method, the value is assigned to the invocand)
+
+  $x = Math::BigInt->from_dec('234');       # from decimal
   $x = Math::BigInt->from_hex('cafe');      # from hexadecimal
+  $x = Math::BigInt->from_hex('1.fap+7');   # from hexadecimal
   $x = Math::BigInt->from_oct('377');       # from octal
+  $x = Math::BigInt->from_oct('1.35p+6');   # from octal
   $x = Math::BigInt->from_bin('1101');      # from binary
+  $x = Math::BigInt->from_bin('1.101p+3');  # from binary
+  $x = Math::BigInt->from_bytes($bytes);    # from byte string
   $x = Math::BigInt->from_base('why', 36);  # from any base
   $x = Math::BigInt->from_base_num([1, 0], 2);  # from any base
+  $x = Math::BigInt->from_ieee754($b, $fmt);    # from IEEE-754 bytes
   $x = Math::BigInt->bzero();               # create a +0
   $x = Math::BigInt->bone();                # create a +1
   $x = Math::BigInt->bone('-');             # create a -1
@@ -7511,55 +7532,56 @@ Math::BigInt - arbitrary size integer math package
 
   # Boolean methods (these don't modify the invocand)
 
-  $x->is_zero();          # if $x is 0
-  $x->is_one();           # if $x is +1
-  $x->is_one("+");        # ditto
-  $x->is_one("-");        # if $x is -1
-  $x->is_inf();           # if $x is +inf or -inf
-  $x->is_inf("+");        # if $x is +inf
-  $x->is_inf("-");        # if $x is -inf
-  $x->is_nan();           # if $x is NaN
+  $x->is_zero();          # true if $x is 0
+  $x->is_one();           # true if $x is +1
+  $x->is_one("+");        # true if $x is +1
+  $x->is_one("-");        # true if $x is -1
+  $x->is_inf();           # true if $x is +inf or -inf
+  $x->is_inf("+");        # true if $x is +inf
+  $x->is_inf("-");        # true if $x is -inf
+  $x->is_nan();           # true if $x is NaN
 
-  $x->is_positive();      # if $x > 0
-  $x->is_pos();           # ditto
-  $x->is_negative();      # if $x < 0
-  $x->is_neg();           # ditto
+  $x->is_finite();        # true if -inf < $x < inf
+  $x->is_positive();      # true if $x > 0
+  $x->is_pos();           # true if $x > 0
+  $x->is_negative();      # true if $x < 0
+  $x->is_neg();           # true if $x < 0
+  $x->is_non_positive()   # true if $x <= 0
+  $x->is_non_negative()   # true if $x >= 0
 
-  $x->is_odd();           # if $x is odd
-  $x->is_even();          # if $x is even
-  $x->is_int();           # if $x is an integer
+  $x->is_odd();           # true if $x is odd
+  $x->is_even();          # true if $x is even
+  $x->is_int();           # true if $x is an integer
 
-  # Comparison methods
+  # Comparison methods (these don't modify the invocand)
 
   $x->bcmp($y);           # compare numbers (undef, < 0, == 0, > 0)
-  $x->bacmp($y);          # compare absolutely (undef, < 0, == 0, > 0)
-  $x->beq($y);            # true if and only if $x == $y
-  $x->bne($y);            # true if and only if $x != $y
-  $x->blt($y);            # true if and only if $x < $y
-  $x->ble($y);            # true if and only if $x <= $y
-  $x->bgt($y);            # true if and only if $x > $y
-  $x->bge($y);            # true if and only if $x >= $y
+  $x->bacmp($y);          # compare abs values (undef, < 0, == 0, > 0)
+  $x->beq($y);            # true if $x == $y
+  $x->bne($y);            # true if $x != $y
+  $x->blt($y);            # true if $x < $y
+  $x->ble($y);            # true if $x <= $y
+  $x->bgt($y);            # true if $x > $y
+  $x->bge($y);            # true if $x >= $y
 
-  # Arithmetic methods
+  # Arithmetic methods (these modify the invocand)
 
   $x->bneg();             # negation
   $x->babs();             # absolute value
   $x->bsgn();             # sign function (-1, 0, 1, or NaN)
-  $x->bnorm();            # normalize (no-op)
+  $x->bdigitsum();        # sum of decimal digits
   $x->binc();             # increment $x by 1
   $x->bdec();             # decrement $x by 1
   $x->badd($y);           # addition (add $y to $x)
   $x->bsub($y);           # subtraction (subtract $y from $x)
   $x->bmul($y);           # multiplication (multiply $x by $y)
-  $x->bmuladd($y,$z);     # $x = $x * $y + $z
-  $x->bdiv($y);           # division (floored), set $x to quotient
-                          # return (quo,rem) or quo if scalar
-  $x->btdiv($y);          # division (truncated), set $x to quotient
-                          # return (quo,rem) or quo if scalar
+  $x->bmuladd($y, $z);    # $x = $x * $y + $z
+  $x->bdiv($y);           # division (floored)
   $x->bmod($y);           # modulus (x % y)
-  $x->btmod($y);          # modulus (truncated)
   $x->bmodinv($mod);      # modular multiplicative inverse
-  $x->bmodpow($y,$mod);   # modular exponentiation (($x ** $y) % $mod)
+  $x->bmodpow($y, $mod);  # modular exponentiation (($x ** $y) % $mod)
+  $x->btdiv($y);          # division (truncated), set $x to quotient
+  $x->btmod($y);          # modulus (truncated)
   $x->binv()              # inverse (1/$x)
   $x->bpow($y);           # power of arguments (x ** y)
   $x->blog();             # logarithm of $x to base e (Euler's number)
@@ -7568,8 +7590,9 @@ Math::BigInt - arbitrary size integer math package
   $x->bilog2();           # log2($x) rounded down to nearest int
   $x->bilog10();          # log10($x) rounded down to nearest int
   $x->bclog2();           # log2($x) rounded up to nearest int
-  $x->bclog10();          # log19($x) rounded up to nearest int
-  $x->bnok($y);           # x over y (binomial coefficient n over k)
+  $x->bclog10();          # log10($x) rounded up to nearest int
+  $x->bnok($y);           # combinations (binomial coefficient n over k)
+  $x->bperm($y);          # permutations
   $x->buparrow($n, $y);   # Knuth's up-arrow notation
   $x->bhyperop($n, $y);   # n'th hyperoprator
   $x->backermann($y);     # the Ackermann function
@@ -7583,15 +7606,15 @@ Math::BigInt - arbitrary size integer math package
   $x->bdfac();            # double factorial of $x ($x*($x-2)*($x-4)*...)
   $x->btfac();            # triple factorial of $x ($x*($x-3)*($x-6)*...)
   $x->bmfac($k);          # $k'th multi-factorial of $x ($x*($x-$k)*...)
+  $x->bfib($k);           # $k'th Fibonacci number
+  $x->blucas($k);         # $k'th Lucas number
 
   $x->blsft($n);          # left shift $n places in base 2
-  $x->blsft($n,$b);       # left shift $n places in base $b
-                          # returns (quo,rem) or quo (scalar context)
+  $x->blsft($n, $b);      # left shift $n places in base $b
   $x->brsft($n);          # right shift $n places in base 2
-  $x->brsft($n,$b);       # right shift $n places in base $b
-                          # returns (quo,rem) or quo (scalar context)
+  $x->brsft($n, $b);      # right shift $n places in base $b
 
-  # Bitwise methods
+  # Bitwise methods (these modify the invocand)
 
   $x->bblsft($y);         # bitwise left shift
   $x->bbrsft($y);         # bitwise right shift
@@ -7600,9 +7623,10 @@ Math::BigInt - arbitrary size integer math package
   $x->bxor($y);           # bitwise exclusive or
   $x->bnot();             # bitwise not (two's complement)
 
-  # Rounding methods
-  $x->round($A,$P,$mode); # round to accuracy or precision using
-                          # rounding mode $mode
+  # Rounding methods (these modify the invocand)
+
+  $x->round($A, $P, $R);  # round to accuracy or precision using
+                          #   rounding mode $R
   $x->bround($n);         # accuracy: preserve $n digits
   $x->bfround($n);        # $n > 0: round to $nth digit left of dec. point
                           # $n < 0: round to $nth digit right of dec. point
@@ -7610,51 +7634,51 @@ Math::BigInt - arbitrary size integer math package
   $x->bceil();            # round towards plus infinity
   $x->bint();             # round towards zero
 
-  # Other mathematical methods
+  # Other mathematical methods (these don't modify the invocand)
 
-  $x->bgcd($y);            # greatest common divisor
-  $x->blcm($y);            # least common multiple
+  $x->bgcd($y);           # greatest common divisor
+  $x->blcm($y);           # least common multiple
 
-  # Object property methods (do not modify the invocand)
+  # Object property methods (these don't modify the invocand)
 
-  $x->sign();              # the sign, either +, - or NaN
-  $x->digit($n);           # the nth digit, counting from the right
-  $x->digit(-$n);          # the nth digit, counting from the left
-  $x->length();            # return number of digits in number
-  ($xl,$f) = $x->length(); # length of number and length of fraction
-                           # part, latter is always 0 digits long
-                           # for Math::BigInt objects
-  $x->mantissa();          # return (signed) mantissa as a Math::BigInt
-  $x->exponent();          # return exponent as a Math::BigInt
-  $x->parts();             # return (mantissa,exponent) as a Math::BigInt
-  $x->sparts();            # mantissa and exponent (as integers)
-  $x->nparts();            # mantissa and exponent (normalised)
-  $x->eparts();            # mantissa and exponent (engineering notation)
-  $x->dparts();            # integer and fraction part
-  $x->fparts();            # numerator and denominator
-  $x->numerator();         # numerator
-  $x->denominator();       # denominator
+  $x->sign();             # the sign, either +, - or NaN
+  $x->digit($n);          # the nth digit, counting from the right
+  $x->digit(-$n);         # the nth digit, counting from the left
+  $x->digitsum();         # sum of decimal digits
+  $x->length();           # return number of digits in number
+  $x->mantissa();         # return (signed) mantissa as a Math::BigInt
+  $x->exponent();         # return exponent as a Math::BigInt
+  $x->parts();            # return (mantissa,exponent) as a Math::BigInt
+  $x->sparts();           # mantissa and exponent (as integers)
+  $x->nparts();           # mantissa and exponent (normalised)
+  $x->eparts();           # mantissa and exponent (engineering notation)
+  $x->dparts();           # integer and fraction part
+  $x->fparts();           # numerator and denominator
+  $x->numerator();        # numerator
+  $x->denominator();      # denominator
 
-  # Conversion methods (do not modify the invocand)
+  # Conversion methods (these don't modify the invocand)
 
-  $x->bstr();         # decimal notation, possibly zero padded
-  $x->bsstr();        # string in scientific notation with integers
-  $x->bnstr();        # string in normalized notation
-  $x->bestr();        # string in engineering notation
-  $x->bfstr();        # string in fractional notation
+  $x->bstr();             # decimal notation (possibly zero padded)
+  $x->bsstr();            # string in scientific notation with integers
+  $x->bnstr();            # string in normalized notation
+  $x->bestr();            # string in engineering notation
+  $x->bdstr();            # string in decimal notation (no padding)
+  $x->bfstr();            # string in fractional notation
 
-  $x->to_hex();       # as signed hexadecimal string
-  $x->to_bin();       # as signed binary string
-  $x->to_oct();       # as signed octal string
-  $x->to_bytes();     # as byte string
-  $x->to_base($b);    # as string in any base
-  $x->to_base_num($b);   # as array of integers in any base
+  $x->to_hex();           # as signed hexadecimal string
+  $x->to_bin();           # as signed binary string
+  $x->to_oct();           # as signed octal string
+  $x->to_bytes();         # as byte string
+  $x->to_base($b);        # as string in any base
+  $x->to_base_num($b);    # as array of integers in any base
+  $x->to_ieee754($fmt);   # to bytes encoded according to IEEE 754-2008
 
-  $x->as_hex();       # as signed hexadecimal string with prefixed 0x
-  $x->as_bin();       # as signed binary string with prefixed 0b
-  $x->as_oct();       # as signed octal string with prefixed 0
+  $x->as_hex();           # as signed hexadecimal string with "0x" prefix
+  $x->as_bin();           # as signed binary string with "0b" prefix
+  $x->as_oct();           # as signed octal string with "0" prefix
 
-  # Other conversion methods
+  # Other conversion methods (these don't modify the invocand)
 
   $x->numify();           # return as scalar (might overflow or underflow)
 
@@ -7767,8 +7791,7 @@ Output values are usually Math::BigInt objects.
 Boolean operators L</is_zero()>, L</is_one()>, L</is_inf()>, etc. return true
 or false.
 
-Comparison operators L</bcmp()> and L</bacmp()>) return -1, 0, 1, or
-undef.
+Comparison operators L</bcmp()> and L</bacmp()>) return -1, 0, 1, or undef.
 
 =head1 METHODS
 
@@ -7777,7 +7800,7 @@ undef.
 Each of the methods below (except L</config()>, L</accuracy()> and
 L</precision()>) accepts three additional parameters. These arguments C<$A>,
 C<$P> and C<$R> are C<accuracy>, C<precision> and C<round_mode>. Please see the
-section about L</ACCURACY and PRECISION> for more information.
+section about L</ACCURACY AND PRECISION> for more information.
 
 Setting a class variable effects all object instance that are created
 afterwards.
@@ -7804,7 +7827,7 @@ as an additional parameter:
     print scalar $x->copy()->bdiv($y, 2);               # prints 4300
     print scalar $x->copy()->bdiv($y)->bround(2);       # prints 4300
 
-Please see the section about L</ACCURACY and PRECISION> for further details.
+Please see the section about L</ACCURACY AND PRECISION> for further details.
 
     $y = Math::BigInt->new(1234567);    # $y is not rounded
     Math::BigInt->accuracy(4);          # set class accuracy to 4
@@ -7843,7 +7866,7 @@ You might want to use L</accuracy()> instead. With L</accuracy()> you set the
 number of digits each result should have, with L</precision()> you set the
 place where to round.
 
-Please see the section about L</ACCURACY and PRECISION> for further details.
+Please see the section about L</ACCURACY AND PRECISION> for further details.
 
     $y = Math::BigInt->new(1234567);    # $y is not rounded
     Math::BigInt->precision(4);         # set class precision to 4
@@ -10010,7 +10033,7 @@ modules and see if they help you.
 =head2 Alternative math libraries
 
 You can use an alternative library to drive Math::BigInt. See the section
-L</MATH LIBRARY> for more information.
+L</Math Library> for more information.
 
 For more benchmark results see L<http://bloodgate.com/perl/benchmarks.html>.
 
@@ -10189,9 +10212,6 @@ strings:
 Alternatively, simply use C<< <=> >> for comparisons, this always gets it
 right. There is not yet a way to get a number automatically represented as a
 string that matches exactly the way Perl represents it.
-
-See also the section about L<Infinity and Not a Number> for problems in
-comparing NaNs.
 
 =item oct()/hex()
 
