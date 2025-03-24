@@ -240,6 +240,9 @@ sub isa {
 ##############################################################################
 
 sub new {
+    # Create a new Math::BigFloat object from a string or another Math::BigInt,
+    # Math::BigFloat, or Math::BigRat object. See hash keys documented at top.
+
     my $self    = shift;
     my $selfref = ref $self;
     my $class   = $selfref || $self;
@@ -248,332 +251,161 @@ sub new {
 
     $class -> import() if $IMPORT == 0;
 
-    # Calling new() with no input arguments has been discouraged for more than
-    # 10 years, but people apparently still use it, so we still support it.
-
-    return $class -> bzero() unless @_;
-
     if (@_ > 2) {
         carp("Superfluous arguments to new() ignored.");
     }
 
-    # Get numerator and denominator. If any of the arguments is undefined,
-    # return zero.
+    # Calling new() with no input arguments has been discouraged for more than
+    # 10 years, but people apparently still use it, so we still support it.
+    # Also, if any of the arguments is undefined, return zero.
 
-    my ($n, $d) = @_;
-
-    if (@_ == 1 && !defined $n ||
-        @_ == 2 && (!defined $n || !defined $d))
-    {
+    if (@_ == 0 ||
+        @_ == 1 && !defined($_[0]) ||
+        @_ == 2 && (!defined($_[0]) || !defined($_[1])))
+      {
         #carp("Use of uninitialized value in new()");
         return $class -> bzero();
     }
+
+    my @args = @_;
 
     # Initialize a new object.
 
     $self = bless {}, $class;
 
-    # One or two input arguments may be given. First handle the numerator $n.
+    # Special cases for speed and to avoid infinite recursion. The methods
+    # Math::BigInt->as_rat() and Math::BigFloat->as_rat() call
+    # Math::BigRat->as_rat() (i.e., this method) with a scalar (non-ref)
+    # integer argument.
 
-    {
-        # Temporarily disable upgrading and downgrading
+    if (@args == 1 && !ref($args[0])) {
 
-        my $upg = Math::BigFloat -> upgrade();
-        my $dng = Math::BigFloat -> downgrade();
-        Math::BigFloat -> upgrade(undef);
-        Math::BigFloat -> downgrade(undef);
+        # "3", "+3", "-3", "+001_2_3e+4"
 
-        if (ref($n)) {
-            $n = Math::BigFloat -> new($n, undef, undef)
-              unless ($n -> isa('Math::BigRat') ||
-                      $n -> isa('Math::BigInt') ||
-                      $n -> isa('Math::BigFloat'));
-        } else {
+        if ($args[0] =~ m{
+                             ^
+                             \s*
 
-            if (defined $d) {
-                # If the denominator is defined, the numerator is not a string
-                # fraction, e.g., "355/113".
-                $n = Math::BigFloat -> new($n, undef, undef);
-            } else {
-                # If the denominator is undefined, the numerator might be a string
-                # fraction, e.g., "355/113".
-                if ($n =~ m| ^ \s* (\S+) \s* / \s* (\S+) \s* $ |x) {
-                    $n = Math::BigFloat -> new($1, undef, undef);
-                    $d = Math::BigFloat -> new($2, undef, undef);
-                } else {
-                    $n = Math::BigFloat -> new($n, undef, undef);
-                }
-            }
-        }
+                             # optional sign
+                             ( [+-]? )
 
-        # Restore upgrading and downgrading
+                             # integer mantissa with optional leading zeros
+                             0* ( [1-9] \d* (?: _ \d+ )* | 0 )
 
-        Math::BigFloat -> upgrade($upg);
-        Math::BigFloat -> downgrade($dng);
-    }
+                             # optional non-negative exponent
+                             (?: [eE] \+? ( \d+ (?: _ \d+ )* ) )?
 
-    # At this point $n is an object and $d is either an object or undefined. An
-    # undefined $d means that $d was not specified by the caller (not that $d
-    # was specified as an undefined value).
+                             \s*
+                             $
+                        }x)
+        {
+            my $sign = $1;
+            (my $mant = $2) =~ tr/_//d;
+            my $expo = $3;
+            $mant .= "0" x $expo if defined($expo) && $mant ne "0";
 
-    unless (defined $d) {
-        #return $n -> copy($n)               if $n -> isa('Math::BigRat');
-        if ($n -> isa('Math::BigRat')) {
-            if ($n -> is_int()) {
-                my $dng = $class -> downgrade();
-                return $dng -> new($n) if $dng && $dng ne $class;
-            }
-            return $class -> copy($n);
-        }
-
-        if ($n -> is_nan()) {
-            return $class -> bnan();
-        }
-
-        if ($n -> is_inf()) {
-            return $class -> binf($n -> sign());
-        }
-
-        if ($n -> isa('Math::BigInt')) {
-            $self -> {_n}   = $LIB -> _new($n -> copy() -> babs(undef, undef)
-                                           -> bstr());
+            $self -> {_n}   = $LIB -> _new($mant);
             $self -> {_d}   = $LIB -> _one();
-            $self -> {sign} = $n -> sign();
-
+            $self -> {sign} = $sign eq "-" && $mant ne "0" ? "-" : "+";
             $self -> _dng();
             return $self;
         }
 
-        if ($n -> isa('Math::BigFloat')) {
-            my $m = $n -> mantissa(undef, undef) -> babs(undef, undef);
-            my $e = $n -> exponent(undef, undef);
-            $self -> {_n} = $LIB -> _new($m -> bstr());
-            $self -> {_d} = $LIB -> _one();
+        # "3/5", "+3/5", "-3/5", "+001_2_3e+4 / 05_6e7"
 
-            if ($e > 0) {
-                $self -> {_n} = $LIB -> _lsft($self -> {_n},
-                                              $LIB -> _new($e -> bstr()), 10);
-            } elsif ($e < 0) {
-                $self -> {_d} = $LIB -> _lsft($self -> {_d},
-                                              $LIB -> _new(-$e -> bstr()), 10);
+        if ($args[0] =~ m{
+                             ^
+                             \s*
 
-                my $gcd = $LIB -> _gcd($LIB -> _copy($self -> {_n}),
-                                       $self -> {_d});
-                if (!$LIB -> _is_one($gcd)) {
-                    $self -> {_n} = $LIB -> _div($self->{_n}, $gcd);
-                    $self -> {_d} = $LIB -> _div($self->{_d}, $gcd);
-                }
+                             # optional leading sign
+                             ( [+-]? )
+
+                             # integer mantissa with optional leading zeros
+                             0* ( [1-9] \d* (?: _ \d+ )* | 0 )
+
+                             # optional non-negative exponent
+                             (?: [eE] \+? ( \d+ (?: _ \d+ )* ) )?
+
+                             # fraction
+                             \s* / \s*
+
+                             # non-zero integer mantissa with optional leading zeros
+                             0* ( [1-9] \d* (?: _ \d+ )* )
+
+                             # optional non-negative exponent
+                             (?: [eE] \+? ( \d+ (?: _ \d+ )* ) )?
+
+                             \s*
+                             $
+                        }x)
+        {
+            my $sign = $1;
+
+            (my $mant1 = $2) =~ tr/_//d;
+            my $expo1 = $3;
+            $mant1 .= "0" x $expo1 if defined($expo1) && $mant1 ne "0";
+
+            (my $mant2 = $4) =~ tr/_//d;
+            my $expo2 = $5;
+            $mant2 .= "0" x $expo2 if defined($expo2) && $mant2 ne "0";
+
+            $self -> {_n}   = $LIB -> _new($mant1);
+            $self -> {_d}   = $LIB -> _new($mant2);
+            $self -> {sign} = $sign eq "-" && $mant1 ne "0" ? "-" : "+";
+
+            my $gcd = $LIB -> _gcd($LIB -> _copy($self -> {_n}),
+                                   $self -> {_d});
+            unless ($LIB -> _is_one($gcd)) {
+                $self -> {_n} = $LIB -> _div($self->{_n}, $gcd);
+                $self -> {_d} = $LIB -> _div($self->{_d}, $gcd);
             }
-
-            $self -> {sign} = $n -> sign();
 
             $self -> _dng() if $self -> is_int();
             return $self;
         }
 
-        die "I don't know how to handle this";  # should never get here
     }
 
-    # At the point we know that both $n and $d are defined. We know that $n is
-    # an object, but $d might still be a scalar. Now handle $d.
+    # If given exactly one argument which is a string that looks like a
+    # fraction, replace this argument with the fraction's numerator and
+    # denominator.
 
+    if (@args == 1 && !ref($args[0]) &&
+        $args[0] =~ m{ ^ \s* ( \S+ ) \s* / \s* ( \S+ ) \s* $ }x)
     {
-        # Temporarily disable upgrading and downgrading
-
-        my $upg = Math::BigFloat -> upgrade();
-        my $dng = Math::BigFloat -> downgrade();
-        Math::BigFloat -> upgrade(undef);
-        Math::BigFloat -> downgrade(undef);
-
-        $d = Math::BigFloat -> new($d, undef, undef)
-          unless ref($d) && ($d -> isa('Math::BigRat') ||
-                             $d -> isa('Math::BigInt') ||
-                             $d -> isa('Math::BigFloat'));
-
-        # Restore upgrading and downgrading
-
-        Math::BigFloat -> upgrade($upg);
-        Math::BigFloat -> downgrade($dng);
+        @args = ($1, $2);
     }
 
-    # At this point both $n and $d are objects.
+    # Now get the numerator and denominator either by calling as_rat() or by
+    # letting Math::BigFloat->new() parse the argument as a string.
 
-    if ($n -> is_nan() || $d -> is_nan()) {
-        return $class -> bnan();
-    }
+    my ($n, $d);
 
-    # At this point neither $n nor $d is a NaN.
-
-    if ($n -> is_zero()) {
-        if ($d -> is_zero()) {     # 0/0 = NaN
-            return $class -> bnan();
-        }
-        return $class -> bzero();
-    }
-
-    if ($d -> is_zero()) {
-        return $class -> binf($d -> sign());
-    }
-
-    # At this point, neither $n nor $d is a NaN or a zero.
-
-    # Copy them now before manipulating them.
-
-    $n = $n -> copy();
-    $d = $d -> copy();
-
-    if ($d < 0) {               # make sure denominator is positive
-        $n -> bneg();
-        $d -> bneg();
-    }
-
-    if ($n -> is_inf()) {
-        return $class -> bnan() if $d -> is_inf();      # Inf/Inf = NaN
-        return $class -> binf($n -> sign());
-    }
-
-    # At this point $n is finite.
-
-    return $class -> bzero()            if $d -> is_inf();
-    return $class -> binf($d -> sign()) if $d -> is_zero();
-
-    # At this point both $n and $d are finite and non-zero.
-
-    if ($n < 0) {
-        $n -> bneg();
-        $self -> {sign} = '-';
-    } else {
-        $self -> {sign} = '+';
-    }
-
-    if ($n -> isa('Math::BigRat')) {
-
-        if ($d -> isa('Math::BigRat')) {
-
-            # At this point both $n and $d is a Math::BigRat.
-
-            # p   r    p * s    (p / gcd(p, r)) * (s / gcd(s, q))
-            # - / -  = ----- =  ---------------------------------
-            # q   s    q * r    (q / gcd(s, q)) * (r / gcd(p, r))
-
-            my $p = $n -> {_n};
-            my $q = $n -> {_d};
-            my $r = $d -> {_n};
-            my $s = $d -> {_d};
-            my $gcd_pr = $LIB -> _gcd($LIB -> _copy($p), $r);
-            my $gcd_sq = $LIB -> _gcd($LIB -> _copy($s), $q);
-            $self -> {_n} = $LIB -> _mul($LIB -> _div($LIB -> _copy($p), $gcd_pr),
-                                         $LIB -> _div($LIB -> _copy($s), $gcd_sq));
-            $self -> {_d} = $LIB -> _mul($LIB -> _div($LIB -> _copy($q), $gcd_sq),
-                                         $LIB -> _div($LIB -> _copy($r), $gcd_pr));
-
-            $self -> _dng() if $self -> is_int();
-            return $self;       # no need for $self -> bnorm() here
-        }
-
-        # At this point, $n is a Math::BigRat and $d is a Math::Big(Int|Float).
-
-        my $p = $n -> {_n};
-        my $q = $n -> {_d};
-        my $m = $d -> mantissa();
-        my $e = $d -> exponent();
-
-        #                   /      p
-        #                  |  ------------  if e > 0
-        #                  |  q * m * 10^e
-        #                  |
-        # p                |    p
-        # - / (m * 10^e) = |  -----         if e == 0
-        # q                |  q * m
-        #                  |
-        #                  |  p * 10^-e
-        #                  |  --------      if e < 0
-        #                   \  q * m
-
-        $self -> {_n} = $LIB -> _copy($p);
-        $self -> {_d} = $LIB -> _mul($LIB -> _copy($q), $m);
-        if ($e > 0) {
-            $self -> {_d} = $LIB -> _lsft($self -> {_d}, $e, 10);
-        } elsif ($e < 0) {
-            $self -> {_n} = $LIB -> _lsft($self -> {_n}, -$e, 10);
-        }
-
-        return $self -> bnorm();
-
-    } else {
-
-        if ($d -> isa('Math::BigRat')) {
-
-            # At this point $n is a Math::Big(Int|Float) and $d is a
-            # Math::BigRat.
-
-            my $m = $n -> mantissa();
-            my $e = $n -> exponent();
-            my $p = $d -> {_n};
-            my $q = $d -> {_d};
-
-            #                   /  q * m * 10^e
-            #                  |   ------------  if e > 0
-            #                  |        p
-            #                  |
-            #              p   |   m * q
-            # (m * 10^e) / - = |   -----         if e == 0
-            #              q   |     p
-            #                  |
-            #                  |     q * m
-            #                  |   ---------     if e < 0
-            #                   \  p * 10^-e
-
-            $self -> {_n} = $LIB -> _mul($LIB -> _copy($q), $m);
-            $self -> {_d} = $LIB -> _copy($p);
-            if ($e > 0) {
-                $self -> {_n} = $LIB -> _lsft($self -> {_n}, $e, 10);
-            } elsif ($e < 0) {
-                $self -> {_d} = $LIB -> _lsft($self -> {_d}, -$e, 10);
-            }
-            return $self -> bnorm();
-
+    if (@args >= 1) {
+        if (ref($args[0]) && $args[0] -> can('as_rat')) {
+            $n = $args[0] -> as_rat();
         } else {
-
-            # At this point $n and $d are both a Math::Big(Int|Float)
-
-            my $m1 = $n -> mantissa();
-            my $e1 = $n -> exponent();
-            my $m2 = $d -> mantissa();
-            my $e2 = $d -> exponent();
-
-            #               /
-            #              |  m1 * 10^(e1 - e2)
-            #              |  -----------------  if e1 > e2
-            #              |         m2
-            #              |
-            # m1 * 10^e1   |  m1
-            # ---------- = |  --                 if e1 = e2
-            # m2 * 10^e2   |  m2
-            #              |
-            #              |         m1
-            #              |  -----------------  if e1 < e2
-            #              |  m2 * 10^(e2 - e1)
-            #               \
-
-            $self -> {_n} = $LIB -> _new($m1 -> bstr());
-            $self -> {_d} = $LIB -> _new($m2 -> bstr());
-            my $ediff = $e1 - $e2;
-            if ($ediff > 0) {
-                $self -> {_n} = $LIB -> _lsft($self -> {_n},
-                                              $LIB -> _new($ediff -> bstr()),
-                                              10);
-            } elsif ($ediff < 0) {
-                $self -> {_d} = $LIB -> _lsft($self -> {_d},
-                                              $LIB -> _new(-$ediff -> bstr()),
-                                              10);
-            }
-
-            return $self -> bnorm();
+            $n = Math::BigFloat -> new($args[0], undef, undef) -> as_rat();
         }
     }
 
-    $self -> _dng() if $self -> is_int();
+    if (@args >= 2) {
+        if (ref($args[1]) && $args[1] -> can('as_rat')) {
+            $d = $args[1] -> as_rat();
+        } else {
+            $d = Math::BigFloat -> new($args[1], undef, undef) -> as_rat();
+        }
+    }
+
+    $n -> bdiv($d) if defined $d;
+
+    $self -> {sign} = $n -> {sign};
+    $self -> {_n}   = $n -> {_n};
+    $self -> {_d}   = $n -> {_d};
+
+    $self -> _dng() if ($self -> is_int() ||
+                        $self -> is_inf() ||
+                        $self -> is_nan());
     return $self;
 }
 
@@ -1255,34 +1087,33 @@ sub copy {
 }
 
 sub as_int {
-    my ($class, $x) = ref($_[0]) ? (ref($_[0]), @_) : objectify(1, @_);
+    my ($class, $x, @r) = ref($_[0]) ? (ref($_[0]), @_) : objectify(1, @_);
 
-    return $x -> copy() if $x -> isa("Math::BigInt");
+    # Temporarily disable upgrading and downgrading.
 
-    # Disable upgrading and downgrading.
-
-    require Math::BigInt;
     my $upg = Math::BigInt -> upgrade();
     my $dng = Math::BigInt -> downgrade();
     Math::BigInt -> upgrade(undef);
     Math::BigInt -> downgrade(undef);
 
-    # Copy the value.
-
     my $y;
-    if ($x -> is_inf()) {
-        $y = Math::BigInt -> binf($x -> sign());
-    } elsif ($x -> is_nan()) {
-        $y = Math::BigInt -> bnan();
+    if ($x -> isa("Math::BigInt")) {
+        $y = $x -> copy();
     } else {
-        my $int = $LIB -> _div($LIB -> _copy($x->{_n}), $x->{_d});  # 22/7 => 3
-        $y = Math::BigInt -> new($LIB -> _str($int));
-        $y = $y -> bneg() if $x -> is_neg();
+        if ($x -> is_inf()) {
+            $y = Math::BigInt -> binf($x -> sign());
+        } elsif ($x -> is_nan()) {
+            $y = Math::BigInt -> bnan();
+        } else {
+            $y = Math::BigInt -> new($x -> copy() -> bint() -> bdstr());
+        }
+
+        # Copy the remaining instance variables.
+
+        ($y->{accuracy}, $y->{precision}) = ($x->{accuracy}, $x->{precision});
     }
 
-    # Copy the remaining instance variables.
-
-    ($y->{accuracy}, $y->{precision}) = ($x->{accuracy}, $x->{precision});
+    $y -> round(@r);
 
     # Restore upgrading and downgrading.
 
@@ -1294,26 +1125,36 @@ sub as_int {
 
 sub as_rat {
     my ($class, $x, @r) = ref($_[0]) ? (ref($_[0]), @_) : objectify(1, @_);
-    carp "Rounding is not supported for ", (caller(0))[3], "()" if @r;
 
-    return $x -> copy() if $x -> isa("Math::BigRat");
+    # Temporarily disable upgrading and downgrading.
 
-    # Disable upgrading and downgrading.
-
+    require Math::BigRat;
     my $upg = Math::BigRat -> upgrade();
     my $dng = Math::BigRat -> downgrade();
     Math::BigRat -> upgrade(undef);
     Math::BigRat -> downgrade(undef);
 
-    # Copy the value.
+    my $y;
+    if ($x -> isa("Math::BigRat")) {
+        $y = $x -> copy();
+    } else {
 
-    my $y = Math::BigRat -> new($x);
+        if ($x -> is_inf()) {
+            $y = Math::BigRat -> binf($x -> sign());
+        } elsif ($x -> is_nan()) {
+            $y = Math::BigRat -> bnan();
+        } else {
+            $y = Math::BigRat -> new($x -> bfstr());
+        }
 
-    # Copy the remaining instance variables.
+        # Copy the remaining instance variables.
 
-    ($y->{accuracy}, $y->{precision}) = ($x->{accuracy}, $x->{precision});
+        ($y->{accuracy}, $y->{precision}) = ($x->{accuracy}, $x->{precision});
+    }
 
-    # Restore upgrading and downgrading
+    $y -> round(@r);
+
+    # Restore upgrading and downgrading.
 
     Math::BigRat -> upgrade($upg);
     Math::BigRat -> downgrade($dng);
@@ -1324,8 +1165,6 @@ sub as_rat {
 sub as_float {
     my ($class, $x, @r) = ref($_[0]) ? (ref($_[0]), @_) : objectify(1, @_);
 
-    return $x -> copy() if $x -> isa("Math::BigFloat");
-
     # Disable upgrading and downgrading.
 
     require Math::BigFloat;
@@ -1334,25 +1173,34 @@ sub as_float {
     Math::BigFloat -> upgrade(undef);
     Math::BigFloat -> downgrade(undef);
 
-    # Copy the value.
-
     my $y;
-    if ($x -> is_inf()) {
-        $y = Math::BigFloat -> binf($x -> sign());
-    } elsif ($x -> is_nan()) {
-        $y = Math::BigFloat -> bnan();
+    if ($x -> isa("Math::BigFloat")) {
+        $y = $x -> copy();
     } else {
-        $y = Math::BigFloat -> new($LIB -> _str($x->{_n}));
-        $y -> {sign} = $x -> {sign};
-        unless ($LIB -> _is_one($x->{_d})) {
-            my $xd = Math::BigFloat -> new($LIB -> _str($x->{_d}));
-            $y -> bfdiv($xd, @r);
+        if ($x -> is_inf()) {
+            $y = Math::BigFloat -> binf($x -> sign());
+        } elsif ($x -> is_nan()) {
+            $y = Math::BigFloat -> bnan();
+        } else {
+            if ($x -> isa("Math::BigRat")) {
+                if ($x -> is_int()) {
+                    $y = Math::BigFloat -> new($x -> bdstr());
+                } else {
+                    my ($num, $den) = $x -> fparts();
+                    my $str = $num -> as_float() -> bdiv($den, @r) -> bdstr();
+                    $y = Math::BigFloat -> new($str);
+                }
+            } else {
+                $y = Math::BigFloat -> new($x -> bdstr());
+            }
         }
+
+        # Copy the remaining instance variables.
+
+        ($y->{accuracy}, $y->{precision}) = ($x->{accuracy}, $x->{precision});
     }
 
-    # Copy the remaining instance variables.
-
-    ($y->{accuracy}, $y->{precision}) = ($x->{accuracy}, $x->{precision});
+    $y -> round(@r);
 
     # Restore upgrading and downgrading.
 
@@ -3846,7 +3694,24 @@ sub bestr {
 sub bdstr {
     my ($class, $x, @r) = ref($_[0]) ? (ref($_[0]), @_) : objectify(1, @_);
 
-    croak "bdstr() is not implemented for $class";
+    # Inf and NaN
+
+    if ($x->{sign} ne '+' && $x->{sign} ne '-') {
+        return $x->{sign} unless $x -> is_inf("+");     # -inf, NaN
+        return 'inf';                                   # +inf
+    }
+
+    # Upgrade?
+
+    $x -> _upg() -> bdstr(@r)
+      if $class -> upgrade() && !$x -> isa(__PACKAGE__);
+
+    croak "$class->bdstr() only supports integer operands"
+      unless $x -> is_int();
+
+    # Integer number
+
+    ($x->{sign} eq '-' ? '-' : '') . $LIB->_str($x->{_n});
 }
 
 sub bfstr {
@@ -4307,14 +4172,17 @@ Please see the documentation in L<Math::BigInt> for further details.
 
 =item as_int()
 
-=item as_number()
+    $y = $x -> as_int();        # $y is a Math::BigInt
 
-    $x = Math::BigRat->new('13/7');
-    print $x->as_int(), "\n";               # '1'
+Returns $x as a Math::BigInt object regardless of upgrading and downgrading. If
+$x is finite, but not an integer, $x is truncated.
 
-Returns a copy of the object as BigInt, truncated to an integer.
+=item as_rat()
 
-C<as_number()> is an alias for C<as_int()>.
+    $y = $x -> as_rat();        # $y is a Math::BigRat
+
+Returns $x a Math::BigRat object regardless of upgrading and downgrading. The
+invocand is not modified.
 
 =item as_float()
 
@@ -4324,10 +4192,9 @@ C<as_number()> is an alias for C<as_int()>.
     $x = Math::BigRat->new('2/3');
     print $x->as_float(5), "\n";            # '0.66667'
 
-Returns a copy of the object as BigFloat, preserving the
-accuracy as wanted, or the default of 40 digits.
-
-This method was added in v0.22 of Math::BigRat (April 2008).
+Returns a copy of the object as Math::BigFloat object regardless of upgrading
+and downgrading, preserving the accuracy as wanted, or the default of 40
+digits.
 
 =item bround()/round()/bfround()
 

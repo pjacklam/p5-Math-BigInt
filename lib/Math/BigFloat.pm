@@ -347,8 +347,8 @@ sub config {
 ###############################################################################
 
 sub new {
-    # Create a new Math::BigFloat object from a string or another
-    # Math::BigFloat object. See hash keys documented at top.
+    # Create a new Math::BigFloat object from a string or another Math::BigInt,
+    # Math::BigFloat, or Math::BigRat object. See hash keys documented at top.
 
     my $self    = shift;
     my $selfref = ref $self;
@@ -386,41 +386,21 @@ sub new {
 
     $self = bless {}, $class;
 
-    # Math::BigFloat or subclass
+    # See if $wanted is an object that is a Math::BigFloat or can convert
+    # itself to a Math::BigFloat.
 
-    if (defined(blessed($wanted)) && $wanted -> isa(__PACKAGE__)) {
-
-        # Don't copy the accuracy and precision, because a new object should
-        # get them from the global configuration.
-
-        $self -> {sign} = $wanted -> {sign};
-        $self -> {_m}   = $LIB -> _copy($wanted -> {_m});
-        $self -> {_es}  = $wanted -> {_es};
-        $self -> {_e}   = $LIB -> _copy($wanted -> {_e});
-        $self -> round(@r)
-          unless @r >= 2 && !defined($r[0]) && !defined($r[1]);
-        return $self;
+    if (defined(blessed($wanted)) && $wanted -> can('as_float')) {
+        my $tmp = $wanted -> as_float(@r);
+        for my $attr ('sign', '_m', '_es', '_e') {
+            $self -> {$attr} = $tmp -> {$attr};
+        }
+        return $self -> round(@r);
     }
 
-    # Shortcut for Math::BigInt and its subclasses. This should be improved.
+    # From now on we only work on the stringified version of $wanted, so
+    # stringify it once and for all.
 
-    if (defined(blessed($wanted))) {
-        if ($wanted -> isa('Math::BigInt')) {
-            $self->{sign} = $wanted -> {sign};
-            $self->{_m}   = $LIB -> _copy($wanted -> {value});
-            $self->{_es}  = '+';
-            $self->{_e}   = $LIB -> _zero();
-            return $self -> bnorm();
-        }
-
-        if ($wanted -> can("as_number")) {
-            $self->{sign} = $wanted -> sign();
-            $self->{_m}   = $wanted -> as_number() -> {value};
-            $self->{_es}  = '+';
-            $self->{_e}   = $LIB -> _zero();
-            return $self -> bnorm();
-        }
-    }
+    $wanted = "$wanted";
 
     # Shortcut for simple forms like '123' that have no trailing zeros.
     # Trailing zeros would require a non-zero exponent.
@@ -1436,40 +1416,33 @@ sub copy {
 }
 
 sub as_int {
-    # return copy as a bigint representation of this Math::BigFloat number
     my ($class, $x, @r) = ref($_[0]) ? (ref($_[0]), @_) : objectify(1, @_);
-    carp "Rounding is not supported for ", (caller(0))[3], "()" if @r;
 
-    return $x -> copy() if $x -> isa("Math::BigInt");
+    # Temporarily disable upgrading and downgrading.
 
-    # Disable upgrading and downgrading.
-
-    require Math::BigInt;
     my $upg = Math::BigInt -> upgrade();
     my $dng = Math::BigInt -> downgrade();
     Math::BigInt -> upgrade(undef);
     Math::BigInt -> downgrade(undef);
 
-    # Copy the value.
-
     my $y;
-    if ($x -> is_inf()) {
-        $y = Math::BigInt -> binf($x -> sign());
-    } elsif ($x -> is_nan()) {
-        $y = Math::BigInt -> bnan();
+    if ($x -> isa("Math::BigInt")) {
+        $y = $x -> copy();
     } else {
-        $y = $LIB->_copy($x->{_m});
-        if ($x->{_es} eq '-') {                     # exponent < 0
-            $y = $LIB->_rsft($y, $x->{_e}, 10);
-        } elsif (! $LIB->_is_zero($x->{_e})) {      # exponent > 0
-            $y = $LIB->_lsft($y, $x->{_e}, 10);
+        if ($x -> is_inf()) {
+            $y = Math::BigInt -> binf($x -> sign());
+        } elsif ($x -> is_nan()) {
+            $y = Math::BigInt -> bnan();
+        } else {
+            $y = Math::BigInt -> new($x -> copy() -> bint() -> bdstr());
         }
-        $y = Math::BigInt -> new($x->{sign} . $LIB->_str($y));
+
+        # Copy the remaining instance variables.
+
+        ($y->{accuracy}, $y->{precision}) = ($x->{accuracy}, $x->{precision});
     }
 
-    # Copy the remaining instance variables.
-
-    ($y->{accuracy}, $y->{precision}) = ($x->{accuracy}, $x->{precision});
+    $y -> round(@r);
 
     # Restore upgrading and downgrading.
 
@@ -1480,13 +1453,9 @@ sub as_int {
 }
 
 sub as_rat {
-    # return copy as a Math::BigRat representation of this Math::BigFloat
     my ($class, $x, @r) = ref($_[0]) ? (ref($_[0]), @_) : objectify(1, @_);
-    carp "Rounding is not supported for ", (caller(0))[3], "()" if @r;
 
-    return $x -> copy() if $x -> isa("Math::BigRat");
-
-    # Disable upgrading and downgrading.
+    # Temporarily disable upgrading and downgrading.
 
     require Math::BigRat;
     my $upg = Math::BigRat -> upgrade();
@@ -1494,23 +1463,25 @@ sub as_rat {
     Math::BigRat -> upgrade(undef);
     Math::BigRat -> downgrade(undef);
 
-    # Copy the value.
-
     my $y;
-    if ($x -> is_inf()) {
-        $y = Math::BigRat -> binf($x -> sign());
-    } elsif ($x -> is_nan()) {
-        $y = Math::BigRat -> bnan();
+    if ($x -> isa("Math::BigRat")) {
+        $y = $x -> copy();
     } else {
-        my @flt_parts = ($x->{sign}, $x->{_m}, $x->{_es}, $x->{_e});
-        my @rat_parts = $class -> _flt_lib_parts_to_rat_lib_parts(@flt_parts);
-        $y = Math::BigRat -> new($rat_parts[0] . $LIB -> _str($rat_parts[1])
-                                         . '/' . $LIB -> _str($rat_parts[2]));
+
+        if ($x -> is_inf()) {
+            $y = Math::BigRat -> binf($x -> sign());
+        } elsif ($x -> is_nan()) {
+            $y = Math::BigRat -> bnan();
+        } else {
+            $y = Math::BigRat -> new($x -> bfstr());
+        }
+
+        # Copy the remaining instance variables.
+
+        ($y->{accuracy}, $y->{precision}) = ($x->{accuracy}, $x->{precision});
     }
 
-    # Copy the remaining instance variables.
-
-    ($y->{accuracy}, $y->{precision}) = ($x->{accuracy}, $x->{precision});
+    $y -> round(@r);
 
     # Restore upgrading and downgrading.
 
@@ -1522,24 +1493,43 @@ sub as_rat {
 
 sub as_float {
     my ($class, $x, @r) = ref($_[0]) ? (ref($_[0]), @_) : objectify(1, @_);
-    carp "Rounding is not supported for ", (caller(0))[3], "()" if @r;
-
-    return $x -> copy() if $x -> isa("Math::BigFloat");
 
     # Disable upgrading and downgrading.
 
+    require Math::BigFloat;
     my $upg = Math::BigFloat -> upgrade();
     my $dng = Math::BigFloat -> downgrade();
     Math::BigFloat -> upgrade(undef);
     Math::BigFloat -> downgrade(undef);
 
-    # Copy the value.
+    my $y;
+    if ($x -> isa("Math::BigFloat")) {
+        $y = $x -> copy();
+    } else {
+        if ($x -> is_inf()) {
+            $y = Math::BigFloat -> binf($x -> sign());
+        } elsif ($x -> is_nan()) {
+            $y = Math::BigFloat -> bnan();
+        } else {
+            if ($x -> isa("Math::BigRat")) {
+                if ($x -> is_int()) {
+                    $y = Math::BigFloat -> new($x -> bdstr());
+                } else {
+                    my ($num, $den) = $x -> fparts();
+                    my $str = $num -> as_float() -> bdiv($den, @r) -> bdstr();
+                    $y = Math::BigFloat -> new($str);
+                }
+            } else {
+                $y = Math::BigFloat -> new($x -> bdstr());
+            }
+        }
 
-    my $y = Math::BigFloat -> new($x);
+        # Copy the remaining instance variables.
 
-    # Copy the remaining instance variables.
+        ($y->{accuracy}, $y->{precision}) = ($x->{accuracy}, $x->{precision});
+    }
 
-    ($y->{accuracy}, $y->{precision}) = ($x->{accuracy}, $x->{precision});
+    $y -> round(@r);
 
     # Restore upgrading and downgrading.
 
@@ -7684,34 +7674,22 @@ This method was added in v1.87 of Math::BigInt (June 2007).
 
     $y = $x -> as_int();        # $y is a Math::BigInt
 
-Returns $x as a Math::BigInt object. If $x is a finite non-integer, $x is
-truncated.
+Returns $x as a Math::BigInt object regardless of upgrading and downgrading. If
+$x is finite, but not an integer, $x is truncated.
 
 =item as_rat()
 
     $y = $x -> as_rat();        # $y is a Math::BigRat
 
-Returns $x a Math::BigRat object. The invocand is not modified.
+Returns $x a Math::BigRat object regardless of upgrading and downgrading. The
+invocand is not modified.
 
 =item as_float()
 
     $y = $x -> as_float();      # $y is a Math::BigFloat
 
-This method is called when Math::BigFloat encounters an object it doesn't know
-how to handle. For instance, assume $x is a Math::BigFloat, or subclass
-thereof, and $y is defined, but not a Math::BigFloat, or subclass thereof. If
-you do
-
-    $x -> badd($y);
-
-$y needs to be converted into an object that $x can deal with. This is done by
-first checking if $y is something that $x might be upgraded to. If that is the
-case, no further attempts are made. The next is to see if $y supports the
-method L</as_float()>. The method L</as_float()> is expected to return either
-an object that has the same class as $x, a subclass thereof, or a string that
-C<ref($x)-E<gt>new()> can parse to create an object.
-
-In Math::BigFloat, L</as_float()> has the same effect as L</copy()>.
+Returns $x a Math::BigFloat object regardless of upgrading and downgrading. The
+invocand is not modified.
 
 =back
 
