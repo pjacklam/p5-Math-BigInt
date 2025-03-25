@@ -4418,7 +4418,9 @@ Return true if $x is exactly one, otherwise false.
 Returns true if the invocand is a finite number, i.e., it is neither +inf,
 -inf, nor NaN.
 
-=item is_pos()/is_positive()
+=item is_positive()
+
+=item is_pos()
 
     print "$x is >= 0\n" if $x->is_positive();
 
@@ -4427,7 +4429,9 @@ false. Please note that '+inf' is also positive, while 'NaN' and '-inf' aren't.
 
 L</is_positive()> is an alias for L</is_pos()>.
 
-=item is_neg()/is_negative()
+=item is_negative()
+
+=item is_neg()
 
     print "$x is < 0\n" if $x->is_negative();
 
