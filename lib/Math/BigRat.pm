@@ -2141,7 +2141,7 @@ sub bsqrt {
     my $xn = Math::BigFloat -> new($LIB -> _str($n));
     my $xd = Math::BigFloat -> new($LIB -> _str($d));
 
-    my $xtmp = Math::BigRat -> new($xn -> bfdiv($xd) -> bsqrt() -> bsstr());
+    my $xtmp = Math::BigRat -> new($xn -> bfdiv($xd) -> bsqrt() -> bfstr());
 
     $x -> {sign} = $xtmp -> {sign};
     $x -> {_n}   = $xtmp -> {_n};
@@ -2251,7 +2251,7 @@ sub broot {
     # Compute the root and convert back to a Math::BigRat.
 
     $xflt -> broot($yflt, @r);
-    my $xtmp = Math::BigRat -> new($xflt -> bsstr());
+    my $xtmp = Math::BigRat -> new($xflt -> bfstr());
 
     $x -> {sign} = $xtmp -> {sign};
     $x -> {_n}   = $xtmp -> {_n};
@@ -2429,7 +2429,7 @@ sub bmodpow {
     my $mint = Math::BigInt -> new($m -> copy() -> bint());
 
     $xint -> bmodpow($yint, $mint, @r);
-    my $xtmp = Math::BigRat -> new($xint -> bsstr());
+    my $xtmp = Math::BigRat -> new($xint -> bfstr());
 
     $x -> {sign} = $xtmp -> {sign};
     $x -> {_n}   = $xtmp -> {_n};
@@ -2453,7 +2453,7 @@ sub bmodinv {
     my $yint = Math::BigInt -> new($y -> copy() -> bint());
 
     $xint -> bmodinv($yint, @r);
-    my $xtmp = Math::BigRat -> new($xint -> bsstr());
+    my $xtmp = Math::BigRat -> new($xint -> bfstr());
 
     $x -> {sign} = $xtmp -> {sign};
     $x -> {_n}   = $xtmp -> {_n};
@@ -2550,7 +2550,7 @@ sub blog {
     $base = Math::BigFloat -> new($base) if defined $base;
     my $xnum = Math::BigFloat -> new($LIB -> _str($x->{_n}));
     my $xden = Math::BigFloat -> new($LIB -> _str($x->{_d}));
-    my $xstr = $xnum -> bfdiv($xden) -> blog($base, @r) -> bsstr();
+    my $xstr = $xnum -> bfdiv($xden) -> blog($base, @r) -> bfstr();
 
     # reset upgrading and downgrading
 
@@ -3677,13 +3677,37 @@ sub bsstr {
 sub bnstr {
     my ($class, $x, @r) = ref($_[0]) ? (ref($_[0]), @_) : objectify(1, @_);
 
-    croak "bnstr() is not implemented for $class";
+    # Inf and NaN
+
+    if ($x->{sign} ne '+' && $x->{sign} ne '-') {
+        return $x->{sign} unless $x -> is_inf("+");     # -inf, NaN
+        return 'inf';                                   # +inf
+    }
+
+    # Upgrade?
+
+    $x -> _upg() -> bnstr(@r)
+      if $class -> upgrade() && !$x -> isa(__PACKAGE__);
+
+    return $x -> as_float(@r) -> bnstr();
 }
 
 sub bestr {
     my ($class, $x, @r) = ref($_[0]) ? (ref($_[0]), @_) : objectify(1, @_);
 
-    croak "bestr() is not implemented for $class";
+    # Inf and NaN
+
+    if ($x->{sign} ne '+' && $x->{sign} ne '-') {
+        return $x->{sign} unless $x -> is_inf("+");     # -inf, NaN
+        return 'inf';                                   # +inf
+    }
+
+    # Upgrade?
+
+    $x -> _upg() -> bestr(@r)
+      if $class -> upgrade() && !$x -> isa(__PACKAGE__);
+
+    return $x -> as_float(@r) -> bestr();
 }
 
 sub bdstr {
@@ -3696,17 +3720,17 @@ sub bdstr {
         return 'inf';                                   # +inf
     }
 
+    return ($x->{sign} eq '-' ? '-' : '') . $LIB->_str($x->{_n})
+      if $x -> is_int();
+
     # Upgrade?
 
     $x -> _upg() -> bdstr(@r)
       if $class -> upgrade() && !$x -> isa(__PACKAGE__);
 
-    croak "$class->bdstr() only supports integer operands"
-      unless $x -> is_int();
-
     # Integer number
 
-    ($x->{sign} eq '-' ? '-' : '') . $LIB->_str($x->{_n});
+    return $x -> as_float(@r) -> bdstr();
 }
 
 sub bfstr {
@@ -4157,7 +4181,6 @@ Math::BigRat - arbitrary size rational number math package
   # Conversion methods (these don't modify the invocand)
 
   $x->bstr();             # decimal notation (possibly zero padded)
-  $x->bsstr();            # string in scientific notation with integers
   $x->bnstr();            # string in normalized notation
   $x->bestr();            # string in engineering notation
   $x->bdstr();            # string in decimal notation (no padding)
@@ -4432,13 +4455,14 @@ Return true if $x is even, otherwise false.
 Return true if $x has a denominator of 1 (e.g. no fraction parts), otherwise
 false. Please note that '-inf', 'inf' and 'NaN' aren't integer.
 
-=item bstr()/bsstr()
+=back
 
-    my $x = Math::BigRat->new('8/4');
-    print $x->bstr(), "\n";             # prints 1/2
-    print $x->bsstr(), "\n";            # prints 1/2
+=head2 Comparison methods
 
-Return a string representing this object.
+None of these methods modify the invocand object. Note that a C<NaN> is neither
+less than, greater than, or equal to anything else, even a C<NaN>.
+
+=over
 
 =item bcmp()
 
@@ -4750,17 +4774,30 @@ Returns a copy of the numerator (the part above the line) as signed BigInt.
 
 Returns a copy of the denominator (the part under the line) as positive BigInt.
 
+=back
+
+=head2 String conversion methods
+
+=over
+
+=item bstr()
+
+    my $x = Math::BigRat->new('8/4');
+    print $x->bstr(), "\n";             # prints 1/2
+
+Returns a string representing the number.
+
 =item bnstr()
 
-Not implemented in Math::BigRat.
+See L<Math::BigInt/bnstr()>.
 
 =item bestr()
 
-Not implemented in Math::BigRat.
+See L<Math::BigInt/bestr()>.
 
 =item bdstr()
 
-Not implemented in Math::BigRat.
+See L<Math::BigInt/bdstr()>.
 
 =item to_bytes()
 

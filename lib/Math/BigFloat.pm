@@ -6009,8 +6009,6 @@ sub bstr {
 sub bsstr {
     my ($class, $x, @r) = ref($_[0]) ? (ref($_[0]), @_) : objectify(1, @_);
 
-    carp "Rounding is not supported for ", (caller(0))[3], "()" if @r;
-
     # Inf and NaN
 
     if ($x->{sign} ne '+' && $x->{sign} ne '-') {
@@ -6023,6 +6021,10 @@ sub bsstr {
     return $x -> _upg() -> bsstr(@r)
       if $class -> upgrade() && !$x -> isa(__PACKAGE__);
 
+    # Round according to arguments or global settings, if any.
+
+    $x = $x -> copy() -> round(@r);
+
     # Finite number
 
     ($x->{sign} eq '-' ? '-' : '') . $LIB->_str($x->{_m})
@@ -6033,8 +6035,6 @@ sub bsstr {
 
 sub bnstr {
     my ($class, $x, @r) = ref($_[0]) ? (ref($_[0]), @_) : objectify(1, @_);
-
-    carp "Rounding is not supported for ", (caller(0))[3], "()" if @r;
 
     # Inf and NaN
 
@@ -6051,6 +6051,10 @@ sub bnstr {
     # Finite number
 
     my $str = $x->{sign} eq '-' ? '-' : '';
+
+    # Round according to arguments or global settings, if any.
+
+    $x = $x -> copy() -> round(@r);
 
     # Get the mantissa and the length of the mantissa.
 
@@ -6085,8 +6089,6 @@ sub bnstr {
 sub bestr {
     my ($class, $x, @r) = ref($_[0]) ? (ref($_[0]), @_) : objectify(1, @_);
 
-    carp "Rounding is not supported for ", (caller(0))[3], "()" if @r;
-
     # Inf and NaN
 
     if ($x->{sign} ne '+' && $x->{sign} ne '-') {
@@ -6098,6 +6100,10 @@ sub bestr {
 
     return $x -> _upg() -> bestr(@r)
       if $class -> upgrade() && !$x -> isa(__PACKAGE__);
+
+    # Round according to arguments or global settings, if any.
+
+    $x = $x -> copy() -> round(@r);
 
     # Finite number
 
@@ -6140,8 +6146,6 @@ sub bestr {
 sub bdstr {
     my ($class, $x, @r) = ref($_[0]) ? (ref($_[0]), @_) : objectify(1, @_);
 
-    carp "Rounding is not supported for ", (caller(0))[3], "()" if @r;
-
     # Inf and NaN
 
     if ($x->{sign} ne '+' && $x->{sign} ne '-') {
@@ -6153,6 +6157,10 @@ sub bdstr {
 
     return $x -> _upg() -> bdstr(@r)
       if $class -> upgrade() && !$x -> isa(__PACKAGE__);
+
+    # Round according to arguments or global settings, if any.
+
+    $x = $x -> copy() -> round(@r);
 
     # Finite number
 
@@ -7834,6 +7842,35 @@ Returns the greatest common divisor (GCD), which is the number with the largest
 absolute value such that $x/$gcd, $y/$gcd, ... is an integer. For example, when
 the operands are 0.8 and 1.2, the GCD is 0.4. This is a generalisation of the
 ordinary GCD for integers. See L<Math::BigInt/gcd()>.
+
+=back
+
+=head2 String conversion methods
+
+=over
+
+=item bstr()
+
+    my $x = Math::BigRat->new('8/4');
+    print $x->bstr(), "\n";             # prints 1/2
+
+Returns a string representing the number.
+
+=item bsstr()
+
+See L<Math::BigInt/bsstr()>.
+
+=item bnstr()
+
+See L<Math::BigInt/bnstr()>.
+
+=item bestr()
+
+See L<Math::BigInt/bestr()>.
+
+=item bdstr()
+
+See L<Math::BigInt/bdstr()>.
 
 =item to_bytes()
 
