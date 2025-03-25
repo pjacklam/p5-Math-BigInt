@@ -1300,6 +1300,8 @@ sub bcmp {
                             ? (ref($_[0]), @_)
                             : objectify(2, @_);
 
+    carp "Rounding is not supported for ", (caller(0))[3], "()" if @r;
+
     if (!$x -> is_finite() || !$y -> is_finite()) {
         # $x is NaN and/or $y is NaN
         return    if $x -> is_nan() || $y -> is_nan();
@@ -1344,6 +1346,8 @@ sub bacmp {
     my ($class, $x, $y, @r) = ref($_[0]) && ref($_[0]) eq ref($_[1])
                             ? (ref($_[0]), @_)
                             : objectify(2, @_);
+
+    carp "Rounding is not supported for ", (caller(0))[3], "()" if @r;
 
     # handle +-inf and NaN
     if (!$x -> is_finite() || !$y -> is_finite()) {
@@ -2761,6 +2765,8 @@ sub bnok {
                             ? (ref($_[0]), @_)
                             : objectify(2, @_);
 
+    carp "Rounding is not supported for ", (caller(0))[3], "()" if @r;
+
     # Don't modify constant (read-only) objects.
 
     return $x if $x -> modify('bnok');
@@ -2786,6 +2792,8 @@ sub bperm {
     my ($class, $x, $y, @r) = ref($_[0]) && ref($_[0]) eq ref($_[1])
                             ? (ref($_[0]), @_)
                             : objectify(2, @_);
+
+    carp "Rounding is not supported for ", (caller(0))[3], "()" if @r;
 
     # Don't modify constant (read-only) objects.
 
