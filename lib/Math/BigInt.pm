@@ -5541,11 +5541,9 @@ sub blcm {
 
     my $x = shift @args;
     $x = $x -> copy();          # bgcd() and blcm() never modify any operands
-    return $x if $x -> is_zero();
 
     while (@args) {
         my $y = shift @args;
-        return $x -> bzero() if $y -> is_zero();
         return $x -> bnan() if !$y -> is_int();         # is $y not integer?
         $x -> {value} = $LIB->_lcm($x -> {value}, $y -> {value});
     }
