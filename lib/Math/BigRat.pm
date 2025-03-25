@@ -3498,18 +3498,13 @@ sub blcm {
 
     # Pre-process list of operands.
 
-    my $all_zero = 1;   # are all operands zero?
-    my $one_zero = 0;   # are at least one operand zero?
-
     for my $arg (@args) {
         return $class -> bnan() unless $arg -> is_finite();
-        my $arg_is_zero = $arg -> is_zero();
-        $all_zero &&= $arg_is_zero;
-        $one_zero ||= $arg_is_zero;
     }
 
-    return $class -> bnan()  if $all_zero;
-    return $class -> bzero() if $one_zero;
+    for my $arg (@args) {
+        return $class -> bzero() if $arg -> is_zero();
+    }
 
     my $x = shift @args;
     $x = $x -> copy();          # bgcd() and blcm() never modify any operands
