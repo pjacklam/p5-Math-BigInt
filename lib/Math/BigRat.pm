@@ -691,6 +691,37 @@ sub from_ieee754 {
     return $self;
 }
 
+sub from_fp80 {
+    my $self    = shift;
+    my $selfref = ref $self;
+    my $class   = $selfref || $self;
+
+    # Make "require" work.
+
+    $class -> import() if $IMPORT == 0;
+
+    # Don't modify constant (read-only) objects.
+
+    return $self if $selfref && $self -> modify('from_fp80');
+
+    my $in = shift;
+    my @r  = @_;
+
+    my $tmp = Math::BigFloat -> from_fp80($in, @r);
+
+    $tmp = $tmp -> as_rat();
+
+    # If called as a class method, initialize a new object.
+
+    $self = $class -> bzero(@r) unless $selfref;
+    $self -> {sign} = $tmp -> {sign};
+    $self -> {_n}   = $tmp -> {_n};
+    $self -> {_d}   = $tmp -> {_d};
+
+    $self -> _dng() if $self -> is_int();
+    return $self;
+}
+
 sub from_base {
     my $self    = shift;
     my $selfref = ref $self;
@@ -3773,6 +3804,13 @@ sub to_ieee754 {
     return $x -> as_float() -> to_ieee754($format);
 }
 
+sub to_fp80 {
+    my ($class, $x, @r) = ref($_[0]) ? (ref($_[0]), @_)
+                                              : objectify(1, @_);
+
+    return $x -> as_float(@r) -> to_fp80();
+}
+
 sub as_hex {
     my ($class, $x) = ref($_[0]) ? (undef, $_[0]) : objectify(1, @_);
 
@@ -3977,6 +4015,7 @@ Math::BigRat - arbitrary size rational number math package
   $x = Math::BigRat->from_base('why', 36);  # from any base
   $x = Math::BigRat->from_base_num([1, 0], 2);  # from any base
   $x = Math::BigRat->from_ieee754($b, $fmt);    # from IEEE-754 bytes
+  $x = Math::BigRat->from_fp80($b);         # from x86 80-bit
   $x = Math::BigRat->bzero();               # create a +0
   $x = Math::BigRat->bone();                # create a +1
   $x = Math::BigRat->bone('-');             # create a -1
@@ -4132,6 +4171,7 @@ Math::BigRat - arbitrary size rational number math package
   $x->to_base($b);        # as string in any base
   $x->to_base_num($b);    # as array of integers in any base
   $x->to_ieee754($fmt);   # to bytes encoded according to IEEE 754-2008
+  $x->to_fp80();          # encode value in x86 80-bit format
 
   $x->as_hex();           # as signed hexadecimal string with "0x" prefix
   $x->as_bin();           # as signed binary string with "0b" prefix
@@ -4242,6 +4282,17 @@ See L<Math::BigInt/from_bytes()>.
 Interpret the input as a value encoded as described in IEEE754-2008.
 
 See L<Math::BigFloat/from_ieee754()>.
+
+=item from_fp80()
+
+    # set $x to 14488038916154245685/4611686018427387904, the closest value
+    # to pi that can be represented in the x86 80-bit format
+    $x = Math::BigRat -> from_fp80("4000c90fdaa22168c235");
+
+Interpret the input as a value encoded in the x86 extended-precision 80-bit
+format.
+
+See L<Math::BigFloat/from_fp80()>.
 
 =item from_base()
 
@@ -4749,6 +4800,10 @@ See L<Math::BigInt/to_bytes()>.
 =item to_ieee754()
 
 See L<Math::BigFloat/to_ieee754()>.
+
+=item to_fp80()
+
+See L<Math::BigFloat/to_fp80()>.
 
 =item as_hex()
 
