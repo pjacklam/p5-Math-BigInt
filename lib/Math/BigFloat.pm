@@ -5140,7 +5140,7 @@ sub bblsft {
 
     # Don't modify constant (read-only) objects.
 
-    return $x if $x -> modify('bblsft');
+    return $x if ref($x) && $x -> modify('bblsft');
 
     # Let Math::BigInt do the job.
 
@@ -5188,7 +5188,7 @@ sub bbrsft {
 
     # Don't modify constant (read-only) objects.
 
-    return $x if $x -> modify('bbrsft');
+    return $x if ref($x) && $x -> modify('bbrsft');
 
     # Let Math::BigInt do the job.
 
