@@ -5864,7 +5864,11 @@ sub fparts {
 
     my $numer = $x -> copy() -> round(@r);
     return $numer unless wantarray;
-    my $denom = $class -> bone(@r);
+
+    my $denom = $x -> copy();
+    $denom -> {sign}  = "+";
+    $denom -> {value} = $LIB -> _one();
+    $denom -> round(@r);
     return $numer, $denom;
 }
 

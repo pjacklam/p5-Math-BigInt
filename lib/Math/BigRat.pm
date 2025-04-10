@@ -3551,16 +3551,32 @@ sub fparts {
     my $x = shift;
     my $class = ref $x;
 
-    croak("fparts() is an instance method") unless $class;
+    # NaN => NaN/NaN
 
-    return ($class -> bnan(),
-            $class -> bnan()) if $x -> is_nan();
+    if ($x -> is_nan()) {
+        return $class -> bnan(), $class -> bnan() if wantarray;
+        return $class -> bnan();
+    }
+
+    # ±Inf => ±Inf/1
+
+    if ($x -> is_inf()) {
+        return $class -> binf($x -> sign()), $class -> bone() if wantarray;
+        return $class -> binf($x -> sign());
+    }
+
+    # -3/2 -> -3/1
 
     my $numer = $x -> copy();
-    my $denom = $class -> bzero();
-
-    $denom -> {_n} = $numer -> {_d};
     $numer -> {_d} = $LIB -> _one();
+    return $numer unless wantarray;
+
+    # -3/2 -> 2/1
+
+    my $denom = $x -> copy();
+    $denom -> {sign} = "+";
+    $denom -> {_n}   = $denom -> {_d};
+    $denom -> {_d}   = $LIB -> _one();
 
     return $numer, $denom;
 }

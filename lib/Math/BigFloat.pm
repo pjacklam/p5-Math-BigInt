@@ -5996,11 +5996,12 @@ sub fparts {
 
     my @flt_parts = ($x->{sign}, $x->{_m}, $x->{_es}, $x->{_e});
     my @rat_parts = $class -> _flt_lib_parts_to_rat_lib_parts(@flt_parts);
-    my $num = $class -> new($LIB -> _str($rat_parts[1]));
-    my $den = $class -> new($LIB -> _str($rat_parts[2]));
-    $num = $num -> bneg() if $rat_parts[0] eq "-";
-    return $num unless wantarray;
-    return $num, $den;
+    my $numer = $class -> new($LIB -> _str($rat_parts[1]));
+    $numer -> bneg() if $rat_parts[0] eq "-";
+    return $numer unless wantarray;
+
+    my $denom = $class -> new($LIB -> _str($rat_parts[2]));
+    return $numer, $denom;
 }
 
 # Given "123.4375", returns "1975", since "123.4375" is "1975/16".
